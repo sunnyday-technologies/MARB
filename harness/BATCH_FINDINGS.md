@@ -83,6 +83,31 @@ modes. n=5/cohort is noisy, but the v2≫v3≈v4 gap is consistent across 20 run
 Next experiment: hold v4 text fixed and raise the turn cap to separate budget-starvation
 from capability.
 
+### Cohort E — v4 text @ 14-turn budget (runs 21–25)
+
+| metric | D (v4 @ 8) | E (v4 @ 14) |
+|---|---|---|
+| loadable | 2/5 | **4/5** |
+| solids (median, loadable) | ~24 | ~30 |
+| tokens (range) | 35–72K | 53–139K |
+
+Raising the cap **partly confirms the budget hypothesis**: export rate recovered 2/5→4/5,
+so v4 was partly budget-starved. But coverage stayed ~30 (vs v2's ~98) and no better
+design appeared — the extra turns were consumed by two failure modes, not by building:
+
+1. **The `BoundingBox()`/`Center()` access spiral is a hard failure.** Run 23 spent all 14
+   turns repeating "try a different approach to get the center coordinates" (113K tokens,
+   no export). The `.x` vs `.X` / `bb.center` confusion isn't reliably fixed by the crib
+   when it's buried in the longer v4 prompt. More budget just means more wasted loops.
+2. **The build-volume clarification doesn't stick.** Runs 21/22/24/25 still treated
+   2000×1000×1000 as a size limit and burned late turns *shrinking* to it, despite v4
+   stating it is the build volume. The bare number anchors the model regardless — arguing
+   for removing the number from the prompt and forbidding any resize-to-fit, not explaining
+   it (consistent with Nick's "don't add boundaries").
+
+**Net:** the lean v2 export-fix remains the buildability optimum; budget recovers *export*
+but not *coverage* or *quality*. The productive next prompt is leaner+sharper, not richer.
+
 ## Comparability + recommendation
 
 `base` is the no-hint control; `cadquery_mechanics_v2` is a new cohort (like kit
