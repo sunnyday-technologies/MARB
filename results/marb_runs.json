@@ -1,0 +1,78 @@
+{
+  "_comment": "MARB run registry + provenance manifest. SINGLE SOURCE OF TRUTH for which runs exist and their full version traceability. marb_grade_all.py --manifest reads this: it groups runs by `cell`, grades each `step`, aggregates per cell, and carries `toolchain` + per-seed provenance into marb_v0_9_stats.json. New runs: append an entry (drop the STEP anywhere and point `step` at it, or use the [local-path-redacted] convention). Nothing auto-populates this — a run is a human/agent CAD session; register it here.",
+  "schema": "marb_runs.v1",
+  "marb_scoring_version": "v0.9",
+  "reference_step": "[local-path-redacted]
+  "spec": "[local-path-redacted]
+
+  "grader_toolchain": {
+    "_comment": "Versions of the GRADER stack (the product). Same for every run unless overridden per-run.",
+    "cadclaw": "0.8.0",
+    "marb_scoring": "v0.9",
+    "step_io": "CadQuery (Python) 2.7.0 / OCP-OpenCASCADE",
+    "fea_beam_frame": "PyNiteFEA 2.4.1",
+    "fea_solid_mesh": "CalculiX 2.23.0 (not exercised by v0.9 positional metrics)"
+  },
+
+  "harness_environment": {
+    "_comment": "Client + versions for the CURRENT cohort (kit v1.2, runs from 2026-05-30 on). Earlier runs differed: Opus 4.7 used Claude Code (CLI); the Opus 4.8 Fusion attempt used the Claude desktop app (incognito). Record per-run client/kit_version going forward.",
+    "client": "Claude Code via the VS Code extension",
+    "vscode_version": "1.122.1",
+    "claude_code_extension": "anthropic.claude-code 2.1.158 (win32-x64)",
+    "claude_code_cli": "2.1.101",
+    "plan": "Claude Max",
+    "ultracode": "NOT used. As of 2026-05-30, ultracode is available only in the VS Code extension, not the Claude Code desktop app. Noted because it would materially change effort/token use; these runs are standard Max, no ultracode.",
+    "kit_version": "v1.3 (build/m3_fusion_blind_kit_v1.3.zip)"
+  },
+
+  "runs": [
+    {
+      "cell": "Opus 4.7 · CadQuery",
+      "seed": "01",
+      "model": {"name": "Claude Opus 4.7", "id": "claude-opus-4-7", "context": "1M", "host": "Claude Code"},
+      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
+      "step": "[local-path-redacted] _x_CadQuery\\cadquery_native_export.step",
+      "run_log": "[local-path-redacted] _x_CadQuery\\run_log.yaml",
+      "timing": {"elapsed_minutes": 48.8, "started_utc": "2026-05-26T05:02:53Z"},
+      "tokens": {"capture_status": "recovered_from_transcript", "billed": 22100000, "output": 321000},
+      "effort": {"attempts": 9, "retries": 2, "corrections": 4, "human_interventions": 0}
+    },
+    {
+      "cell": "Opus 4.7 · Fusion",
+      "seed": "01",
+      "model": {"name": "Claude Opus 4.7", "id": "claude-opus-4-7", "host": "Claude Code"},
+      "driver": {"tool": "Autodesk Fusion", "version": "2702.1.58", "interface": "Fusion MCP"},
+      "step": "[local-path-redacted]
+      "run_log": "[local-path-redacted]
+      "timing": {"elapsed_minutes": 33.7, "started_utc": "2026-05-26T05:58:33Z"},
+      "tokens": {"capture_status": "recovered_from_transcript", "billed": 34200000, "output": 1150000},
+      "effort": {"attempts": 12, "retries": 1, "corrections": 4, "human_interventions": 0}
+    },
+    {
+      "cell": "GPT-5 Codex · CadQuery",
+      "seed": "01",
+      "model": {"name": "GPT-5 Codex", "id": "gpt-5-codex", "host": "OpenAI Codex desktop"},
+      "driver": {"tool": "CadQuery", "version": "2.7.0", "viewer_helper": "cadclaw 0.8.0"},
+      "step": "[local-path-redacted]
+      "run_log": "[local-path-redacted]
+      "timing": {"elapsed_minutes": 13.0, "started_utc": "2026-05-26T07:04:44Z"},
+      "tokens": {"capture_status": "unavailable", "billed": null, "output": null},
+      "effort": {"attempts": 1, "retries": 0, "corrections": 1, "human_interventions": 0}
+    }
+  ],
+
+  "_pending_runs_template": {
+    "_comment": "Copy an entry into runs[] when each new STEP lands. Fill driver.version for every tool so the contributing-versions axis stays complete.",
+    "cell": "Opus 4.8 · CadQuery",
+    "seed": "01",
+    "model": {"name": "Claude Opus 4.8", "id": "claude-opus-4-8", "host": "Claude Code"},
+    "driver": {"tool": "CadQuery | Autodesk Fusion | build123d | SolidDesk | <other>", "version": "<exact>"},
+    "step": "[local-path-redacted]
+    "run_log": "[local-path-redacted]
+    "kit_version": "v1.3",
+    "client": "Claude Code via the VS Code extension (see harness_environment)",
+    "blind_method": "neutral folder, no CLAUDE.md, account memory not in play",
+    "timing": {"elapsed_minutes": null},
+    "tokens": {"capture_status": "unavailable", "billed": null, "output": null}
+  }
+}
