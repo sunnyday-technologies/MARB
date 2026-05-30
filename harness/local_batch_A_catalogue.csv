@@ -9,3 +9,13 @@ run,prompt_variant,status,loadable,solids,bbox_x,bbox_y,bbox_z,turns,prompt_toke
 8,cadquery_mechanics_v2,complete,True,110,2742,1742,1420,8,53103,10526,63629,4.54,
 9,cadquery_mechanics_v2,complete,True,103,1927,1788,2459,8,50084,11238,61322,4.87,
 10,cadquery_mechanics_v2,complete,True,37,1040,1342,1421,8,48171,9354,57525,4.06,
+11,cadquery_mechanics_v3,no_valid_artifact,False,0,,,,8,36681,866,37547,0.64,no export.step
+12,cadquery_mechanics_v3,complete,True,28,1125,858,1996,6,36472,5806,42278,2.54,
+13,cadquery_mechanics_v3,no_valid_artifact,False,0,,,,8,36543,1622,38165,1.03,no export.step
+14,cadquery_mechanics_v3,complete,True,25,380,1726,1471,8,52092,6078,58170,2.88,
+15,cadquery_mechanics_v3,complete,True,54,2540,1562,1996,8,49858,5431,55289,2.97,
+16,design_requirements_v4,complete,True,26,271,958,2094,8,61039,11241,72280,4.78,
+17,design_requirements_v4,no_valid_artifact,False,0,,,,8,40307,1620,41927,1.3,no export.step
+18,design_requirements_v4,no_valid_artifact,False,0,,,,8,45125,4679,49804,2.38,no export.step
+19,design_requirements_v4,complete,True,21,1080,958,1225,8,51080,5988,57068,2.87,
+20,design_requirements_v4,no_valid_artifact,False,0,,,,8,33692,1595,35287,1.01,no export.step
