@@ -58,6 +58,31 @@ that. Fix belongs in the spec/brief (build-volume wording), carried into v3 prom
 guidance. We still do NOT hand the model the numbers as a target to hit (gate-gaming,
 which the brief forbids); v3 only corrects the *meaning* of the figure.
 
+## Recursive progression A–D (added 2026-05-30) — more scaffolding backfires
+
+| Cohort | prompt_variant | loadable | solids (median, loadable) | total_tokens (range) |
+|---|---|---|---|---|
+| A | base | 1/5 | 15 | 16–48K |
+| B | cadquery_mechanics_v2 | **5/5** | **~98** | 50–81K |
+| C | cadquery_mechanics_v3 (+build-volume) | 3/5 | 28 | 37–58K |
+| D | design_requirements_v4 (+design modes) | 2/5 | ~24 | 35–72K |
+
+The single export-idiom fix (v2) is the dominant lever and the buildability optimum.
+Every block of text added after it (v3 build-volume note, v4 multi-mode design
+objectives) **monotonically degraded** buildability and instance coverage. Logs show
+why: with a longer system prompt the model spends its ~8 turns re-reading the brief and
+re-deriving the same `BoundingBox()`/`Center()` access friction (batch-D runs 17 & 18
+never exported), instead of building. The binding constraint at 8B-active / 8 turns is
+**turn budget**, not capability or willingness — and the extra design asks buy no
+*measurable* quality because the grader scores placement (POS/ORIENT/GAP), not the design
+modes. n=5/cohort is noisy, but the v2≫v3≈v4 gap is consistent across 20 runs.
+
+**Implication for the multi-mode (L0–L7) ambition:** asking a small local model to
+*consider* rigidity/manufacturability/thermal/etc. in-prompt is counterproductive until
+(a) it has the turn/compute budget to act on it and (b) the grader can score those modes.
+Next experiment: hold v4 text fixed and raise the turn cap to separate budget-starvation
+from capability.
+
 ## Comparability + recommendation
 
 `base` is the no-hint control; `cadquery_mechanics_v2` is a new cohort (like kit
