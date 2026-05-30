@@ -75,8 +75,10 @@ for name, t in TIMES.items():
 _gaps = [_gap(n)[0] for n in TIMES if n in runs] or [0]
 ax.set_xlim(0, 60); ax.set_ylim(-0.6, max(10, max(_gaps) + 1.5))
 ax.invert_yaxis()                                 # lower is better, put 0 at top visually
-ax.set_xlabel("Build time (minutes)", fontsize=SIZES["axis"], color=COLORS["ink"])
-ax.set_ylabel("GAP median (mm)", fontsize=SIZES["axis"], color=COLORS["ink"])
+# direction cues: faster = less time = LEFT (the old "faster ->" pointed the wrong way)
+ax.set_xlabel("← faster          Build time (minutes)          slower →",
+              fontsize=SIZES["axis"], color=COLORS["ink"])
+ax.set_ylabel("GAP median (mm), lower is better", fontsize=SIZES["axis"], color=COLORS["ink"])
 ax.tick_params(labelsize=SIZES["tick"], colors=COLORS["grey"])
 for s in ("top", "right"): ax.spines[s].set_visible(False)
 for s in ("left", "bottom"): ax.spines[s].set_color("#c3ccd4")
@@ -87,6 +89,14 @@ fig.text(0.10, 0.905, "Three AIs build a 100-part machine: gap correctness vs sp
 fig.text(0.10, 0.05,
          "GAP = error vs the answer key's intended interface gap. Lower is closer to correct.",
          fontsize=SIZES["note"], color=COLORS["grey"], style="italic")
+
+# Sunnyday Technologies logo, bottom-right on the white interior (skip cleanly if absent)
+LOGO = REPO / "assets" / "sdt_logo.png"
+if LOGO.exists():
+    from PIL import Image as _Img
+    import numpy as _np
+    _logo = _np.asarray(_Img.open(LOGO).convert("RGBA"))
+    lax = fig.add_axes([0.785, 0.018, 0.175, 0.125]); lax.imshow(_logo); lax.axis("off")
 
 fig.savefig(OUT, dpi=100, facecolor=COLORS["navy"]); print("saved:", OUT)
 from PIL import Image; print("size:", Image.open(OUT).size)
