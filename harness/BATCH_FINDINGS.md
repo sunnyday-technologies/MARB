@@ -108,10 +108,46 @@ design appeared — the extra turns were consumed by two failure modes, not by b
 **Net:** the lean v2 export-fix remains the buildability optimum; budget recovers *export*
 but not *coverage* or *quality*. The productive next prompt is leaner+sharper, not richer.
 
-## Comparability + recommendation
+### Cohort F — lean v5 @ 8 turns (runs 26–30) — the consolidating step
 
-`base` is the no-hint control; `cadquery_mechanics_v2` is a new cohort (like kit
-v1.1 vs v1.2 for Fusion). Do not pool them on one leaderboard without noting the
-variant. For future local runs, drive with
-`--guidance-file harness/cadquery_mechanics_v2.md` (recorded as `prompt_variant`);
-keep `base` only as the control.
+v5 distilled every learning into a lean prompt: exact lowercase `.x` idiom, "probe at most
+once, never loop", correct Assembly export, "never resize to fit a number", and dropped the
+backfiring design-mode list.
+
+| metric | B (v2 @8) | F (v5 @8) |
+|---|---|---|
+| loadable | 5/5 | **5/5** |
+| solids (median, loadable) | 98 | 84 (102, 88, 84, 30, 26) |
+| `.x` probe-spiral | n/a | **eliminated** (the "probe once" rule held) |
+
+v5 ties v2 on buildability (5/5) and, crucially, **removes the catastrophic center-access
+spiral** that burned a whole 14-turn run in cohort E — so it is the more robust prompt even
+though v2's median coverage is marginally higher (n=5 noise). The envelope-anchored
+*shrinking* instinct still appears (runs 26/28/30 note "too large"), but with "never resize"
+the model repositions instead of deleting parts (run 26 kept 102 solids while "shrinking").
+
+## Full progression + recommendation
+
+| Cohort | prompt_variant | budget | loadable | solids (median) |
+|---|---|---|---|---|
+| A | base | 8 | 1/5 | 15 |
+| B | cadquery_mechanics_v2 | 8 | 5/5 | 98 |
+| C | cadquery_mechanics_v3 | 8 | 3/5 | 28 |
+| D | design_requirements_v4 | 8 | 2/5 | 24 |
+| E | design_requirements_v4 | 14 | 4/5 | 30 |
+| F | **cadquery_lean_v5** | 8 | **5/5** | 84 |
+
+**Recommended local-track default: `--guidance-file harness/cadquery_lean_v5.md`** (ties best
+buildability, eliminates the worst failure mode, leanest effective prompt). Keep `base` as the
+no-hint control. These are new cohorts (like kit v1.1 vs v1.2 for Fusion) — note the
+`prompt_variant` and never pool variants on one leaderboard.
+
+**What stays unsolved here (belongs upstream / future runs):**
+- **Structural quality.** Across all 30 runs the output is loosely-placed parts, not rigid
+  jointed frames. Measuring it needs the grader's L1+ interface/kinematics metrics; coaching
+  it in-prompt is design-leaking and (per C/D) backfires at this scale anyway.
+- **The envelope number anchors shrinking.** No prompt wording fully overrode it; the real
+  fix is to reframe the brief/spec so 2000×1000×1000 isn't presented as a box to fit.
+- **Multi-mode design (L0–L7).** Defer to (a) the upstream brief once the grader can score
+  those modes and (b) a higher-budget / larger-model run — at 8B-active/8 turns the asks only
+  trade away the artifact.

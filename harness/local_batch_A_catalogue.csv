@@ -24,3 +24,8 @@ run,prompt_variant,status,loadable,solids,bbox_x,bbox_y,bbox_z,turns,prompt_toke
 23,design_requirements_v4,no_valid_artifact,False,0,,,,14,110082,2831,112913,2.22,no export.step
 24,design_requirements_v4,complete,True,25,1621,1319,1538,7,45625,7924,53549,3.45,
 25,design_requirements_v4,complete,True,70,2115,1527,2927,14,124998,14123,139121,6.69,
+26,cadquery_lean_v5,complete,True,102,1914,1258,2104,8,81582,18739,100321,8.32,
+27,cadquery_lean_v5,complete,True,30,180,1835,1064,6,25097,4678,29775,1.99,
+28,cadquery_lean_v5,complete,True,88,1567,2319,2442,8,71990,15325,87315,8.26,
+29,cadquery_lean_v5,complete,True,26,1080,1551,1471,8,36466,3719,40185,1.85,
+30,cadquery_lean_v5,complete,True,84,2127,1758,2114,8,50441,7560,58001,3.69,
