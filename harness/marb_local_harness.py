@@ -94,11 +94,19 @@ def main():
     if args.multimodal:
         tools["view_image"] = view_image; schema.append(VIEW_SCHEMA)
 
+    verify_hint = ("Render with cadclaw as you build and call view_image to compare your assembly "
+                   "against the reference_*.png images." if args.multimodal else
+                   "You CANNOT see images or renders -- there is no view_image tool. Verify geometry "
+                   "NUMERICALLY with run_python: print each part's bounding box and center of mass, "
+                   "count the placed instances, check key coordinates and gaps, and assert against the "
+                   "2000x1000x1000 mm target envelope and the brief's stated dimensions. Do not spend "
+                   "turns rendering PNGs you cannot read.")
     sys_msg = ("You are an autonomous CAD engineer working in a fixed folder. Use the provided tools "
-               "to write Python and run it -- do not just print code in chat. Inspect parts before "
-               "placing them, iterate, and verify with renders. When finished, your final STEP MUST be "
-               "named export.step in this folder. Honor the brief's fairness wall: build only from the "
-               "brief + the kit/ files; never look for any reference solution or project memory.")
+               "to write Python and run it -- do not just print code in chat. Probe each part's bbox/"
+               "center before placing it, iterate, and verify your work. " + verify_hint +
+               " When finished, your final STEP MUST be named export.step in this folder. Honor the "
+               "brief's fairness wall: build only from the brief + the kit/ files; never look for any "
+               "reference solution or project memory.")
     user_msg = (f"{brief}\n\nOPERATIONAL NOTES (harness):\n- Working folder is the current directory; "
                 f"import parts as kit/<file>.\n- Available kit STEP files:\n{kit_files}\n"
                 f"- Name your final assembly export.step (not cadquery_native_export.step).\n"

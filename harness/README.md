@@ -68,6 +68,17 @@ python marb_local_harness.py `
   model has no cross-session memory, and tools are sandboxed to the run folder — there
   is no path to any reference solution or project memory.
 
+### How a text-only model verifies (no vision)
+
+A text-only model (the default) **cannot see renders or the reference PNGs** — `view_image`
+is not registered without `--multimodal`, and a PNG can't be read back as text. So the
+harness steers it to verify **numerically** via `run_python`: probe each part's
+`BoundingBox()` / center of mass, count placed instances, check key coordinates and gaps,
+and `assert` against the 2000×1000×1000 mm envelope and the brief's dimensions. That
+blindness is the genuine floor — build quality rides on coordinate reasoning alone, with
+no visual feedback. To give the run sight, use `--multimodal` **and** a vision-capable
+model (e.g. the Gemini cloud cell above); `qwen3-coder-next` is text-only.
+
 ## Loop control
 
 `--max-iters` caps model turns (default 8). The loop also exits early on
