@@ -42,13 +42,21 @@ strategy. Effect: loadable 20% → 100%, instance coverage 15 → ~98 median. It
 **no placements, counts, or orientations** — verified line-by-line — so cohort B remains
 a blind run; the brief + kit stay the only design inputs.
 
-## New failure mode exposed (do NOT patch by hinting the envelope)
+## Correction: the "oversizing" was NOT a defect (build volume ≠ machine size)
 
-With export fixed, cohort B builds the whole machine but commonly **exceeds the
-2000×1000×1000 target** (4/5 oversized in ≥1 axis) and run 10 *regressed* to 37 solids
-while shrinking to fit. The brief explicitly says "do not tune toward any gate," so we
-deliberately leave this alone — telling the model the envelope numbers (already in the
-brief) or how to hit them would be gate-gaming, not a fair mechanics hint.
+Originally this section flagged cohort B for "exceeding the 2000×1000×1000 target."
+**That framing was wrong** (corrected 2026-05-30, per Nick): 2000×1000×1000 mm is the
+achievable **print/build volume**, not the machine's outer size. The frame, rails,
+gantry, Z-posts and end mounts must extend *beyond* it — a carriage cannot print to the
+ends of its own travel — so an assembly larger than 2000×1000×1000 is **expected and
+correct**. The grader confirms this is not a scoring bound (`benchmark.yaml` metadata
+only; POS/ORIENT/GAP match parts to the reference, not to a size limit).
+
+The real defect was the opposite: the brief's "target envelope/class" wording made the
+model try to **shrink** the machine to fit — run 10 regressed to 37 solids doing exactly
+that. Fix belongs in the spec/brief (build-volume wording), carried into v3 prompt
+guidance. We still do NOT hand the model the numbers as a target to hit (gate-gaming,
+which the brief forbids); v3 only corrects the *meaning* of the figure.
 
 ## Comparability + recommendation
 

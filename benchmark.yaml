@@ -6,7 +6,7 @@ target:
   project: M3-CRETE
   variant: M3-2
   target_envelope_mm: [2000.0, 1000.0, 1000.0]
-  interpretation: target envelope/class; requires physical validation
+  interpretation: achievable PRINT/BUILD VOLUME, not the machine's outer size; the frame, rails, gantry, Z-posts and end mounts extend beyond it, so a correct machine is physically larger than these numbers. Not a scoring bound; requires physical validation.
   fixture_constraints:
     - open bottom frame in X direction; no bottom X rails
     - lower Y static frame rails are 2080 V-slot
