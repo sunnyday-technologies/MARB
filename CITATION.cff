@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+title: "MARB: Mechanical Assembly Readiness Benchmark"
+message: "If you use MARB, please cite it."
+type: dataset
+authors:
+  - name: "Sunnyday Technologies"
+abstract: >-
+  MARB (Mechanical Assembly Readiness Benchmark) is a tool-independent, automated
+  benchmark for AI-assisted CAD assembly: given authored parts and a goal image,
+  how correctly does an AI place every part of a real machine (position,
+  orientation, and interface gaps). Graded by the open-source CADCLAW engine and
+  mapped onto the TRL / MRL / IRL readiness scales.
+url: "https://cadclaw.io/benchmark"
+repository-code: "https://github.com/sunnyday-technologies/MARB"
+license: MIT
+version: "0.9"
+date-released: "2026-05-30"
