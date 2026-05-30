@@ -1,0 +1,11 @@
+run,prompt_variant,status,loadable,solids,bbox_x,bbox_y,bbox_z,turns,prompt_tokens,completion_tokens,total_tokens,elapsed_min,error
+1,base,no_valid_artifact,False,0,,,,8,26155,5644,31799,2.45,no export.step
+2,base,complete,True,15,140,958,1028,8,40207,7689,47896,3.47,
+3,base,no_valid_artifact,False,0,,,,8,15010,1512,16522,1.1,no export.step
+4,base,no_valid_artifact,False,0,,,,8,22530,2175,24705,1.32,no export.step
+5,base,no_valid_artifact,False,0,,,,8,37126,4132,41258,2.05,no export.step
+6,cadquery_mechanics_v2,complete,True,82,2080,1462,2134,8,57440,8032,65472,3.51,
+7,cadquery_mechanics_v2,complete,True,98,2064,1632,1050,8,70106,10511,80617,4.45,
+8,cadquery_mechanics_v2,complete,True,110,2742,1742,1420,8,53103,10526,63629,4.54,
+9,cadquery_mechanics_v2,complete,True,103,1927,1788,2459,8,50084,11238,61322,4.87,
+10,cadquery_mechanics_v2,complete,True,37,1040,1342,1421,8,48171,9354,57525,4.06,
