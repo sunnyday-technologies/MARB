@@ -87,6 +87,10 @@ def main():
                     help="env var holding the API key (e.g. GEMINI_API_KEY); omitted -> local Ollama")
     ap.add_argument("--run-dir", default=str(RUN_DIR),
                     help="staged run folder (kit + brief + reference images already in it)")
+    ap.add_argument("--guidance-file", default=None,
+                    help="optional file whose text is appended to the system prompt as harness "
+                         "process/CadQuery-mechanics guidance (NOT design answers). Used for prompt-"
+                         "variant cohorts; recorded as prompt_variant in the run log.")
     args = ap.parse_args()
     RUN_DIR = pathlib.Path(args.run_dir)
     is_local = args.base_url == ENDPOINT
@@ -117,6 +121,13 @@ def main():
                 f"- The harness writes run_log.yaml for you; focus on the geometry.\n"
                 f"- Reference images present: reference_overview/front/top/side.png"
                 + ("" if args.multimodal else " (you are text-only; you cannot view them)") + ".")
+    prompt_variant = "base"
+    if args.guidance_file and pathlib.Path(args.guidance_file).exists():
+        g = pathlib.Path(args.guidance_file).read_text(encoding="utf-8").strip()
+        if g:
+            sys_msg += ("\n\nHARNESS GUIDANCE (general process & CadQuery mechanics learned from prior "
+                        "local runs -- NOT design answers; the brief stays the only design input):\n" + g)
+            prompt_variant = pathlib.Path(args.guidance_file).stem
     messages = [{"role": "system", "content": sys_msg}, {"role": "user", "content": user_msg}]
 
     import os
@@ -170,7 +181,7 @@ def main():
         "schema_version": "m3_ai_assembly_run_log.v0.1",
         "run_id": f"cadquery_native_driver_{args.model.replace(':','_').replace('/','_')}_{started:%Y%m%d}_01",
         "benchmark_id": "m3_ai_assembly", "track": "cadquery_native_driver",
-        "kit_version": KIT_VERSION,
+        "kit_version": KIT_VERSION, "prompt_variant": prompt_variant,
         "status": "complete" if exp.exists() else "no_valid_artifact",
         "driver": {
             "ai_driver": f"{args.model} ({'local open-weight, Ollama' if is_local else 'cloud API'})",
