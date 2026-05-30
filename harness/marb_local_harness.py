@@ -84,7 +84,11 @@ def main():
                          "(e.g. Gemini's OpenAI-compatible URL) only as a SEPARATE non-local cell.")
     ap.add_argument("--api-key-env", default=None,
                     help="env var holding the API key (e.g. GEMINI_API_KEY); omitted -> local Ollama")
+    ap.add_argument("--run-dir", default=str(RUN_DIR),
+                    help="staged run folder (kit + brief + reference images already in it)")
     args = ap.parse_args()
+    global RUN_DIR
+    RUN_DIR = pathlib.Path(args.run_dir)
     is_local = args.base_url == ENDPOINT
 
     brief = (RUN_DIR / "CADQUERY_DRIVER_BRIEF.md").read_text(encoding="utf-8")
