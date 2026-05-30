@@ -74,6 +74,7 @@ def progress_sig():  # used for no-improvement detection
     return (len(steps), exp.stat().st_size if exp.exists() else 0)
 
 def main():
+    global RUN_DIR
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=DEF_MODEL)
     ap.add_argument("--max-iters", type=int, default=8)
@@ -87,7 +88,6 @@ def main():
     ap.add_argument("--run-dir", default=str(RUN_DIR),
                     help="staged run folder (kit + brief + reference images already in it)")
     args = ap.parse_args()
-    global RUN_DIR
     RUN_DIR = pathlib.Path(args.run_dir)
     is_local = args.base_url == ENDPOINT
 
