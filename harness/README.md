@@ -36,6 +36,48 @@ Q4); two units bridge over **ConnectX-7** (200 Gbps direct peer, no switch) into
 There is **no "Qwen3.5"**; the coder line is Qwen2.5-Coder → Qwen3-Coder → **Qwen3-Coder-Next**.
 `qwen3-coder-next` is both the newest coder and the best single-box fit, so **no bridge is needed**.
 
+### Vision-capable cells (multimodal) + Chinese-literature extraction
+
+A local vision model serves two purposes here: **(a)** a *sighted* MARB cell that reads the
+goal image directly (vs the text-only blind floor below), and **(b)** **data extraction from
+Chinese-language technical literature** (cement / 3DCP / materials papers) — where a
+Chinese-trained VLM's native Chinese OCR + table/chart/document parsing is a real advantage.
+
+| Model | Maker / origin | Size (Q4) | local AI supercomputer fit | Use |
+|---|---|---|---|---|
+| **`glm-4.5v`** | Zhipu AI / Z.ai (🇨🇳) | 106B-A12B, ~62 GB | single box | Top doc/chart reasoning + Chinese OCR; the heaviest extractor. Leads 41+ multimodal benchmarks. |
+| **`qwen3-vl:32b`** | Alibaba Qwen (🇨🇳) | 32B dense, ~21 GB | single box | Default workhorse; best-in-class doc/diagram + Chinese OCR. `:8b` (~6 GB) for bulk throughput, `:235b-a22b` bridge-only for the ceiling. |
+| `nemotron-3-nano-omni` | **NVIDIA (🇺🇸)** | 30B-A3B, ~18 GB | single box | **US-origin** option for the origin-sensitive MARB benchmark cell; native to the local AI supercomputer via NIM. vision+audio+text, C-RADIOv4-H encoder. |
+
+**Origin note.** GLM-4.5V and Qwen3-VL are PRC-origin (Zhipu, Alibaba). Run **local/air-gapped**
+on `[redacted-host]` the data-exfiltration risk is nil — the only axis is **customer optics** for the
+MARB benchmark cell, and for *that* prefer NVIDIA Nemotron. For **Chinese-literature extraction**
+the Chinese models are the *right* tool (the origin is the feature). The `m3dcpm:*` answer-key
+ban still applies to any MARB blind run regardless of model.
+
+**Serving.** Ollama **≥ 0.12.7** for `qwen3-vl`. GLM-4.5V (zai-org/GLM-4.5V) may need a community
+GGUF + a Modelfile (Ollama's official coverage is partial). Nemotron 3 Nano Omni serves via
+NVIDIA **NIM** (OpenAI-compatible, native to the local AI supercomputer/local AI supercomputer) or an HF GGUF. All expose an
+OpenAI-compatible API, so `marb_local_harness.py --multimodal` drives any of them unchanged.
+Pull on [redacted-host]: `ollama pull qwen3-vl:32b` (then `--model qwen3-vl:32b`).
+
+**For MARB the designated vision cell is `nemotron-3-nano-omni`** (US-origin, NVIDIA-native,
+30B-A3B, vision+audio+text — also the token-cheap **data-ingestion** model). The local AI supercomputer already
+has the *text* Nemotrons (`nemotron-3-super:120b-a12b`, `nemotron-3-nano:4b`) but **not** the
+Omni vision build. Get sight on it via llama.cpp (the confirmed vision path):
+
+```
+# on [redacted-host] — Q4 GGUF + the multimodal projector, OpenAI-compatible on :8001
+llama-server --model NVIDIA-Nemotron-3-Nano-Omni-30B-A3B-...-Q4_K_XL.gguf \
+             --mmproj mmproj-BF16.gguf --alias nemotron-3-nano-omni --port 8001
+# then, from the workstation (logs as local_anchor — is_local matches the local AI supercomputer host on any port):
+python marb_local_harness.py --base-url http://[redacted-ip]:8001/v1 \
+       --model nemotron-3-nano-omni --multimodal
+```
+
+(or serve it as an NVIDIA **NIM** on the local AI supercomputer — also OpenAI-compatible. The `--multimodal`
+path now inlines the goal image on turn 1, so the model sees the target immediately.)
+
 Override the default and caps:
 
 ```powershell
@@ -77,7 +119,8 @@ harness steers it to verify **numerically** via `run_python`: probe each part's
 and `assert` against the 2000×1000×1000 mm envelope and the brief's dimensions. That
 blindness is the genuine floor — build quality rides on coordinate reasoning alone, with
 no visual feedback. To give the run sight, use `--multimodal` **and** a vision-capable
-model (e.g. the Gemini cloud cell above); `qwen3-coder-next` is text-only.
+model — a local cell (`qwen3-vl:32b`, `glm-4.5v`, or NVIDIA `nemotron-3-nano-omni`; see the
+vision-cells table above) or the Gemini cloud cell; `qwen3-coder-next` is text-only.
 
 ## Loop control
 
