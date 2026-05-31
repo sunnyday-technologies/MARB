@@ -1,0 +1,549 @@
+{
+  "schema": "marb_v0_9_stats",
+  "reference_step": "[local-path-redacted]
+  "spec": "[local-path-redacted]
+  "toolchain": {},
+  "runs": {
+    "Reference (self / ceiling)": {
+      "position": {
+        "matched": 101,
+        "total_run": 101,
+        "absolute": {
+          "median_mm": 0.0,
+          "bands_pct": {
+            "<= 0.01 mm": 100.0,
+            "<= 1.0 mm": 100.0,
+            "<= 5.0 mm": 100.0,
+            "<= 25.0 mm": 100.0,
+            "<= 50.0 mm": 100.0,
+            "<= 100.0 mm": 100.0
+          }
+        },
+        "relative": {
+          "median_mm": 0.0,
+          "bands_pct": {
+            "<= 0.01 mm": 100.0,
+            "<= 1.0 mm": 100.0,
+            "<= 5.0 mm": 100.0,
+            "<= 25.0 mm": 100.0,
+            "<= 50.0 mm": 100.0,
+            "<= 100.0 mm": 100.0
+          }
+        }
+      },
+      "gap": {
+        "interface_threshold_mm": 5.0,
+        "total_interfaces": 207,
+        "by_type": {
+          "attachment": {
+            "n": 173,
+            "median_mm": 0.0,
+            "bands_pct": {
+              "<= 0.1 mm": 100.0,
+              "<= 1.0 mm": 100.0,
+              "<= 5.0 mm": 100.0
+            }
+          },
+          "motion": {
+            "n": 21,
+            "median_mm": 0.0,
+            "bands_pct": {
+              "<= 0.1 mm": 100.0,
+              "<= 1.0 mm": 100.0,
+              "<= 5.0 mm": 100.0
+            }
+          },
+          "standoff": {
+            "n": 13,
+            "median_mm": 0.0,
+            "bands_pct": {
+              "<= 0.1 mm": 100.0,
+              "<= 1.0 mm": 100.0,
+              "<= 5.0 mm": 100.0
+            }
+          }
+        },
+        "overall": {
+          "n": 207,
+          "median_mm": 0.0,
+          "bands_pct": {
+            "<= 0.1 mm": 100.0,
+            "<= 1.0 mm": 100.0,
+            "<= 5.0 mm": 100.0
+          }
+        }
+      },
+      "orientation": {
+        "asymmetric_graded": 51,
+        "symmetric_skipped": 50,
+        "aligned_pct": 100.0,
+        "rotated_pct": 0.0,
+        "wrong_pct": 0.0,
+        "counts": {
+          "aligned": 51,
+          "rotated": 0,
+          "wrong": 0
+        },
+        "by_label": {
+          "cbeam_4080": {
+            "aligned": 14,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "vslot_2040": {
+            "aligned": 4,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "plate_2080": {
+            "aligned": 10,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "vslot_2080": {
+            "aligned": 2,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "spacer_zpmm": {
+            "aligned": 4,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "other": {
+            "aligned": 4,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "belt": {
+            "aligned": 13,
+            "rotated": 0,
+            "wrong": 0
+          }
+        }
+      },
+      "_agg": {
+        "gap_median_mm": {
+          "n": 1,
+          "median": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "gap_le1_pct": {
+          "n": 1,
+          "median": 100.0,
+          "mean": 100.0,
+          "std": 0.0,
+          "values": [
+            100.0
+          ]
+        },
+        "pos_rel_mm": {
+          "n": 1,
+          "median": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "pos_abs_mm": {
+          "n": 1,
+          "median": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "orient_aligned_pct": {
+          "n": 1,
+          "median": 100.0,
+          "mean": 100.0,
+          "std": 0.0,
+          "values": [
+            100.0
+          ]
+        }
+      },
+      "_n": 1
+    },
+    "Local \u00b7 qwen3-coder-next (mechanics v2)": {
+      "position": {
+        "matched": 78,
+        "total_run": 82,
+        "absolute": {
+          "median_mm": 399.1,
+          "bands_pct": {
+            "<= 0.01 mm": 0.0,
+            "<= 1.0 mm": 0.0,
+            "<= 5.0 mm": 0.0,
+            "<= 25.0 mm": 0.0,
+            "<= 50.0 mm": 0.0,
+            "<= 100.0 mm": 0.0
+          }
+        },
+        "relative": {
+          "median_mm": 47.2,
+          "bands_pct": {
+            "<= 0.01 mm": 0.0,
+            "<= 1.0 mm": 0.0,
+            "<= 5.0 mm": 0.0,
+            "<= 25.0 mm": 10.5,
+            "<= 50.0 mm": 52.6,
+            "<= 100.0 mm": 54.4
+          }
+        }
+      },
+      "gap": {
+        "interface_threshold_mm": 5.0,
+        "total_interfaces": 207,
+        "by_type": {
+          "attachment": {
+            "n": 76,
+            "median_mm": 368.5,
+            "bands_pct": {
+              "<= 0.1 mm": 36.8,
+              "<= 1.0 mm": 36.8,
+              "<= 5.0 mm": 39.5
+            }
+          },
+          "motion": {
+            "n": 9,
+            "median_mm": 2.0,
+            "bands_pct": {
+              "<= 0.1 mm": 0.0,
+              "<= 1.0 mm": 22.2,
+              "<= 5.0 mm": 66.7
+            }
+          },
+          "standoff": {
+            "n": 3,
+            "median_mm": 716.0,
+            "bands_pct": {
+              "<= 0.1 mm": 0.0,
+              "<= 1.0 mm": 0.0,
+              "<= 5.0 mm": 33.3
+            }
+          }
+        },
+        "overall": {
+          "n": 88,
+          "median_mm": 308.06,
+          "bands_pct": {
+            "<= 0.1 mm": 31.8,
+            "<= 1.0 mm": 34.1,
+            "<= 5.0 mm": 42.0
+          }
+        }
+      },
+      "orientation": {
+        "asymmetric_graded": 28,
+        "symmetric_skipped": 50,
+        "aligned_pct": 32.1,
+        "rotated_pct": 67.9,
+        "wrong_pct": 0.0,
+        "counts": {
+          "aligned": 9,
+          "rotated": 19,
+          "wrong": 0
+        },
+        "by_label": {
+          "vslot_2080": {
+            "aligned": 0,
+            "rotated": 2,
+            "wrong": 0
+          },
+          "cbeam_4080": {
+            "aligned": 0,
+            "rotated": 8,
+            "wrong": 0
+          },
+          "vslot_2040": {
+            "aligned": 0,
+            "rotated": 3,
+            "wrong": 0
+          },
+          "plate_2080": {
+            "aligned": 5,
+            "rotated": 1,
+            "wrong": 0
+          },
+          "spacer_zpmm": {
+            "aligned": 0,
+            "rotated": 4,
+            "wrong": 0
+          },
+          "other": {
+            "aligned": 4,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "belt": {
+            "aligned": 0,
+            "rotated": 1,
+            "wrong": 0
+          }
+        }
+      },
+      "_agg": {
+        "gap_median_mm": {
+          "n": 5,
+          "median": 308.06,
+          "mean": 268.58,
+          "std": 96.29,
+          "values": [
+            308.06,
+            125.05,
+            186.62,
+            351.88,
+            371.27
+          ]
+        },
+        "gap_le1_pct": {
+          "n": 5,
+          "median": 14.4,
+          "mean": 17.2,
+          "std": 9.76,
+          "values": [
+            34.1,
+            14.4,
+            20.7,
+            11.2,
+            5.6
+          ]
+        },
+        "pos_rel_mm": {
+          "n": 5,
+          "median": 103.7,
+          "mean": 112.36,
+          "std": 42.75,
+          "values": [
+            47.2,
+            103.7,
+            92.9,
+            165.6,
+            152.4
+          ]
+        },
+        "pos_abs_mm": {
+          "n": 5,
+          "median": 497.9,
+          "mean": 470.06,
+          "std": 125.91,
+          "values": [
+            399.1,
+            497.9,
+            264.9,
+            577.7,
+            610.7
+          ]
+        },
+        "orient_aligned_pct": {
+          "n": 5,
+          "median": 30.0,
+          "mean": 24.32,
+          "std": 13.66,
+          "values": [
+            32.1,
+            30.0,
+            20.0,
+            39.5,
+            0.0
+          ]
+        }
+      },
+      "_n": 5
+    },
+    "Local \u00b7 qwen3-coder-next (lean v5)": {
+      "position": {
+        "matched": 26,
+        "total_run": 26,
+        "absolute": {
+          "median_mm": 544.9,
+          "bands_pct": {
+            "<= 0.01 mm": 0.0,
+            "<= 1.0 mm": 0.0,
+            "<= 5.0 mm": 0.0,
+            "<= 25.0 mm": 0.0,
+            "<= 50.0 mm": 0.0,
+            "<= 100.0 mm": 0.0
+          }
+        },
+        "relative": {
+          "median_mm": 474.3,
+          "bands_pct": {
+            "<= 0.01 mm": 0.0,
+            "<= 1.0 mm": 0.0,
+            "<= 5.0 mm": 0.0,
+            "<= 25.0 mm": 0.0,
+            "<= 50.0 mm": 0.0,
+            "<= 100.0 mm": 27.3
+          }
+        }
+      },
+      "gap": {
+        "interface_threshold_mm": 5.0,
+        "total_interfaces": 207,
+        "by_type": {
+          "attachment": {
+            "n": 16,
+            "median_mm": 430.03,
+            "bands_pct": {
+              "<= 0.1 mm": 12.5,
+              "<= 1.0 mm": 12.5,
+              "<= 5.0 mm": 12.5
+            }
+          },
+          "motion": {
+            "n": 1,
+            "median_mm": 459.82,
+            "bands_pct": {
+              "<= 0.1 mm": 0.0,
+              "<= 1.0 mm": 0.0,
+              "<= 5.0 mm": 0.0
+            }
+          },
+          "standoff": {
+            "n": 2,
+            "median_mm": 18.0,
+            "bands_pct": {
+              "<= 0.1 mm": 0.0,
+              "<= 1.0 mm": 0.0,
+              "<= 5.0 mm": 0.0
+            }
+          }
+        },
+        "overall": {
+          "n": 19,
+          "median_mm": 409.62,
+          "bands_pct": {
+            "<= 0.1 mm": 10.5,
+            "<= 1.0 mm": 10.5,
+            "<= 5.0 mm": 10.5
+          }
+        }
+      },
+      "orientation": {
+        "asymmetric_graded": 14,
+        "symmetric_skipped": 12,
+        "aligned_pct": 28.6,
+        "rotated_pct": 57.1,
+        "wrong_pct": 14.3,
+        "counts": {
+          "aligned": 4,
+          "rotated": 8,
+          "wrong": 2
+        },
+        "by_label": {
+          "vslot_2040": {
+            "aligned": 0,
+            "rotated": 2,
+            "wrong": 0
+          },
+          "other": {
+            "aligned": 2,
+            "rotated": 0,
+            "wrong": 1
+          },
+          "vslot_2080": {
+            "aligned": 0,
+            "rotated": 2,
+            "wrong": 0
+          },
+          "cbeam_4080": {
+            "aligned": 0,
+            "rotated": 2,
+            "wrong": 0
+          },
+          "plate_2080": {
+            "aligned": 1,
+            "rotated": 0,
+            "wrong": 0
+          },
+          "belt": {
+            "aligned": 1,
+            "rotated": 0,
+            "wrong": 1
+          },
+          "spacer_zpmm": {
+            "aligned": 0,
+            "rotated": 2,
+            "wrong": 0
+          }
+        }
+      },
+      "_agg": {
+        "gap_median_mm": {
+          "n": 5,
+          "median": 409.62,
+          "mean": 393.45,
+          "std": 71.66,
+          "values": [
+            281.06,
+            351.67,
+            490.0,
+            409.62,
+            434.9
+          ]
+        },
+        "gap_le1_pct": {
+          "n": 5,
+          "median": 10.5,
+          "mean": 13.3,
+          "std": 5.62,
+          "values": [
+            5.8,
+            10.5,
+            20.0,
+            10.5,
+            19.7
+          ]
+        },
+        "pos_rel_mm": {
+          "n": 5,
+          "median": 352.7,
+          "mean": 283.2,
+          "std": 157.34,
+          "values": [
+            352.7,
+            84.6,
+            108.9,
+            474.3,
+            395.5
+          ]
+        },
+        "pos_abs_mm": {
+          "n": 5,
+          "median": 571.4,
+          "mean": 632.1,
+          "std": 115.41,
+          "values": [
+            803.5,
+            571.4,
+            733.6,
+            544.9,
+            507.1
+          ]
+        },
+        "orient_aligned_pct": {
+          "n": 5,
+          "median": 28.6,
+          "mean": 30.44,
+          "std": 8.67,
+          "values": [
+            32.6,
+            45.5,
+            26.1,
+            28.6,
+            19.4
+          ]
+        }
+      },
+      "_n": 5
+    }
+  }
+}

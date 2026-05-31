@@ -1,0 +1,142 @@
+{
+  "schema": "marb_native_gates.v0.1",
+  "note": "Native-track gates (host-agnostic, black-box): inventory (right part mix by bbox signature), interference (no solid clipping; rolling/belt/motor contacts skipped), floating (no part detached from structure). Complements the GAP/POS/ORIENT positional track. Reference-vs-itself is the ceiling. Graded with cadclaw 0.9.0 grader/grade_native_step.py against tasks/m3_crete/m3_reference_assembly.yaml.",
+  "spec": "tasks/m3_crete/m3_reference_assembly.yaml",
+  "cells": {
+    "Reference (ceiling)": {
+      "step": "tasks/m3_crete/m3_reference_round1.step",
+      "total_parts": 101,
+      "passed": true,
+      "gates": {
+        "inventory": true,
+        "interference": true,
+        "floating": true
+      },
+      "expected_total": 101,
+      "observed_total": 101,
+      "expected_inventory": {
+        "cbeam_4080": 14,
+        "vslot_2040": 4,
+        "plate_2080": 10,
+        "vslot_2080": 2,
+        "plate_xlarge": 2,
+        "v_wheel": 32,
+        "spacer_zpmm": 4,
+        "spacer_flat": 4,
+        "pulley": 5,
+        "idler": 4,
+        "belt": 13,
+        "m3_nema23_motor": 7
+      },
+      "observed_inventory": {
+        "cbeam_4080": 14,
+        "vslot_2040": 4,
+        "plate_2080": 10,
+        "vslot_2080": 2,
+        "plate_xlarge": 2,
+        "v_wheel": 32,
+        "spacer_zpmm": 4,
+        "spacer_flat": 4,
+        "pulley": 5,
+        "idler": 4,
+        "belt": 13,
+        "m3_nema23_motor": 7
+      },
+      "findings": {
+        "total": 0,
+        "inventory_mismatches": 0,
+        "interference_pairs": 0
+      }
+    },
+    "Local mechanics v2 (run_08)": {
+      "step": "[local-path-redacted]
+      "total_parts": 106,
+      "passed": false,
+      "gates": {
+        "inventory": false,
+        "interference": false,
+        "floating": true
+      },
+      "expected_total": 101,
+      "observed_total": 106,
+      "expected_inventory": {
+        "cbeam_4080": 14,
+        "vslot_2040": 4,
+        "plate_2080": 10,
+        "vslot_2080": 2,
+        "plate_xlarge": 2,
+        "v_wheel": 32,
+        "spacer_zpmm": 4,
+        "spacer_flat": 4,
+        "pulley": 5,
+        "idler": 4,
+        "belt": 13,
+        "m3_nema23_motor": 7
+      },
+      "observed_inventory": {
+        "cbeam_4080": 12,
+        "vslot_2080": 2,
+        "plate_xlarge": 2,
+        "plate_2080": 16,
+        "vslot_2040": 1,
+        "v_wheel": 40,
+        "m3_nema23_motor": 7,
+        "pulley": 7,
+        "idler": 4,
+        "belt": 7,
+        "spacer_zpmm": 4,
+        "spacer_flat": 4
+      },
+      "findings": {
+        "total": 34,
+        "inventory_mismatches": 6,
+        "interference_pairs": 28
+      }
+    },
+    "Local lean v5 (run_26)": {
+      "step": "[local-path-redacted]
+      "total_parts": 100,
+      "passed": false,
+      "gates": {
+        "inventory": false,
+        "interference": false,
+        "floating": true
+      },
+      "expected_total": 101,
+      "observed_total": 100,
+      "expected_inventory": {
+        "cbeam_4080": 14,
+        "vslot_2040": 4,
+        "plate_2080": 10,
+        "vslot_2080": 2,
+        "plate_xlarge": 2,
+        "v_wheel": 32,
+        "spacer_zpmm": 4,
+        "spacer_flat": 4,
+        "pulley": 5,
+        "idler": 4,
+        "belt": 13,
+        "m3_nema23_motor": 7
+      },
+      "observed_inventory": {
+        "cbeam_4080": 10,
+        "vslot_2080": 6,
+        "vslot_2040": 1,
+        "plate_2080": 10,
+        "plate_xlarge": 2,
+        "v_wheel": 32,
+        "pulley": 7,
+        "idler": 6,
+        "belt": 11,
+        "m3_nema23_motor": 7,
+        "spacer_zpmm": 4,
+        "spacer_flat": 4
+      },
+      "findings": {
+        "total": 26,
+        "inventory_mismatches": 6,
+        "interference_pairs": 20
+      }
+    }
+  }
+}
