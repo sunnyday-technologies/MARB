@@ -21,7 +21,13 @@ import argparse, base64, datetime, json, pathlib, re, shutil, subprocess, sys, t
 from openai import OpenAI
 
 ENDPOINT   = "http://[redacted-ip]:11434/v1"   # local AI supercomputer ([redacted-host]), Ollama OpenAI-compatible
+local AI supercomputer_HOSTS = ("[redacted-ip]", "[redacted-host]", "[redacted-host]")  # ANY port on the local AI supercomputer is still the local anchor
+                                                  # (Ollama :11434, llama.cpp llama-server :8001, NVIDIA NIM :8000)
 DEF_MODEL  = "qwen3-coder-next:q4_K_M"          # Qwen3-Coder 79.7B Q4 -- real coder, text-only floor
+# Vision cell (--multimodal): NVIDIA Nemotron 3 Nano Omni is the US-origin pick, native to the local AI supercomputer.
+#   llama.cpp:  llama-server --model ...Nemotron-3-Nano-Omni-30B-A3B...Q4_K_XL.gguf --mmproj mmproj-BF16.gguf --port 8001
+#   then:       python marb_local_harness.py --base-url http://[redacted-ip]:8001/v1 --model <alias> --multimodal
+# Chinese-literature extraction / max-accuracy: glm-4.5v or qwen3-vl:32b (PRC-origin; see harness/README.md).
 RUN_DIR    = pathlib.Path(r"[local-path-redacted]
 KIT_VERSION = "v1.1"
 TOOL_VER   = "2.7.0"                             # CadQuery version (frozen for the log)
@@ -93,7 +99,7 @@ def main():
                          "variant cohorts; recorded as prompt_variant in the run log.")
     args = ap.parse_args()
     RUN_DIR = pathlib.Path(args.run_dir)
-    is_local = args.base_url == ENDPOINT
+    is_local = any(h in args.base_url for h in local AI supercomputer_HOSTS)  # local AI supercomputer on ANY port = local anchor
 
     brief = (RUN_DIR / "CADQUERY_DRIVER_BRIEF.md").read_text(encoding="utf-8")
     brief = brief.split("=== BEGIN ===")[1].split("=== END ===")[0] if "=== BEGIN ===" in brief else brief
@@ -128,7 +134,24 @@ def main():
             sys_msg += ("\n\nHARNESS GUIDANCE (general process & CadQuery mechanics learned from prior "
                         "local runs -- NOT design answers; the brief stays the only design input):\n" + g)
             prompt_variant = pathlib.Path(args.guidance_file).stem
-    messages = [{"role": "system", "content": sys_msg}, {"role": "user", "content": user_msg}]
+    # With a vision model, put the goal image in front of it on TURN 1 (don't wait for a
+    # view_image tool call). Inline the reference overview into the first user message.
+    user_content = user_msg
+    if args.multimodal:
+        ref_img = RUN_DIR / "reference_overview.png"
+        if ref_img.exists():
+            b64 = base64.b64encode(ref_img.read_bytes()).decode()
+            user_content = [
+                {"type": "text", "text": user_msg + "\n\nThe TARGET machine (goal image) is shown "
+                 "below. Build your assembly to match it; call view_image on your own renders to "
+                 "compare as you go."},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+            ]
+            print(f"[harness] multimodal: inlined goal image reference_overview.png on turn 1")
+        else:
+            print("[harness] --multimodal set but reference_overview.png not in run folder; "
+                  "model will rely on view_image only")
+    messages = [{"role": "system", "content": sys_msg}, {"role": "user", "content": user_content}]
 
     import os
     api_key = os.environ.get(args.api_key_env, "") if args.api_key_env else "ollama"
