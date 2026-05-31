@@ -3,11 +3,17 @@
 This repo is built and the grader runs, but review these before making it public.
 
 ## Blocking
-- [ ] **Authored-parts license.** The kit zips in `kits/` contain authored STEP
-      parts. The component manifest flags several as *"Authored STEP asset. Verify
-      upstream license/source terms before public."* Confirm redistribution rights
-      for every part (V-Slot / C-Beam / gantry plates / NEMA / wheels / belts)
-      before publishing the kits. This is the #1 gate.
+- [ ] **Authored-parts license.** — *Provenance confirmed 2026-05-31; license drafted.*
+      All bundled motion-system parts (V-Slot / C-Beam / gantry plates / NEMA 23 / wheels /
+      pulleys / belts / VS_Belt_Pinion) are **OpenBuilds-derived → CC BY-SA 4.0**
+      (redistributable with attribution + share-alike + trademark disclaimer). Only
+      `M3_6mm_frame_shim_4080` and `ZPMM_6p1_motor_mount_spacer` are Sunnyday-authored
+      (covered by the repo MIT LICENSE). The split + attribution is drafted in
+      [`kits/LICENSE.md`](kits/LICENSE.md) (mirrors `M3-CRETE/CAD/Components/LICENSE.md`).
+      **Remaining before public:** (1) review/commit `kits/LICENSE.md`; (2) the OpenBuilds
+      attribution must travel *inside* the kit zips — add it to each kit's bundled `README.md`
+      (and/or include `LICENSE.md` in the zip) so extracted parts stay CC BY-SA-compliant.
+      The repo is currently **private**, so nothing has been publicly redistributed yet.
 - [ ] **Answer-key boundary.** `tasks/m3_crete/` includes the reference STEP + spec
       (fully open, good for reproducibility). With one task that is fine. When a
       second task lands, decide whether to hold out a leaderboard split
