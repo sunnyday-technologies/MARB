@@ -41,11 +41,29 @@ is what the metrics measure. Full write-up:
 [`results/comparison_claude_tracks.md`](results/comparison_claude_tracks.md) and
 [`results/prompt_framework_findings.md`](results/prompt_framework_findings.md).
 
+## The local-anchor floor
+
+The frontier table is the ceiling; this is the floor. A single **80B open-weight coder**
+(`qwen3-coder-next`, text-only, on one local AI supercomputer box) building the same machine blind — the model
+an air-gapped shop could run, no internet, no hosted API.
+
+| Cell (n=5) | GAP median | ORIENT aligned | POS rel median |
+|---|---|---|---|
+| Local · qwen3-coder-next (mechanics v2) | 308 ± 96 mm | 30% | 104 ± 43 mm |
+| Local · qwen3-coder-next (lean v5) | 410 ± 72 mm | 29% | 353 ± 157 mm |
+
+It reliably imports the **right parts** but seats them as **loosely-placed pieces, not a jointed
+frame** (parts land 100–400 mm off on a 2000 mm machine). The native gates agree: the part *mix*
+is wrong and 20–28 part-pairs *clip*, while nothing floats free — a pile, not a machine. One
+CadQuery export-mechanic fix takes it 1/5 → 5/5 buildable; more prompt scaffolding *backfires*;
+budget ≠ quality. Write-up: [`results/local_anchor_study.md`](results/local_anchor_study.md) ·
+figure: [`results/figures/marb_local_3panel.png`](results/figures/marb_local_3panel.png).
+
 ## Quickstart
 
 ```bash
-pip install cadclaw           # the grading engine + STEP I/O
-pip install -r requirements.txt
+pip install "cadclaw>=0.9.0"  # the grading engine + STEP I/O (see requirements.txt: 0.9.0 is on
+pip install -r requirements.txt   # CADCLAW `main`; if not yet on PyPI, install it from the repo)
 
 # grade the reference against itself (the ceiling) plus the bundled runs
 python grader/marb_grade_all.py --json results/marb_v0_9_grades.json
@@ -98,6 +116,8 @@ If you use MARB in published research or derivative work, please cite it (see
 
 ## License
 
-MIT. Copyright (c) 2026 Sunnyday Technologies. See [`LICENSE`](LICENSE).
-Product and company names used to identify the tools tested are trademarks of their
-respective owners.
+MIT (the MARB code). Copyright (c) 2026 Sunnyday Technologies. See [`LICENSE`](LICENSE).
+The CAD parts bundled in the blind kits are licensed separately — OpenBuilds-derived parts
+under CC BY-SA 4.0, Sunnyday-authored parts under the repo MIT; see
+[`kits/LICENSE.md`](kits/LICENSE.md). Product and company names used to identify the tools
+tested are trademarks of their respective owners.

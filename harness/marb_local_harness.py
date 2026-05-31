@@ -33,6 +33,12 @@ KIT_VERSION = "v1.1"
 TOOL_VER   = "2.7.0"                             # CadQuery version (frozen for the log)
 PY_TIMEOUT = 600                                 # seconds per run_python call
 MAXOUT     = 6000                                # truncate tool output returned to model
+# Reasoning models (e.g. NVIDIA Nemotron 3 Nano Omni) spend a large hidden "think"
+# budget before emitting the answer; with too small a completion cap they hit
+# finish_reason=length mid-thought and return an EMPTY message. Give any model whose
+# name matches a reasoning hint a generous default cap unless --max-tokens is set.
+REASONING_HINTS    = ("nemotron",)               # substrings (case-insensitive) of reasoning models
+REASONING_MAXTOK   = 8192                         # generous per-turn cap for reasoning models (handoff: >= ~1500)
 
 def _safe(rel):  # resolve a model-supplied path, kept inside the run folder
     p = (RUN_DIR / rel).resolve()
@@ -84,6 +90,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=DEF_MODEL)
     ap.add_argument("--max-iters", type=int, default=8)
+    ap.add_argument("--max-tokens", type=int, default=None,
+                    help="cap completion tokens per turn. Omitted -> Ollama default, EXCEPT "
+                         "reasoning models (name matches REASONING_HINTS, e.g. Nemotron) which "
+                         "auto-get a generous default so they don't truncate mid-thought and "
+                         "return empty. Pass 0 to force the Ollama default even for those.")
     ap.add_argument("--patience", type=int, default=3, help="stop after N turns with no STEP progress")
     ap.add_argument("--multimodal", action="store_true", help="register view_image (model must support vision)")
     ap.add_argument("--base-url", default=ENDPOINT,
@@ -100,6 +111,17 @@ def main():
     args = ap.parse_args()
     RUN_DIR = pathlib.Path(args.run_dir)
     is_local = any(h in args.base_url for h in local AI supercomputer_HOSTS)  # local AI supercomputer on ANY port = local anchor
+
+    # Resolve the per-turn completion cap. None -> auto (generous for reasoning models,
+    # Ollama default otherwise); 0 -> force Ollama default; >0 -> use as given.
+    if args.max_tokens is None:
+        max_tokens = (REASONING_MAXTOK
+                      if any(h in args.model.lower() for h in REASONING_HINTS) else None)
+        if max_tokens:
+            print(f"[harness] reasoning model detected ({args.model}); defaulting "
+                  f"max_tokens={max_tokens} (override with --max-tokens, 0 = Ollama default)")
+    else:
+        max_tokens = args.max_tokens or None  # --max-tokens 0 -> None (Ollama default)
 
     brief = (RUN_DIR / "CADQUERY_DRIVER_BRIEF.md").read_text(encoding="utf-8")
     brief = brief.split("=== BEGIN ===")[1].split("=== END ===")[0] if "=== BEGIN ===" in brief else brief
@@ -160,9 +182,11 @@ def main():
     tok_in = tok_out = tool_calls_made = 0; last_sig = None; stale = 0
     print(f"[harness] model={args.model} run={RUN_DIR} max_iters={args.max_iters}")
 
+    create_kwargs = dict(tools=schema, tool_choice="auto", temperature=0.2)
+    if max_tokens is not None:
+        create_kwargs["max_tokens"] = max_tokens
     for it in range(1, args.max_iters + 1):
-        resp = client.chat.completions.create(model=args.model, messages=messages,
-                                              tools=schema, tool_choice="auto", temperature=0.2)
+        resp = client.chat.completions.create(model=args.model, messages=messages, **create_kwargs)
         u = getattr(resp, "usage", None)
         if u: tok_in += u.prompt_tokens or 0; tok_out += u.completion_tokens or 0
         msg = resp.choices[0].message
@@ -213,6 +237,7 @@ def main():
                          if is_local else "cloud API endpoint (NON-LOCAL cell, not the local anchor)"),
             "cell": "local_anchor" if is_local else "cloud_api",
             "endpoint": args.base_url, "multimodal": args.multimodal,
+            "max_tokens": max_tokens,  # per-turn completion cap (None = Ollama default)
         },
         "timing": {"started_utc": started.isoformat(), "ended_utc": ended.isoformat(),
                    "elapsed_minutes": round((time.time() - t0) / 60, 2)},
