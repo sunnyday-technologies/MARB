@@ -1,7 +1,7 @@
 # MARB local-anchor study — an 80B open-weight model builds M3-CRETE blind
 
 **Track:** `cadquery_native_driver`, cell `local_anchor` · **Builder:** `qwen3-coder-next:q4_K_M`
-(Qwen3-Coder 79.7B / 3B-active, Q4, **text-only**) on the local AI supercomputer ([redacted-host]), Ollama, 8-turn cap ·
+(Qwen3-Coder 79.7B / 3B-active, Q4, **text-only**) on a local AI supercomputer, Ollama, 8-turn cap ·
 **Kit:** v1.1 · **Blind:** brief + staged kit only, no reference solution, no project memory ·
 **Grader:** MARB v0.9 (`marb_grade_all.py`), cadclaw 0.9.0 · **n = 5 / cohort.**
 

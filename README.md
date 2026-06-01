@@ -44,7 +44,7 @@ is what the metrics measure. Full write-up:
 ## The local-anchor floor
 
 The frontier table is the ceiling; this is the floor. A single **80B open-weight coder**
-(`qwen3-coder-next`, text-only, on one local AI supercomputer box) building the same machine blind — the model
+(`qwen3-coder-next`, text-only, on one local AI supercomputer) building the same machine blind — the model
 an air-gapped shop could run, no internet, no hosted API.
 
 | Cell (n=5) | GAP median | ORIENT aligned | POS rel median |
