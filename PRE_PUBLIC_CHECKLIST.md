@@ -20,10 +20,10 @@ This repo is built and the grader runs, but review these before making it public
       (contamination control, SWE-bench style).
 
 ## Cleanup
-- [ ] **Local paths in prose.** `results/comparison_claude_tracks.md` and
-      `results/prompt_framework_findings.md` still mention local paths
-      (`[local-path-redacted] `[session-path-redacted] as provenance. Scrub or keep as you prefer.
-      (Code entry points and `marb_runs.json` are already genericized to `runs/`.)
+- [x] **Local paths in prose.** Scrubbed 2026-06-01: results docs, the study, the harness,
+      and the figure builder no longer carry absolute local paths, home-directory transcript
+      paths, or the local hardware model name; internal session/roadmap notes are gitignored. Code entry points
+      and `marb_runs.json` already used `runs/`.
 - [ ] **Large file.** `tasks/m3_crete/m3_reference_round1.step` is ~38 MB. Consider
       Git LFS before pushing.
 - [ ] **Fresh-env install.** Verify `pip install cadclaw && pip install -r

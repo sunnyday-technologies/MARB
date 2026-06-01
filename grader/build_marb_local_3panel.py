@@ -2,7 +2,7 @@
 """MARB local-anchor track — the 3-panel "goal vs best local builds" figure.
 
 The local/anchor track plants a real point on the capability curve: an 80B
-open-weight model (qwen3-coder-next, text-only, on the local AI supercomputer) building the
+open-weight model (qwen3-coder-next, text-only, on a local AI supercomputer) building the
 M3-CRETE assembly blind in CadQuery. This figure shows, side by side from ONE
 shared iso camera, the GOAL (answer-key reference) next to the two best local
 builds — the mechanics-v2 cohort winner and the lean-v5 cohort winner.
@@ -33,7 +33,7 @@ from brand_figs import COLORS, NUL, apply_base                # noqa: E402
 from cadclaw.render import render_step_to_png                 # noqa: E402
 
 REF = REPO / "tasks" / "m3_crete" / "m3_reference_round1.step"
-LOCAL = Path(r"[local-path-redacted]
+LOCAL = REPO / "runs" / "local_batch_A"
 
 # (heading, sub-line, STEP path, solid-count chip). Panel 0 is always the goal.
 PANELS = [

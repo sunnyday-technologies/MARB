@@ -1,8 +1,7 @@
 # Prompt-framework mining — first three MARB runs (receipts)
 
-*Source logs: `[local-path-redacted] _x_CadQuery\run_log.yaml` (Opus 4.7, 9 attempts),
-`[local-path-redacted] (Opus 4.7, 12 attempts),
-`[local-path-redacted] (GPT-5 Codex, 1 attempt). Graded with MARB
+*Source logs: each run's `run_log.yaml` (Opus 4.7 · CadQuery, 9 attempts;
+Opus 4.7 · Fusion, 12 attempts; GPT-5 Codex · CadQuery, 1 attempt). Graded with MARB
 v0.9 — see `marb_v0_9_grades.json`. This doc is the evidence; the distilled,
 versioned framework lives in `../MARB_SCORING.md` §8.*
 
