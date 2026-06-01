@@ -15,3 +15,7 @@ Thumbs.db
 # Local run outputs (drivers export here; not part of the repo)
 /runs/
 *.stats.json
+
+# Internal session / roadmap notes — kept local, not shipped publicly
+/NEXT_SESSION_HANDOFF.md
+harness/DEEPSEEK_LATER.md

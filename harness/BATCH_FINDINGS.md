@@ -1,8 +1,8 @@
 # Local CadQuery track — n=10 batch findings (qwen3-coder-next, 2026-05-30)
 
-Driver: `qwen3-coder-next:q4_K_M` on the local AI supercomputer ([redacted-host]), CadQuery 2.7.0, kit v1.1,
+Driver: `qwen3-coder-next:q4_K_M` on a local AI supercomputer, CadQuery 2.7.0, kit v1.1,
 text-only, 8-turn cap. Two cohorts of 5, identical except the system-prompt guidance.
-Raw catalogue: `local_batch_A_catalogue.csv` (and `[local-path-redacted]
+Raw catalogue: `local_batch_A_catalogue.csv`.
 
 **These are BUILDER metrics — buildability and BOM coverage, NOT grades.** A loadable
 110-solid assembly can still be oversized/misoriented and score low. Grading is Session C.

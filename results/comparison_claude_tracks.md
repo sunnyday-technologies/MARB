@@ -78,6 +78,6 @@ datum/orientation reasoning. Tracked for ARB v0.9 spec.
 
 ## Artifacts
 - Scores: `results/{fusion_native,claude_cadquery,cadclaw_track_blackbox}_score.json`; reports `*_report.json`.
-- Exports: `[local-path-redacted] `[local-path-redacted] _x_CadQuery\cadquery_native_export.step`.
-- Run logs: each run folder's `run_log.yaml`. Token recovery: parsed from the run session transcripts (`[session-path-redacted]
-- GPT-CadQuery export will land in `[local-path-redacted] → graded on the identical lens.
+- Exports: each run folder's `*_native_export.step`.
+- Run logs: each run folder's `run_log.yaml`. Token recovery: parsed from the run session transcripts.
+- GPT-CadQuery export lands in its run folder → graded on the identical lens.

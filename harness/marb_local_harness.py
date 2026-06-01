@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MARB local/anchor-track builder harness.
 
-Drives a local open-weight model (served by Ollama on the local AI supercomputer, OpenAI-compatible
+Drives a local open-weight model (served by Ollama on a local AI supercomputer, OpenAI-compatible
 API) to build the M3-CRETE assembly in CadQuery, working only from the staged blind
 kit + frozen brief. Builder only -- grading is a separate session.
 
@@ -17,18 +17,20 @@ Fairness: never point --model at an m3dcpm:* entry -- those are fine-tuned on
 M3-CRETE and bake the answer key into the weights (a memory-leak violation of the
 blind-run protocol, MARB_ROADMAP.md 2.1).
 """
-import argparse, base64, datetime, json, pathlib, re, shutil, subprocess, sys, time
+import argparse, base64, datetime, json, os, pathlib, re, shutil, subprocess, sys, time
 from openai import OpenAI
 
-ENDPOINT   = "http://[redacted-ip]:11434/v1"   # local AI supercomputer ([redacted-host]), Ollama OpenAI-compatible
-local AI supercomputer_HOSTS = ("[redacted-ip]", "[redacted-host]", "[redacted-host]")  # ANY port on the local AI supercomputer is still the local anchor
-                                                  # (Ollama :11434, llama.cpp llama-server :8001, NVIDIA NIM :8000)
+# Local OpenAI-compatible endpoint (Ollama by default). Override via env or --base-url.
+ENDPOINT   = os.environ.get("MARB_LOCAL_ENDPOINT", "http://localhost:11434/v1")
+# Hosts that count as the local anchor (matched on any port). Set MARB_LOCAL_HOSTS=host1,host2
+# if your local box is remote (Ollama :11434, llama.cpp llama-server :8001, NVIDIA NIM :8000).
+LOCAL_HOSTS = tuple(h.strip() for h in os.environ.get("MARB_LOCAL_HOSTS", "localhost,127.0.0.1").split(",") if h.strip())
 DEF_MODEL  = "qwen3-coder-next:q4_K_M"          # Qwen3-Coder 79.7B Q4 -- real coder, text-only floor
-# Vision cell (--multimodal): NVIDIA Nemotron 3 Nano Omni is the US-origin pick, native to the local AI supercomputer.
+# Vision cell (--multimodal): NVIDIA Nemotron 3 Nano Omni is the US-origin pick.
 #   llama.cpp:  llama-server --model ...Nemotron-3-Nano-Omni-30B-A3B...Q4_K_XL.gguf --mmproj mmproj-BF16.gguf --port 8001
-#   then:       python marb_local_harness.py --base-url http://[redacted-ip]:8001/v1 --model <alias> --multimodal
+#   then:       python marb_local_harness.py --base-url http://<local-host>:8001/v1 --model <alias> --multimodal
 # Chinese-literature extraction / max-accuracy: glm-4.5v or qwen3-vl:32b (PRC-origin; see harness/README.md).
-RUN_DIR    = pathlib.Path(r"[local-path-redacted]
+RUN_DIR    = pathlib.Path("runs/local_cadquery_01")
 KIT_VERSION = "v1.1"
 TOOL_VER   = "2.7.0"                             # CadQuery version (frozen for the log)
 PY_TIMEOUT = 600                                 # seconds per run_python call
@@ -98,7 +100,7 @@ def main():
     ap.add_argument("--patience", type=int, default=3, help="stop after N turns with no STEP progress")
     ap.add_argument("--multimodal", action="store_true", help="register view_image (model must support vision)")
     ap.add_argument("--base-url", default=ENDPOINT,
-                    help="OpenAI-compatible endpoint (default: local AI supercomputer Ollama). Point at a cloud API "
+                    help="OpenAI-compatible endpoint (default: local Ollama). Point at a cloud API "
                          "(e.g. Gemini's OpenAI-compatible URL) only as a SEPARATE non-local cell.")
     ap.add_argument("--api-key-env", default=None,
                     help="env var holding the API key (e.g. GEMINI_API_KEY); omitted -> local Ollama")
@@ -110,7 +112,7 @@ def main():
                          "variant cohorts; recorded as prompt_variant in the run log.")
     args = ap.parse_args()
     RUN_DIR = pathlib.Path(args.run_dir)
-    is_local = any(h in args.base_url for h in local AI supercomputer_HOSTS)  # local AI supercomputer on ANY port = local anchor
+    is_local = any(h in args.base_url for h in LOCAL_HOSTS)  # local box on ANY port = local anchor
 
     # Resolve the per-turn completion cap. None -> auto (generous for reasoning models,
     # Ollama default otherwise); 0 -> force Ollama default; >0 -> use as given.
@@ -233,7 +235,7 @@ def main():
         "driver": {
             "ai_driver": f"{args.model} ({'local open-weight, Ollama' if is_local else 'cloud API'})",
             "host_application": f"CadQuery (Python) {TOOL_VER}",
-            "hardware": ("NVIDIA local AI supercomputer ([redacted-host], [redacted-ip]), unified-memory box"
+            "hardware": ("local AI supercomputer (unified-memory box)"
                          if is_local else "cloud API endpoint (NON-LOCAL cell, not the local anchor)"),
             "cell": "local_anchor" if is_local else "cloud_api",
             "endpoint": args.base_url, "multimodal": args.multimodal,

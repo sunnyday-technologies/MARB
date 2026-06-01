@@ -19,7 +19,7 @@ scale, but it does not seat them into a connected structure. Treat the buildabil
 *how far off* the placement is, not whether the machine is "almost assembled" (it is not).
 See [the 3-panel figure](figures/marb_local_3panel.png): GOAL vs the two best local builds.
 
-## Buildability — the primary signal (catalogue: `[local-path-redacted]
+## Buildability — the primary signal
 
 30 runs across 6 recursive prompt cohorts. **20/30 produced a loadable STEP.** The two cohorts
 graded here are the ones that reliably export:
@@ -122,7 +122,7 @@ runs.
 ```
 # build (one 80B local run, lean-v5 default):
 python harness/marb_local_harness.py --model qwen3-coder-next:q4_K_M \
-    --guidance-file harness/cadquery_lean_v5.md --run-dir [local-path-redacted]
+    --guidance-file harness/cadquery_lean_v5.md --run-dir runs/<name>
 
 # grade the cohort (n seeds -> aggregate stats), vs the reference answer key:
 python grader/marb_grade_all.py --config <cells.json> --json results/marb_local_grades.json
