@@ -80,7 +80,7 @@ def main(argv=None) -> int:
     fig.text(0.5, 0.945, "AN 80B LOCAL MODEL vs THE GOAL", fontproperties=NUL,
              fontsize=27, color=COLORS["navy"], ha="center")
     fig.text(0.5, 0.892,
-             "Blind CadQuery builds on the local AI supercomputer. Right part COUNT, but loosely-placed "
+             "Blind CadQuery builds on a local AI supercomputer. Right part COUNT, loosely-placed "
              "parts — not a rigid jointed frame. Identical iso camera.",
              fontsize=15.5, color=COLORS["ink_dim"], ha="center", style="italic")
 
