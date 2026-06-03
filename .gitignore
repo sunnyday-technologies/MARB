@@ -11,6 +11,8 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+.claude/
+.wrangler/
 
 # Local run outputs (drivers export here; not part of the repo)
 /runs/
