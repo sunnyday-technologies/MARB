@@ -1,34 +1,39 @@
 # MARB roadmap
 
-MARB is early and openly versioned. The aim is a benchmark that measures how much
-better AI-assisted CAD assembly can get, across the levels mechanical design
-actually requires, with results that stay reproducible as models and tools change.
+MARB is early and openly versioned. The goal is a benchmark that measures how much
+AI-assisted CAD assembly improves over time. It grades at the levels mechanical
+design actually requires, and it keeps results reproducible as models and tools
+change.
 
 ## Now (v0.9)
-- Three positional metrics: GAP, ORIENT, POS (see `spec/MARB_SCORING.md`).
-- One reference task (the M3 gantry frame, ~100 parts) with versioned blind kits.
-- Tool-independent grading on the exported STEP, via the CADCLAW engine.
+
+- Three positional metrics: GAP, ORIENT, and POS. See [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md).
+- One reference task: the M3-CRETE gantry frame (task 1), about 100 parts, with versioned blind kits.
+- Tool-independent grading on the exported STEP, through the CADCLAW engine.
 
 ## Next
-- **Statistics.** Multiple seeds per model+tool cell; median / mean / std and
-  error bars (`grader/marb_grade_all.py --manifest`). Awaiting repeat runs.
-- **More drivers.** CadQuery, Autodesk Fusion, and additional tools
-  (build123d and others) on the identical lens. Contributions welcome.
-- **A second task.** A different machine type, to claim generality. Task 1 is
-  `tasks/m3_crete/`; the layout leaves room for `tasks/<next>/`.
-- **Held-out split.** Once there are multiple tasks, an optional held-out
-  leaderboard split for contamination control.
-- **Metric hardening.** A random-floor baseline; principal-axis (OBB/PCA)
-  orientation; a separate manufacturing-tolerance axis.
+
+- **Statistics.** Run multiple seeds per model and tool cell. Report median, mean,
+  standard deviation, and error bars through [`grader/marb_grade_all.py`](grader/marb_grade_all.py) `--manifest`.
+  This work awaits repeat runs.
+- **More drivers.** CadQuery and Autodesk Fusion are covered today. Add more tools
+  such as build123d, all graded the same way. Contributions are welcome.
+- **A second task.** Add a different machine type to show the benchmark generalizes.
+  Task 1 lives in [`tasks/m3_crete/`](tasks/m3_crete/), and the layout leaves room for `tasks/<next>/`.
+- **Held-out split.** Once several tasks exist, add an optional held-out leaderboard
+  split to control for contamination.
+- **Metric hardening.** Add a random-floor baseline. Add principal-axis (OBB or PCA)
+  orientation. Add a separate manufacturing-tolerance axis.
 
 ## Method principles
-- **Blind by construction.** Drivers receive only the kit and the goal image,
-  never the answer key, and must run in a sealed, memoryless context.
-- **Tight, fixed standard.** Tolerances are graded exact and never loosened to
-  flatter a model; the headline is a median error that drops toward zero as models
+
+- **Blind by design.** Drivers receive only the kit and the goal image, never the
+  answer key. Each driver runs in a sealed context with no memory between runs.
+- **Tight, fixed standard.** Tolerances are graded exactly and stay the same for
+  every model. The headline number is a median error that gets smaller as models
   improve.
-- **Comparable within a cohort.** Results compare only within a kit version and a
+- **Comparable within a cohort.** Results compare only within one kit version and one
   fixed scoring version. Every run records its kit, model, tool, and environment.
 
-Versioned scoring lives in `spec/MARB_SCORING.md`; kit versions in
-`kits/KIT_VERSIONS.md`.
+Versioned scoring lives in [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md). Kit versions
+live in [`kits/KIT_VERSIONS.md`](kits/KIT_VERSIONS.md).

@@ -7,8 +7,8 @@ blind kit), runs marb_local_harness.py, then we inspect the produced export.step
 appending a row to catalogue.csv + catalogue.md in the batch folder.
 
 Usage:
-    python run_batch.py --n 5 --start 1 --batch-dir [local-path-redacted]
-    python run_batch.py --n 5 --start 6 --batch-dir [local-path-redacted] --guidance-file v2_guidance.md
+    python run_batch.py --n 5 --start 1 --batch-dir runs/qwen3-coder-next_cadquery
+    python run_batch.py --n 5 --start 6 --batch-dir runs/qwen3-coder-next_cadquery --guidance-file v2_guidance.md
 """
 import argparse, csv, json, pathlib, subprocess, sys, zipfile
 import cadquery as cq
