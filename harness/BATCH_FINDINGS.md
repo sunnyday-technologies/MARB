@@ -1,17 +1,18 @@
-# Local CadQuery track — n=10 batch findings (qwen3-coder-next, 2026-05-30)
+# Local CadQuery track: 10-run batch findings (qwen3-coder-next, 2026-05-30)
 
-Driver: `qwen3-coder-next:q4_K_M` on a local AI supercomputer, CadQuery 2.7.0, kit v1.1,
-text-only, 8-turn cap. Two cohorts of 5, identical except the system-prompt guidance.
-Raw catalogue: `local_batch_A_catalogue.csv`.
+Builder: `qwen3-coder-next:q4_K_M` on a local AI supercomputer, CadQuery 2.7.0, kit v1.1,
+text-only, 8-turn cap. Two cohorts of five runs each. The cohorts are identical except for
+the system-prompt guidance. The raw run log is `harness/local_batch_A_catalogue.csv`.
 
-**These are BUILDER metrics — buildability and BOM coverage, NOT grades.** A loadable
-110-solid assembly can still be oversized/misoriented and score low. Grading is Session C.
+These are builder metrics: buildability and bill-of-materials coverage, not grades. A loadable
+110-solid assembly can still be oversized or misoriented and still score low. Grading is a
+separate session. The local-anchor study reports the GAP, ORIENT, and POS grades.
 
 ## Result
 
 | Cohort | prompt_variant | loadable STEP | solids (loadable) | dominant failure |
 |---|---|---|---|---|
-| A | `base` | **1 / 5** | 15 | dies at export |
+| A | `base` | **1 / 5** | 15 | fails at export |
 | B | `cadquery_mechanics_v2` | **5 / 5** | 37, 82, 98, 103, 110 (median ~98) | oversizes envelope |
 
 | run | variant | status | loadable | solids | bbox (mm) | total_tokens |
@@ -27,38 +28,42 @@ Raw catalogue: `local_batch_A_catalogue.csv`.
 | 9 | v2 | complete | ✓ | 103 | 1927×1788×2459 | 61.3K |
 | 10 | v2 | complete | ✓ | 37 | 1040×1342×1421 | 57.5K |
 
-## General learning (mechanics, not answer — the Fusion-style fix)
+## What fixed cohort A: a CadQuery mechanic, not the design
 
-Cohort A failed almost entirely on **one CadQuery mechanic, not on design**: the model
-wrote plausible placement code, then passed a `cq.Assembly` straight to
-`cq.exporters.export(asm, ...)` (which needs a Shape) and called `asm.val()` (doesn't
-exist) — so the build died at the export line after burning its turns re-deriving
-bbox/center idioms. This is the direct analogue of the Fusion `addExistingComponent`
-token-drain.
+Cohort A failed almost entirely on one CadQuery mechanic, not on the design. The model wrote
+plausible placement code. It then passed a `cq.Assembly` straight to
+`cq.exporters.export(asm, ...)`, which needs a `Shape`, and called `asm.val()`, which does not
+exist. The build failed at the export line. The model then spent its remaining turns
+re-deriving the bounding-box and center idioms. This is the CadQuery analogue of the Autodesk
+Fusion `addExistingComponent` failure that consumes turns.
 
-`cadquery_mechanics_v2.md` supplies the correct `import → probe → place → asm.save()` /
-`cq.exporters.export(asm.toCompound(), ...)` idioms plus an "export early, refine later"
-strategy. Effect: loadable 20% → 100%, instance coverage 15 → ~98 median. It contains
-**no placements, counts, or orientations** — verified line-by-line — so cohort B remains
-a blind run; the brief + kit stay the only design inputs.
+`harness/cadquery_mechanics_v2.md` supplies the correct sequence: import, probe, place, then
+`asm.save()` or `cq.exporters.export(asm.toCompound(), ...)`. It also adds an "export early,
+refine later" strategy. The effect was clear: the loadable rate rose from 1 of 5 to 5 of 5, and
+median instance coverage rose from 15 to about 98 solids. The guidance contains no placements,
+no part counts, and no orientations. This was verified line by line. Cohort B therefore remains
+a blind run. The brief and the kit stay the only design inputs.
 
-## Correction: the "oversizing" was NOT a defect (build volume ≠ machine size)
+## Correction: the oversizing was not a defect
 
-Originally this section flagged cohort B for "exceeding the 2000×1000×1000 target."
-**That framing was wrong** (corrected 2026-05-30, per Nick): 2000×1000×1000 mm is the
-achievable **print/build volume**, not the machine's outer size. The frame, rails,
-gantry, Z-posts and end mounts must extend *beyond* it — a carriage cannot print to the
-ends of its own travel — so an assembly larger than 2000×1000×1000 is **expected and
-correct**. The grader confirms this is not a scoring bound (`benchmark.yaml` metadata
-only; POS/ORIENT/GAP match parts to the reference, not to a size limit).
+The machine build volume is 2000 × 1000 × 1000 mm. This is the volume the machine can print, not
+the machine's outer size. The frame, rails, gantry, vertical posts, and end mounts must extend
+beyond it, because a moving carriage cannot reach the far ends of its own travel without
+structure past those ends. An assembly larger than 2000 × 1000 × 1000 mm is therefore expected
+and correct.
 
-The real defect was the opposite: the brief's "target envelope/class" wording made the
-model try to **shrink** the machine to fit — run 10 regressed to 37 solids doing exactly
-that. Fix belongs in the spec/brief (build-volume wording), carried into v3 prompt
-guidance. We still do NOT hand the model the numbers as a target to hit (gate-gaming,
-which the brief forbids); v3 only corrects the *meaning* of the figure.
+An earlier draft of this document flagged cohort B for exceeding 2000 × 1000 × 1000 mm. That was
+wrong. The grader confirms this is not a scoring bound. The figure lives in `benchmark.yaml` as
+metadata only. The GAP, ORIENT, and POS metrics match parts to the answer key, not to a size
+limit.
 
-## Recursive progression A–D (added 2026-05-30) — more scaffolding backfires
+The real defect was the opposite. The brief's "target envelope" wording made the model shrink
+the machine to fit the figure. Run 10 regressed to 37 solids doing exactly that. The fix belongs
+in the spec and the brief, in how the build volume is described. It carries into the v3 prompt
+guidance. We still do not hand the model the build-volume numbers as a target to hit, because the
+brief forbids optimizing to the gate. The v3 fix only corrects the meaning of the figure.
+
+## Recursive progression A to D: more guidance text reduced buildability
 
 | Cohort | prompt_variant | loadable | solids (median, loadable) | total_tokens (range) |
 |---|---|---|---|---|
@@ -67,23 +72,27 @@ which the brief forbids); v3 only corrects the *meaning* of the figure.
 | C | cadquery_mechanics_v3 (+build-volume) | 3/5 | 28 | 37–58K |
 | D | design_requirements_v4 (+design modes) | 2/5 | ~24 | 35–72K |
 
-The single export-idiom fix (v2) is the dominant lever and the buildability optimum.
-Every block of text added after it (v3 build-volume note, v4 multi-mode design
-objectives) **monotonically degraded** buildability and instance coverage. Logs show
-why: with a longer system prompt the model spends its ~8 turns re-reading the brief and
-re-deriving the same `BoundingBox()`/`Center()` access friction (batch-D runs 17 & 18
-never exported), instead of building. The binding constraint at 8B-active / 8 turns is
-**turn budget**, not capability or willingness — and the extra design asks buy no
-*measurable* quality because the grader scores placement (POS/ORIENT/GAP), not the design
-modes. n=5/cohort is noisy, but the v2≫v3≈v4 gap is consistent across 20 runs.
+The single export-idiom fix in v2 is the dominant lever and the buildability optimum. Every
+block of text added after it reduced buildability and instance coverage. This includes the v3
+build-volume note and the v4 multi-mode design objectives.
 
-**Implication for the multi-mode (L0–L7) ambition:** asking a small local model to
-*consider* rigidity/manufacturability/thermal/etc. in-prompt is counterproductive until
-(a) it has the turn/compute budget to act on it and (b) the grader can score those modes.
-Next experiment: hold v4 text fixed and raise the turn cap to separate budget-starvation
-from capability.
+The logs explain why. With a longer system prompt, the model spends its eight turns re-reading
+the brief and re-deriving the same `BoundingBox()` and `Center()` access friction. Cohort D runs
+17 and 18 never exported. The binding constraint at 3B-active and eight turns is the turn budget,
+not capability or willingness. The extra design requests buy no measurable quality, because the
+grader scores placement through GAP, ORIENT, and POS, not the design modes.
 
-### Cohort E — v4 text @ 14-turn budget (runs 21–25)
+n = 5 per cohort is noisy. The gap is still consistent across all 20 runs: v2 is far ahead of v3,
+and v3 and v4 are about equal.
+
+This affects the multi-mode design ambition (the L0 to L7 ladder). Asking a small local model to
+weigh rigidity, manufacturability, thermal behavior, and similar concerns inside the prompt is
+counterproductive until two conditions hold. First, the model needs the turn budget and compute
+budget to act on the request. Second, the grader needs to be able to score those modes. The next
+experiment holds the v4 text fixed and raises the turn cap, to separate budget starvation from
+capability.
+
+### Cohort E: v4 text at a 14-turn budget (runs 21 to 25)
 
 | metric | D (v4 @ 8) | E (v4 @ 14) |
 |---|---|---|
@@ -91,42 +100,45 @@ from capability.
 | solids (median, loadable) | ~24 | ~30 |
 | tokens (range) | 35–72K | 53–139K |
 
-Raising the cap **partly confirms the budget hypothesis**: export rate recovered 2/5→4/5,
-so v4 was partly budget-starved. But coverage stayed ~30 (vs v2's ~98) and no better
-design appeared — the extra turns were consumed by two failure modes, not by building:
+Raising the turn cap partly confirms the budget hypothesis. The export rate recovered from 2 of 5
+to 4 of 5, so v4 was partly starved for turns. But coverage stayed near 30 solids, against about
+98 for v2, and no better design appeared. The extra turns went to two failure modes, not to
+building.
 
-1. **The `BoundingBox()`/`Center()` access spiral is a hard failure.** Run 23 spent all 14
-   turns repeating "try a different approach to get the center coordinates" (113K tokens,
-   no export). The `.x` vs `.X` / `bb.center` confusion isn't reliably fixed by the crib
-   when it's buried in the longer v4 prompt. More budget just means more wasted loops.
-2. **The build-volume clarification doesn't stick.** Runs 21/22/24/25 still treated
-   2000×1000×1000 as a size limit and burned late turns *shrinking* to it, despite v4
-   stating it is the build volume. The bare number anchors the model regardless — arguing
-   for removing the number from the prompt and forbidding any resize-to-fit, not explaining
-   it (consistent with Nick's "don't add boundaries").
+1. **The `BoundingBox()` and `Center()` access loop is a hard failure.** Run 23 spent all 14
+   turns repeating "try a different approach to get the center coordinates" and used 113K tokens
+   with no export. The confusion between `.x` and `.X`, and between forms of `bb.center`, is not
+   reliably fixed by the crib note when that note is buried in the longer v4 prompt. More budget
+   only produces more wasted loops.
+2. **The build-volume clarification did not hold.** Runs 21, 22, 24, and 25 still treated
+   2000 × 1000 × 1000 mm as a size limit and spent late turns shrinking to it, even though v4
+   states it is the build volume. The figure draws the model toward it regardless of the
+   explanation. This argues for removing the number from the prompt and forbidding any
+   resize-to-fit, rather than explaining the number.
 
-**Net:** the lean v2 export-fix remains the buildability optimum; budget recovers *export*
-but not *coverage* or *quality*. The productive next prompt is leaner+sharper, not richer.
+In summary: the lean v2 export fix remains the buildability optimum. A larger budget recovers the
+export rate but not coverage or quality. The next prompt should be leaner and sharper, not richer.
 
-### Cohort F — lean v5 @ 8 turns (runs 26–30) — the consolidating step
+### Cohort F: lean v5 at 8 turns (runs 26 to 30), the consolidating step
 
-v5 distilled every learning into a lean prompt: exact lowercase `.x` idiom, "probe at most
-once, never loop", correct Assembly export, "never resize to fit a number", and dropped the
-backfiring design-mode list.
+`harness/cadquery_lean_v5.md` distills every prior finding into a lean prompt. It states the exact
+lowercase `.x` idiom, "probe at most once, never loop", the correct Assembly export, and "never
+resize to fit a number". It drops the design-mode list that reduced buildability.
 
 | metric | B (v2 @8) | F (v5 @8) |
 |---|---|---|
 | loadable | 5/5 | **5/5** |
 | solids (median, loadable) | 98 | 84 (102, 88, 84, 30, 26) |
-| `.x` probe-spiral | n/a | **eliminated** (the "probe once" rule held) |
+| `.x` probe loop | n/a | **eliminated** (the "probe once" rule held) |
 
-v5 ties v2 on buildability (5/5) and, crucially, **removes the catastrophic center-access
-spiral** that burned a whole 14-turn run in cohort E — so it is the more robust prompt even
-though v2's median coverage is marginally higher (n=5 noise). The envelope-anchored
-*shrinking* instinct still appears (runs 26/28/30 note "too large"), but with "never resize"
-the model repositions instead of deleting parts (run 26 kept 102 solids while "shrinking").
+v5 matches v2 on buildability at 5 of 5. It also removes the center-access loop that consumed a
+full 14-turn run in cohort E. v5 is therefore the more robust prompt, even though v2's median
+coverage is marginally higher within n = 5 noise. The instinct to shrink toward the build-volume
+figure still appears: runs 26, 28, and 30 note the assembly is "too large". But with the "never
+resize" rule, the model repositions parts instead of deleting them. Run 26 kept 102 solids while
+shrinking.
 
-## Full progression + recommendation
+## Full progression and recommendation
 
 | Cohort | prompt_variant | budget | loadable | solids (median) |
 |---|---|---|---|---|
@@ -137,17 +149,20 @@ the model repositions instead of deleting parts (run 26 kept 102 solids while "s
 | E | design_requirements_v4 | 14 | 4/5 | 30 |
 | F | **cadquery_lean_v5** | 8 | **5/5** | 84 |
 
-**Recommended local-track default: `--guidance-file harness/cadquery_lean_v5.md`** (ties best
-buildability, eliminates the worst failure mode, leanest effective prompt). Keep `base` as the
-no-hint control. These are new cohorts (like kit v1.1 vs v1.2 for Fusion) — note the
-`prompt_variant` and never pool variants on one leaderboard.
+Recommended local-track default: `--guidance-file harness/cadquery_lean_v5.md`. It ties the best
+buildability, eliminates the worst failure mode, and is the leanest prompt that still works. Keep
+`base` as the no-hint control. These are distinct cohorts, comparable to kit v1.1 versus kit v1.2
+for Fusion. Always note the `prompt_variant`, and never combine variants on one leaderboard.
 
-**What stays unsolved here (belongs upstream / future runs):**
-- **Structural quality.** Across all 30 runs the output is loosely-placed parts, not rigid
-  jointed frames. Measuring it needs the grader's L1+ interface/kinematics metrics; coaching
-  it in-prompt is design-leaking and (per C/D) backfires at this scale anyway.
-- **The envelope number anchors shrinking.** No prompt wording fully overrode it; the real
-  fix is to reframe the brief/spec so 2000×1000×1000 isn't presented as a box to fit.
-- **Multi-mode design (L0–L7).** Defer to (a) the upstream brief once the grader can score
-  those modes and (b) a higher-budget / larger-model run — at 8B-active/8 turns the asks only
-  trade away the artifact.
+## What remains unsolved here (belongs upstream or in future runs)
+
+- **Structural quality.** Across all 30 runs the output is loosely placed parts, not a rigid,
+  jointed frame. Measuring this needs the grader's L1 and higher interface and kinematics metrics.
+  Coaching it inside the prompt leaks design intent, and as cohorts C and D show, it reduces
+  buildability at this model scale.
+- **The build-volume figure pulls the model toward shrinking.** No prompt wording fully overrode
+  it. The real fix is to reframe the brief and the spec so 2000 × 1000 × 1000 mm is not presented
+  as a box to fit inside.
+- **Multi-mode design (L0 to L7).** Defer this to two conditions. First, the upstream brief once
+  the grader can score those modes. Second, a run with a higher budget or a larger model. At
+  3B-active and eight turns, these requests only trade away the artifact.

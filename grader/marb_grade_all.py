@@ -21,8 +21,8 @@ USAGE
   # aggregate from an explicit config {cell_name: [step_paths, ...]}:
   python marb_grade_all.py --config runs.json --json results/marb_v0_9_stats.json
 
-  # aggregate by auto-discovering [local-path-redacted]
-  python marb_grade_all.py --runs-dir [local-path-redacted] --json results/marb_v0_9_stats.json
+  # aggregate by auto-discovering run subdirs (runs/<model>_<driver>_<seed>/export.step)
+  python marb_grade_all.py --runs-dir runs/ --json results/marb_v0_9_stats.json
 """
 from __future__ import annotations
 import argparse, json, re, statistics, sys
@@ -129,7 +129,7 @@ def _load_manifest(path: Path):
 
 
 def _discover(runs_dir: Path) -> dict:
-    """Group [local-path-redacted] by <model>_<driver>."""
+    """Group run subdirs (runs/<model>_<driver>_<seed>/) by <model>_<driver>."""
     cells: dict[str, list[Path]] = {}
     for sub in sorted(p for p in runs_dir.iterdir() if p.is_dir()):
         step = sub / "export.step"

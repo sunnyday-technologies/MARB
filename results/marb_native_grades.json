@@ -49,7 +49,7 @@
       }
     },
     "Local mechanics v2 (run_08)": {
-      "step": "[local-path-redacted]
+      "step": "runs/qwen3-coder-next_cadquery_08/export.step",
       "total_parts": 106,
       "passed": false,
       "gates": {
@@ -94,7 +94,7 @@
       }
     },
     "Local lean v5 (run_26)": {
-      "step": "[local-path-redacted]
+      "step": "runs/qwen3-coder-next_cadquery_26/export.step",
       "total_parts": 100,
       "passed": false,
       "gates": {
