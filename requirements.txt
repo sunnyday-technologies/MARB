@@ -1,10 +1,5 @@
 # MARB graders depend on the CADCLAW engine (STEP I/O, inventory, harness, render).
-# 0.9.0 is the current/canonical version (CADCLAW `main`). GAP/POS/ORIENT run on 0.8.0 too
-# (inventory.sig is byte-identical between 0.8.0 and 0.9.0), but the native-track gates
-# (grader/grade_native_step.py -> cadclaw.assembly_compiler) REQUIRE >= 0.9.0.
-# NOTE: 0.9.0 is not on PyPI yet (latest there is 0.8.0). Until it is published, install from
-# the CADCLAW repo:  pip install "git+https://github.com/sunnyday-technologies/CADCLAW.git@main"
-# (or, from a local checkout:  pip install -e ../CADCLAW).
+# Install the published package (0.9.0+ is on PyPI):
 cadclaw>=0.9.0
 # Direct dependencies used by the metric + figure builders:
 cadquery>=2.7

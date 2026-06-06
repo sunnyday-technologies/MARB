@@ -212,10 +212,3 @@ Codex, 13 minutes) was the fastest but the least accurate: it had the worst GAP
 and the most interference. As repeat runs land, quantify per model where
 iteration pays and where it wastes tokens.
 
-### 8.5 Backend-stub notes
-
-These are not part of the prompt framework, but they cost real attempts. Autodesk
-Fusion runs lost about 2 attempts each to two issues: hiding a master occurrence
-hides the whole component, and an auto-fit step produced a blank PNG. A one-line
-warning in the Autodesk Fusion backend stub, not in the fair core, would reclaim
-those attempts without affecting comparability.

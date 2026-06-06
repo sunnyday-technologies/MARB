@@ -23,7 +23,7 @@ variants:
     notes: X and Y long axes are spliced; BOM quantities come from variant overrides.
 
 reference_assets:
-  - path: ../M3-CRETE/docs/M3-CRETE_render.jpg
+  - path: docs/M3-CRETE_render.jpg
     role: visual_reference
     dimensional_evidence: false
     notes: >
@@ -31,18 +31,16 @@ reference_assets:
       assembly rounds. Exact dimensions must come from the spec and authored
       STEP assets.
 
-manifests:
-  - tasks/m3_crete/m3_component_manifest.yaml
 
 connector_metadata: tasks/m3_crete/m3_connector_metadata.yaml
 
 component_roots:
-  - ../M3-CRETE/CAD
+  - CAD
 
 protected_paths:
-  - ../M3-CRETE/CAD/M3-2_Assembly.step
-  - ../M3-CRETE/CAD/M3-2_Assembly_latest.step
-  - ../M3-CRETE/CAD/M3-2_Assembly-latest.step
+  - CAD/M3-2_Assembly.step
+  - CAD/M3-2_Assembly_latest.step
+  - CAD/M3-2_Assembly-latest.step
 
 outputs:
   step: tasks/m3_crete/m3_reference_round1.step
@@ -52,8 +50,8 @@ outputs:
   bom: tasks/m3_crete/build/m3_reference_round1_bom.csv
 
 bom:
-  source_path: ../M3-CRETE/bom/data.json
-  variant_config_path: ../M3-CRETE/config.js
+  source_path: bom/data.json
+  variant_config_path: config.js
   output_path: tasks/m3_crete/build/m3_reference_round1_bom.csv
   private_fields_redacted: true
   notes: >
@@ -61,7 +59,7 @@ bom:
     sources, roles, and explicit generated stock/spacer declarations. The
     M3-CRETE interactive/procurement BOM remains owned by the M3 project. Use
     CADCLAW output and parity findings to propose deltas against
-    ../M3-CRETE/bom/data.json; do not overwrite that public BOM from this
+    bom/data.json; do not overwrite that public BOM from this
     harness. M3-2 is the current base quantity set, while M3-1 and M3-4 apply
     variant overrides from config.js. Private procurement fields must stay out
     of public CADCLAW reports.
@@ -76,7 +74,7 @@ assumptions:
   - "Narrow M3 exception: tasks/m3_crete/generated/ZPMM_6p1_motor_mount_spacer_6mm_holes.step is derived from the user-confirmed authored ZPMM.step only to widen the four existing motor holes to 6mm and add six 6mm C-Beam end-alignment holes from the asymmetric 4080 screw-port pattern; this is not general CADCLAW plate authoring."
   - "The assembly sequence is inside-out: X gantry spacing first, then Y gantry spacing, then Z posts and frame members that accommodate those gantries."
   - Current user guidance sets the side-rail/post frame spacer thickness to 6 mm for this CADCLAW reference round.
-  - "Gantry plates by interface: the two X-axis printhead carriage plates are the C-Beam Gantry Plate XLarge (125x125x6mm), restored 2026-05-23 per Nick for the toolhead's off-axis forces; the two X-to-Y handoff plates, the four Y-to-Z/Z-post carriage plates, and the four top-center spreader bracket plates (a 2-plate 6mm stack at each spanner end) are the small 3mm V-Slot 20-80 (10 small total). The XLarge carriage choice intentionally diverges from the April-29 V1.0 source (zero XLarge) and is pinned in docs/M3_FRAME_CANON.md; do not re-correct it from the source."
+  - "Gantry plates by interface: the two X-axis printhead carriage plates are the C-Beam Gantry Plate XLarge (125x125x6mm), restored 2026-05-23 per the maintainer for the toolhead's off-axis forces; the two X-to-Y handoff plates, the four Y-to-Z/Z-post carriage plates, and the four top-center spreader bracket plates (a 2-plate 6mm stack at each spanner end) are the small 3mm V-Slot 20-80 (10 small total). The XLarge carriage choice intentionally diverges from the April-29 V1.0 source (zero XLarge) and is pinned in the internal frame-canon notes; do not re-correct it from the source."
   - "The 6mm spacer belongs to the static frame side-rail/post joint; it moves the frame out to accommodate the gantry, rather than being inserted between the moving gantry plate and the Z post."
   - "The 6.1mm ZPMM side-rail spacer also acts as the motor mount at the motor-mount positions; lower Y-frame side-rail joints use a simple 6 x 40 x 80mm flat spacer instead of the full ZPMM motor mount."
   - "The lower Y-direction static frame rails are 2080 V-slot, not C-Beam."
@@ -106,12 +104,12 @@ constraints:
   - id: no_external_x_gantry_reinforcement
     severity: fail
     rule: X-direction 2040 reinforcement must bridge the middle splice of each 2m 4080 run; X-gantry reinforcement must stay internal or below the wheel path, while external plates/gussets on the 40mm faces block the two-sided X-carriage.
-    source: ../M3-CRETE/AGENTS.md
+    source: the project's internal design notes
     applies_to_variants: [M3-2, M3-4]
   - id: cbeam_primary_stock
     severity: warn
     rule: Gantry extrusions, Z posts, and top X frame rails use 4080 C-Beam in 1000mm stock lengths; lower Y frame rails use 2080, and the top center spreader plus centered 2m-run splice inserts use 2040 per field-build guidance.
-    source: ../M3-CRETE/AGENTS.md and user guidance, 2026-05-20
+    source: the project's internal design notes and user guidance, 2026-05-20
   - id: gantry_first_inside_out_spacing
     severity: warn
     rule: X/Y/Z gantry placement should define the required frame spacing before the surrounding frame extrusions are placed.
@@ -125,7 +123,7 @@ constraints:
   - id: plate_family_by_axis_handoff
     severity: fail
     rule: The two X-axis printhead carriage plates use the C-Beam Gantry Plate XLarge (125x125x6mm) for the toolhead's off-axis forces; all other gantry plates - the two X-to-Y handoff and the four Y-to-Z/Z-post carriage - use the smaller 3mm V-Slot 20-80 plate. The XLarge carriage choice intentionally diverges from the April-29 V1.0 source (which has zero XLarge); do not re-correct it from the source.
-    source: user guidance, 2026-05-23 (Nick - X carriage restored to XLarge for off-axis stiffness; supersedes the 2026-05-22 all-small correction for the carriage only)
+    source: user guidance, 2026-05-23 (the maintainer - X carriage restored to XLarge for off-axis stiffness; supersedes the 2026-05-22 all-small correction for the carriage only)
     applies_to_variants: [M3-2]
   - id: vslot_axis_handoff_stackup
     severity: fail
@@ -150,15 +148,15 @@ constraints:
   - id: no_motion_endstops
     severity: fail
     rule: Do not add mechanical motion endstops or limit switches; the design uses StallGuard sensorless homing.
-    source: ../M3-CRETE/AGENTS.md
+    source: the project's internal design notes
   - id: no_leveling_feet
     severity: fail
     rule: Do not add leveling feet; bed leveling is handled by measurement/probing.
-    source: ../M3-CRETE/AGENTS.md
+    source: the project's internal design notes
   - id: no_nonrequested_extras
     severity: warn
     rule: Do not add HEPA filters, carbon fiber bars, LED lighting, or enclosure extras unless the spec changes explicitly.
-    source: ../M3-CRETE/AGENTS.md
+    source: the project's internal design notes
 
 instances:
   - id: post_front_left
@@ -281,7 +279,7 @@ instances:
       source_origin_mm: [0.0, 1.5, 0.0]
     notes: >
       Front-end spreader spacer, plate 2 of the 2-plate (6mm) stack, flush
-      outboard (toward the front frame) of plate 1. Per Nick 2026-05-23 each
+      outboard (toward the front frame) of plate 1. Per the maintainer 2026-05-23 each
       spanner end uses a 2-plate stack = 4 spreader plates total.
   - id: top_center_spreader_plate_back
     role: top_center_spreader_plate
@@ -410,10 +408,10 @@ instances:
       rotate_deg: [-90.0, 0.0, 0.0]
     notes: >
       C-Beam Gantry Plate XLarge (125x125x6mm) for the X-axis printhead carriage,
-      front (negative-Y) side. Restored to XLarge 2026-05-23 per Nick: the
+      front (negative-Y) side. Restored to XLarge 2026-05-23 per the maintainer: the
       printhead carriage needs the larger, stiffer plate for the off-axis toolhead
       forces. This INTENTIONALLY diverges from the V1.0 source (0 XLarge) and is
-      pinned in docs/M3_FRAME_CANON.md; the X-to-Y handoff and Y-to-Z carriage
+      pinned in the internal frame-canon notes; the X-to-Y handoff and Y-to-Z carriage
       plates stay the small V-Slot 20-80. rotate [-90,0,0] puts the 6mm thin axis
       along Y and the 125x125 face in X-Z; translate Y=-43.2 seats the beam-side
       (inner, +Y) face at -37.2 (same beam grip as the prior 3mm plate, with 3mm
@@ -1261,7 +1259,7 @@ instances:
       rotate_deg: [0.0, 0.0, 0.0]
     notes: >
       NEMA 23 X-drive stepper for the belt-pinion drive. FIRST-PASS alignment
-      onto the printhead carriage (X=456 -> X=0, the carriage position) per Nick
+      onto the printhead carriage (X=456 -> X=0, the carriage position) per the maintainer
       2026-05-23: the pinion motor rides on the moving carriage and engages the
       fixed VS_Belt_Pinion. Y=41 places it on the rear carriage plate; the exact
       2-hole mount and Z still need render-review tuning in Fusion.
@@ -1461,16 +1459,16 @@ assembly_sequence:
 
 not_built_yet:
   # Pruned 2026-05-23 (resolved/validated/placed; recorded in the spec notes,
-  # docs/M3_FRAME_CANON.md, and the FEA memory): connector-frame verification,
+  # the internal frame-canon notes, and the FEA memory): connector-frame verification,
   # Y-belt routing (placed first-pass), Z-motor mounting, ZPMM BOM binding,
   # static side-rail joints, and the PyNite comparison sweep (frame physically
   # validated: 6kg center -> 0.3mm, matches PyNite). Only genuine future work
   # remains below.
   - item: motor mount plates (optional, deferred)
-    reason: "Per Nick (2026-05-23): no separate motor mount plates are needed for now - the Y-axis NEMA screws directly to the C-beam; homing is sensorless via the stepper driver's StallGuard (a firmware feature, not a physical endstop). A plate may be added in a later version. All 7 motors are placed."
+    reason: "Per the maintainer (2026-05-23): no separate motor mount plates are needed for now - the Y-axis NEMA screws directly to the C-beam; homing is sensorless via the stepper driver's StallGuard (a firmware feature, not a physical endstop). A plate may be added in a later version. All 7 motors are placed."
     required_for_release: false
   - item: printhead/tooling interface (deferred to a later version)
-    reason: "Required for a complete machine but intentionally deferred to a later release version (Nick 2026-05-23): this canonical baseline is the frame + motion system; the printhead/tool payload comes later. The XLarge X-carriage plates + eight V-wheels that will carry it are placed and ready. (Stays required_for_release so --release mode correctly flags the machine as not yet complete.)"
+    reason: "Required for a complete machine but intentionally deferred to a later release version (the maintainer 2026-05-23): this canonical baseline is the frame + motion system; the printhead/tool payload comes later. The XLarge X-carriage plates + eight V-wheels that will carry it are placed and ready. (Stays required_for_release so --release mode correctly flags the machine as not yet complete.)"
     required_for_release: true
 
 validation:

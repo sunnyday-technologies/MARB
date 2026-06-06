@@ -15,14 +15,9 @@
   },
 
   "harness_environment": {
-    "_comment": "Client + versions for the CURRENT cohort (kit v1.2, runs from 2026-05-30 on). Earlier runs differed: Opus 4.7 used Claude Code (CLI); the Opus 4.8 Fusion attempt used the Claude desktop app (incognito). Record per-run client/kit_version going forward.",
-    "client": "Claude Code via the VS Code extension",
-    "vscode_version": "1.122.1",
-    "claude_code_extension": "anthropic.claude-code 2.1.158 (win32-x64)",
-    "claude_code_cli": "2.1.101",
-    "plan": "Claude Max",
-    "ultracode": "NOT used. As of 2026-05-30, ultracode is available only in the VS Code extension, not the Claude Code desktop app. Noted because it would materially change effort/token use; these runs are standard Max, no ultracode.",
-    "kit_version": "v1.3 (build/m3_fusion_blind_kit_v1.3.zip)"
+    "_comment": "Operator harness + kit for the current cohort. Each run records its own client and kit_version. Blind runs use a clean, memoryless context so the answer key cannot leak.",
+    "client": "agentic coding assistant driving the CAD tool",
+    "kit_version": "v1.3 (kits/m3_fusion_blind_kit_v1.3.zip)"
   },
 
   "runs": [

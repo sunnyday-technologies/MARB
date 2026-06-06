@@ -9,7 +9,7 @@ assumptions:
     references from CADCLAW inspect-component bbox centers. Solid V Wheel frames
     are included for placement visibility at the modeled carriage interfaces.
     The C-Beam Gantry Plate XLarge is used for the two X-axis printhead carriage
-    plates only (Nick's off-axis-force requirement, 2026-05-23) and intentionally
+    plates only (the maintainer's off-axis-force requirement, 2026-05-23) and intentionally
     diverges from the V1.0 source's 0-XLarge; the X-to-Y handoff and Y-to-Z
     carriage plates remain the small V-Slot 20-80.
 
@@ -139,7 +139,7 @@ components:
     source_path: CAD/Advanced/Plates/C-Beam Gantry Plate XLarge.STEP
     notes: >
       125 x 125 x 6mm C-Beam gantry plate. Used for the two X-axis printhead
-      CARRIAGE plates only, per Nick's off-axis-force requirement (2026-05-23):
+      CARRIAGE plates only, per the maintainer's off-axis-force requirement (2026-05-23):
       the toolhead carriage needs the stiffer, larger plate. This intentionally
       diverges from the V1.0 source (which has 0 XLarge) — do NOT re-correct from
       the source. The X-to-Y handoff and Y-to-Z carriage plates stay the small

@@ -44,26 +44,16 @@ There is no "Qwen3.5". The coder line runs Qwen2.5-Coder, then Qwen3-Coder, then
 **Qwen3-Coder-Next**. `qwen3-coder-next` is both the newest coder and the best single-node
 fit, so no bridge is needed.
 
-### Vision-capable cells and Chinese-literature extraction
+### Vision-capable cells (optional)
 
-A local vision model serves two purposes. First, it powers a sighted MARB cell that reads
-the goal image directly. This is a separate cell from the text-only blind floor described
-below. Second, it extracts data from Chinese-language technical literature, such as cement,
-3DCP, and materials papers. A Chinese-trained vision-language model has a real advantage
-here. Its native Chinese OCR and its table, chart, and document parsing are strong.
+A local vision model can power a sighted MARB cell that reads the goal image directly. This
+is a separate cell from the text-only blind floor described below.
 
 | Model | Maker / origin | Size (Q4) | Fit | Use |
 |---|---|---|---|---|
 | **`glm-4.5v`** | Zhipu AI / Z.ai (China) | 106B-A12B, ~62 GB | single node | Top document and chart reasoning plus Chinese OCR. The heaviest extractor. Leads more than 41 multimodal benchmarks. |
 | **`qwen3-vl:32b`** | Alibaba Qwen (China) | 32B dense, ~21 GB | single node | Default workhorse. Best-in-class document and diagram parsing plus Chinese OCR. Use `:8b` (~6 GB) for bulk throughput, and the bridge-only `:235b-a22b` for maximum accuracy. |
 | `nemotron-3-nano-omni` | NVIDIA (United States) | 30B-A3B, ~18 GB | single node | The US-origin option for the origin-sensitive MARB benchmark cell. Vision, audio, and text, with a C-RADIOv4-H encoder. |
-
-**Origin note.** GLM-4.5V and Qwen3-VL are PRC-origin models from Zhipu and Alibaba. Run
-local and air-gapped, they carry no data-exfiltration risk. The only remaining axis is
-customer optics for the MARB benchmark cell, and for that we prefer the NVIDIA Nemotron
-model. For Chinese-literature extraction the Chinese models are the right tool, because the
-origin is the feature. The `m3dcpm:*` answer-key ban still applies to any MARB blind run,
-regardless of model.
 
 **Serving.** Use Ollama 0.12.7 or newer for `qwen3-vl`. GLM-4.5V (zai-org/GLM-4.5V) may
 need a community GGUF plus a Modelfile, because Ollama's official coverage is partial.

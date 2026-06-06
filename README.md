@@ -73,13 +73,12 @@ not better. A larger token budget did not improve quality. Write-up:
 ## Quickstart
 
 ```bash
-# Install the cadclaw grading engine and STEP I/O. See requirements.txt.
-# Version 0.9.0 is on CADCLAW main; if it is not yet on PyPI, install from the repo.
+# Install the cadclaw grading engine and STEP I/O (0.9.0+ is on PyPI). See requirements.txt.
 pip install "cadclaw>=0.9.0"
 pip install -r requirements.txt
 
-# Grade the reference against itself, plus the bundled runs.
-python grader/marb_grade_all.py --json results/marb_v0_9_grades.json
+# Grade the reference against itself (writes a fresh grades file).
+python grader/marb_grade_all.py --json results/marb_grades_local.json
 
 # Grade a set of runs via the run registry (median, mean, and std per cell).
 python grader/marb_grade_all.py --manifest results/marb_runs.json \
