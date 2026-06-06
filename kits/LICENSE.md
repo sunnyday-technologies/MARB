@@ -54,6 +54,6 @@ Sunnyday's to assign.
 
 ## Provenance
 
-The source library and path for each part are recorded in
-`tasks/m3_crete/m3_component_manifest.yaml` (fields `source_library` and `source_path`).
-The upstream terms mirror `M3-CRETE/CAD/Components/LICENSE.md`.
+The OpenBuilds-derived parts are listed above; their upstream source is the OpenBuilds
+library (https://openbuilds.com/) under CC BY-SA 4.0. The two Sunnyday-authored parts are
+covered by the repository MIT license.

@@ -29,7 +29,7 @@ DEF_MODEL  = "qwen3-coder-next:q4_K_M"          # Qwen3-Coder 79.7B Q4 -- real c
 # Vision cell (--multimodal): NVIDIA Nemotron 3 Nano Omni is the US-origin pick.
 #   llama.cpp:  llama-server --model ...Nemotron-3-Nano-Omni-30B-A3B...Q4_K_XL.gguf --mmproj mmproj-BF16.gguf --port 8001
 #   then:       python marb_local_harness.py --base-url http://<local-host>:8001/v1 --model <alias> --multimodal
-# Chinese-literature extraction / max-accuracy: glm-4.5v or qwen3-vl:32b (PRC-origin; see harness/README.md).
+# Higher-accuracy vision alternatives are listed in harness/README.md.
 RUN_DIR    = pathlib.Path("runs/local_cadquery_01")
 KIT_VERSION = "v1.1"
 TOOL_VER   = "2.7.0"                             # CadQuery version (frozen for the log)

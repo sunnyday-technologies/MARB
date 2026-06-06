@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MARB v0.9 scoring spec | Mechanical Assembly Readiness Benchmark</title>
+  <meta name="description" content="The canonical, versioned scoring method for MARB (Mechanical Assembly Readiness Benchmark): the GAP, POS, and ORIENT metrics, the fixed tolerance bands, and the first-run results. Graded by the open-source CADCLAW engine." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://marb.cadclaw.io/scoring/" />
+  <style>
+    :root { --ink:#0f1720; --dim:#33404a; --faint:#5b6b78; --rule:#d8e0e6; --navy:#013a73; --green:#4e7a00; --bg:#fbfcfd; --code:#f1f5f8; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.7 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+    main { max-width:820px; margin:0 auto; padding:3rem 1.4rem 5rem; }
+    h1 { font-size:clamp(1.7rem,3.4vw,2.4rem); line-height:1.15; margin:0 0 .4rem; }
+    .sub { color:var(--dim); font-size:1.05rem; margin:0 0 1.6rem; }
+    h2 { font-size:1.35rem; margin:2.4rem 0 .8rem; color:var(--navy); border-bottom:1px solid var(--rule); padding-bottom:.3rem; }
+    h3 { font-size:1.08rem; margin:1.5rem 0 .5rem; }
+    p, li { margin:0 0 .9rem; }
+    ul, ol { margin:0 0 1rem 1.3rem; }
+    code { background:var(--code); padding:.1em .35em; border-radius:3px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.88em; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0 1.4rem; font-size:.93rem; }
+    th, td { border:1px solid var(--rule); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+    thead th { background:var(--navy); color:#fff; font-size:.78rem; text-transform:uppercase; letter-spacing:.03em; }
+    tbody tr:nth-child(even) { background:#f3f7fa; }
+    .disclosure { border-left:3px solid var(--green); background:#f5faf0; padding:.8rem 1.1rem; margin:1.4rem 0; font-size:.95rem; }
+    .nav { font-size:.9rem; color:var(--faint); margin-bottom:2rem; }
+    .nav a { color:var(--navy); }
+    footer { margin-top:3rem; padding-top:1.2rem; border-top:1px solid var(--rule); color:var(--faint); font-size:.82rem; line-height:1.6; }
+    a { color:var(--green); }
+  </style>
+</head>
+<body>
+<main>
+  <p class="nav"><a href="https://cadclaw.io/benchmark/">MARB benchmark</a> &middot; <a href="https://cadclaw.io/">CADCLAW</a> &middot; scoring spec v0.9</p>
+
+  <h1>MARB scoring spec (v0.9)</h1>
+  <p class="sub">The canonical, versioned scoring method for the Mechanical Assembly Readiness Benchmark. MARB grades how correctly AI-assisted CAD places the parts of a real machine. It is developed by Sunnyday Technologies and runs on the open-source <a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW</a> verification engine.</p>
+
+  <div class="disclosure">
+    <strong>Read this first.</strong> Sunnyday Technologies authored MARB, runs the CADCLAW engine that grades every score, and supplies the reference machine (our own M3-CRETE assembly), which scores the rubric ceiling (0.0 mm gap, 100% oriented) by construction. CADCLAW is the floor and the referee, not a contender. The first results below are <strong>one run per frontier cell</strong> (the local-anchor floor is five runs per cell); read them as a starting line and a method, not a leaderboard. The grader and benchmark scaffold are open so anyone can reproduce or dispute a score.
+  </div>
+
+  <h2>1. What MARB measures, and why the metric changed</h2>
+  <p>The earlier v0.3 headline was a single buildability score, dominated by interference. It collapsed every run to roughly 12 to 15 out of 100 and barely separated models. For an early-stage test that is the wrong signal. The useful question, and the one that separates models, is: how many parts did the AI place in the correct position and orientation, and are the gaps between parts functionally correct?</p>
+  <p>MARB v0.9 grades positional accuracy with three metrics:</p>
+  <ul>
+    <li><strong>GAP</strong> is the error between the actual and intended interface gap. It is the primary functional score.</li>
+    <li><strong>POS</strong> is the position error of each part versus the answer key, after a best-fit rigid alignment.</li>
+    <li><strong>ORIENT</strong> is the share of orientation-gradeable parts placed in the correct rotation.</li>
+  </ul>
+  <p>Buildability remains as a secondary gate: it asks whether the parts could be bolted together as placed. It is no longer the headline.</p>
+
+  <h2>2. Tolerance philosophy</h2>
+  <p>Two points define the standard and do not change.</p>
+  <p>First, digital placement is graded exactly. A perfect digital model has no placement error: a part is either in the correct spot or it is not. Real machines function at fractions of a millimeter, so the bar is tight. A part within 5 mm of its target counts as located; within 0.01 mm counts as exact. The only allowance is floating-point and export noise, which is far tighter than commercial CAD requires. The band is never loosened to favor a model.</p>
+  <p>Second, manufacturing tolerance is a separate axis: the plus-or-minus of material added or removed when a real part is made from the perfect digital model. That is the purpose of the CADCLAW tolerance gate, and it is not exercised here. Today MARB grades only whether the AI can place the parts correctly. Production tolerance is graded later (see Section 7).</p>
+
+  <h2>3. The functional-gap metric (GAP)</h2>
+  <p>Absolute coordinates are a proxy. What distinguishes a functional system from a single fused body is the gap at each interface, and GAP grades that directly.</p>
+  <ul>
+    <li><strong>Attachment interfaces:</strong> intended gap about 0 mm. Parts that bolt or fasten together must touch.</li>
+    <li><strong>Motion interfaces:</strong> intended gap about 1 to 2 mm. Parts that move relative to each other, such as wheels in slots or gantry carriages, need a clearance.</li>
+  </ul>
+  <p>A correct functional assembly reproduces the intended gap at each interface. Collapsing every gap to 0 mm fuses the machine into one body; missing the attachment contacts leaves a set of separated parts. GAP maps onto the CADCLAW adjacency check (parts that should touch) and the interference and clearance check (parts that should not overlap and that should clear). Position and orientation are the foundation that GAP builds on.</p>
+
+  <h2>4. Scales and bands</h2>
+  <p>Every part-level measure is reported at two scales:</p>
+  <ul>
+    <li><strong>POS absolute:</strong> each part's pose versus the answer key in a common frame, after a best-fit rigid alignment (Kabsch or ICP on label-matched centroids). Runs are authored in different global frames, so the alignment puts them in one frame before scoring.</li>
+    <li><strong>POS relative (neighbor-relative):</strong> each part's pose relative to its neighbors. This scale is frame-invariant and separates whether the model understood how parts connect from whether it anchored the whole machine in the right place.</li>
+  </ul>
+  <p>The headline number per scale is the median error: millimeters for position, degrees for orientation. The median drops toward 0 as models improve, and it never requires the band to be loosened. The bands are tight and fixed:</p>
+  <table>
+    <thead><tr><th>Metric</th><th>Bands</th></tr></thead>
+    <tbody>
+      <tr><td>Position</td><td>exact at 0.01 mm or less; within 1 mm; located at 5 mm or less; then 25, 50, and 100 mm bins</td></tr>
+      <tr><td>Orientation</td><td>exact at 0.5 degrees or less; aligned at 5 degrees or less; slightly off at 15 degrees or less; otherwise wrong</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. How a run is graded</h2>
+  <p>Grading is automated and tool-independent. The grader loads the answer-key STEP and the run's exported STEP with no roles or metadata, labels each solid by its bounding-box signature, rigid-aligns the two assemblies (Kabsch or ICP), matches parts by a linear-assignment solve, and computes the POS bands and median (absolute and relative). A separate pass classifies each answer-key interface as attachment, motion, or standoff and grades the actual gap against the intended gap (GAP). A third pass grades each part's rotation against the answer key, binned as aligned, rotated, or wrong, skipping rotationally symmetric parts (ORIENT). The secondary buildability gate runs the native CADCLAW checks: inventory, interference, and floating. The method is versioned with this document; it changes only when this spec changes.</p>
+
+  <h2>6. First-run findings (three frontier runs, 2026-05-26)</h2>
+  <p>Median placement error under the tight standard. These are one run per cell: hypotheses and a starting line, not a statistically significant ranking.</p>
+  <table>
+    <thead><tr><th>Run</th><th>GAP median</th><th>ORIENT aligned</th><th>POS abs median</th><th>POS rel median</th></tr></thead>
+    <tbody>
+      <tr><td>Claude Opus 4.7 &middot; CadQuery</td><td>0.0 mm</td><td>51%</td><td>118 mm</td><td>49.9 mm</td></tr>
+      <tr><td>Claude Opus 4.7 &middot; Autodesk Fusion</td><td>2.0 mm</td><td>47%</td><td>97 mm</td><td>47.7 mm</td></tr>
+      <tr><td>GPT-5 Codex &middot; CadQuery</td><td>7.8 mm</td><td>69%</td><td>110 mm</td><td>47.2 mm</td></tr>
+      <tr><td><em>Reference (answer key)</em></td><td><em>0.0 mm</em></td><td><em>100%</em></td><td><em>0.0 mm</em></td><td><em>0.0 mm</em></td></tr>
+    </tbody>
+  </table>
+  <p>At the 5 mm precision a real machine needs, today's frontier AI places about 0% of parts correctly on the absolute scale. The median part is roughly 10 cm off in absolute terms and about 5 cm off relative to its neighbors. Parts land in roughly the correct region, but not at functional precision, and none of these results is buildable yet. The answer-key frame is about 2175 mm wide and the runs' frames are about 2048 mm wide: the models built a slightly smaller machine, which inflates the absolute figures, so the relative metric factors that difference out.</p>
+
+  <h2>7. Planned work</h2>
+  <ol>
+    <li>Statistics with more than one run per cell (median, mean, and standard deviation per cell). The aggregate grader is built and awaits the repeat runs.</li>
+    <li>A random-floor baseline: grade shuffled positions to establish a true floor beneath the current relative median of about 47 mm.</li>
+    <li>Principal-axes orientation refinement (OBB or PCA) to catch off-axis rotations the current axis-aligned metric misses.</li>
+    <li>A second task on a different machine type, to support a claim of generality.</li>
+    <li>The manufacturing-tolerance axis, to grade the real-world plus-or-minus of made parts (a separate axis the AI is not tested on yet).</li>
+  </ol>
+
+  <footer>
+    <p>MARB scores are Sunnyday Technologies' own measurements from this published method, on the software versions and dates shown. Each frontier cell is a single run of one task: informational, provided "as is" without warranty, and not a statement about any product's overall quality or fitness for any purpose. Verify independently before relying on them.</p>
+    <p>Sunnyday Technologies is independent and not affiliated with, sponsored by, or endorsed by Anthropic, OpenAI, Autodesk, or Dassault Systemes. The CAD parts in the benchmark kits are licensed separately: OpenBuilds-derived motion-system parts under CC BY-SA 4.0, Sunnyday-authored parts under MIT. V-Slot, C-Beam, and V-Wheel are trademarks of OpenBuilds LLC; other product and company names are trademarks of their respective owners, used only to identify the tools tested.</p>
+    <p>&copy; 2026 Sunnyday Technologies &middot; MIT-licensed method &middot; <a href="https://cadclaw.io/benchmark/">cadclaw.io/benchmark</a></p>
+  </footer>
+</main>
+</body>
+</html>
