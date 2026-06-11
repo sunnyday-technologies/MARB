@@ -18,9 +18,9 @@ Thumbs.db
 /runs/
 *.stats.json
 
-# Internal session / roadmap notes — kept local, not shipped publicly
-/NEXT_SESSION_HANDOFF.md
-harness/DEEPSEEK_LATER.md
+# Internal/session notes live in ../MARB-private (separate private repo)
 
-# Stale pre-public scratchpad (kept local)
-/PRE_PUBLIC_CHECKLIST.md
+# Site deploy source for marb.cadclaw.io — published content only, media-heavy
+# (~34 MB of figures/GIFs), so kept out of the public repo history.
+# See PUBLISHING.md. Deploys go ONLY from this folder.
+/publishing/

@@ -115,6 +115,7 @@ for rank, name in enumerate(order_ai, 1):
             "Fable 5 (low) · CadQuery":    "Claude Fable 5  ·  CadQuery",
             "Fable 5 (medium) · CadQuery": "Claude Fable 5  ·  CadQuery",
             "Fable 5 (high) · CadQuery":   "Claude Fable 5  ·  CadQuery",
+            "Fable 5 (ultra) · CadQuery":  "Claude Fable 5  ·  CadQuery",
             "Local · qwen3-coder-next (mechanics v2)": "qwen3-coder-next 80B  ·  CadQuery",
             "Local · qwen3-coder-next (lean v5)":      "qwen3-coder-next 80B  ·  CadQuery"}.get(name, name.replace(" · ", "  ·  "))
     fig.text(x_name, y, disp, fontsize=max(13, 15*sc), color=COLORS["ink"])

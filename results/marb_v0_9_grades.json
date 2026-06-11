@@ -933,6 +933,158 @@
     }
    },
    "_n": 1
+  },
+  "Fable 5 (ultra) · CadQuery": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 88.6,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 0.0,
+      "<= 25.0 mm": 6.9,
+      "<= 50.0 mm": 9.9,
+      "<= 100.0 mm": 68.3
+     }
+    },
+    "relative": {
+     "median_mm": 30.4,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 5.9,
+      "<= 25.0 mm": 43.6,
+      "<= 50.0 mm": 72.3,
+      "<= 100.0 mm": 88.1
+     }
+    }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 2.21,
+      "bands_pct": {
+       "<= 0.1 mm": 48.6,
+       "<= 1.0 mm": 49.1,
+       "<= 5.0 mm": 53.2
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 5.0,
+      "bands_pct": {
+       "<= 0.1 mm": 9.5,
+       "<= 1.0 mm": 38.1,
+       "<= 5.0 mm": 47.6
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 3.0,
+      "bands_pct": {
+       "<= 0.1 mm": 15.4,
+       "<= 1.0 mm": 15.4,
+       "<= 5.0 mm": 53.8
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 3.0,
+     "bands_pct": {
+      "<= 0.1 mm": 42.5,
+      "<= 1.0 mm": 45.9,
+      "<= 5.0 mm": 52.7
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 47.1,
+    "rotated_pct": 21.6,
+    "wrong_pct": 31.4,
+    "counts": {
+     "aligned": 24,
+     "rotated": 11,
+     "wrong": 16
+    },
+    "by_label": {
+     "other": {
+      "aligned": 12,
+      "rotated": 10,
+      "wrong": 8
+     },
+     "spacer_zpmm": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "spacer_flat": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 4,
+      "rotated": 1,
+      "wrong": 8
+     }
+    }
+   },
+   "_agg": {
+    "gap_median_mm": {
+     "n": 1,
+     "median": 3.0,
+     "mean": 3.0,
+     "std": 0.0,
+     "values": [
+      3.0
+     ]
+    },
+    "gap_le1_pct": {
+     "n": 1,
+     "median": 45.9,
+     "mean": 45.9,
+     "std": 0.0,
+     "values": [
+      45.9
+     ]
+    },
+    "pos_rel_mm": {
+     "n": 1,
+     "median": 30.4,
+     "mean": 30.4,
+     "std": 0.0,
+     "values": [
+      30.4
+     ]
+    },
+    "pos_abs_mm": {
+     "n": 1,
+     "median": 88.6,
+     "mean": 88.6,
+     "std": 0.0,
+     "values": [
+      88.6
+     ]
+    },
+    "orient_aligned_pct": {
+     "n": 1,
+     "median": 47.1,
+     "mean": 47.1,
+     "std": 0.0,
+     "values": [
+      47.1
+     ]
+    }
+   },
+   "_n": 1
   }
  }
 }
