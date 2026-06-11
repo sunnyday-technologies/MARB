@@ -1,482 +1,938 @@
 {
-  "reference_step": "tasks/m3_crete/m3_reference_round1.step",
-  "spec": "tasks/m3_crete/m3_reference_assembly.yaml",
-  "runs": {
-    "Reference (self / ceiling)": {
-      "position": {
-        "matched": 101,
-        "total_run": 101,
-        "absolute": {
-          "median_mm": 0.0,
-          "bands_pct": {
-            "<= 0.01 mm": 100.0,
-            "<= 1.0 mm": 100.0,
-            "<= 5.0 mm": 100.0,
-            "<= 25.0 mm": 100.0,
-            "<= 50.0 mm": 100.0,
-            "<= 100.0 mm": 100.0
-          }
-        },
-        "relative": {
-          "median_mm": 0.0,
-          "bands_pct": {
-            "<= 0.01 mm": 100.0,
-            "<= 1.0 mm": 100.0,
-            "<= 5.0 mm": 100.0,
-            "<= 25.0 mm": 100.0,
-            "<= 50.0 mm": 100.0,
-            "<= 100.0 mm": 100.0
-          }
-        }
-      },
-      "gap": {
-        "interface_threshold_mm": 5.0,
-        "total_interfaces": 207,
-        "by_type": {
-          "attachment": {
-            "n": 173,
-            "median_mm": 0.0,
-            "bands_pct": {
-              "<= 0.1 mm": 100.0,
-              "<= 1.0 mm": 100.0,
-              "<= 5.0 mm": 100.0
-            }
-          },
-          "motion": {
-            "n": 21,
-            "median_mm": 0.0,
-            "bands_pct": {
-              "<= 0.1 mm": 100.0,
-              "<= 1.0 mm": 100.0,
-              "<= 5.0 mm": 100.0
-            }
-          },
-          "standoff": {
-            "n": 13,
-            "median_mm": 0.0,
-            "bands_pct": {
-              "<= 0.1 mm": 100.0,
-              "<= 1.0 mm": 100.0,
-              "<= 5.0 mm": 100.0
-            }
-          }
-        },
-        "overall": {
-          "n": 207,
-          "median_mm": 0.0,
-          "bands_pct": {
-            "<= 0.1 mm": 100.0,
-            "<= 1.0 mm": 100.0,
-            "<= 5.0 mm": 100.0
-          }
-        }
-      },
-      "orientation": {
-        "asymmetric_graded": 51,
-        "symmetric_skipped": 50,
-        "aligned_pct": 100.0,
-        "rotated_pct": 0.0,
-        "wrong_pct": 0.0,
-        "counts": {
-          "aligned": 51,
-          "rotated": 0,
-          "wrong": 0
-        },
-        "by_label": {
-          "cbeam_4080": {
-            "aligned": 14,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "vslot_2040": {
-            "aligned": 4,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "plate_2080": {
-            "aligned": 10,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "vslot_2080": {
-            "aligned": 2,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "spacer_zpmm": {
-            "aligned": 4,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "spacer_flat": {
-            "aligned": 4,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "belt": {
-            "aligned": 13,
-            "rotated": 0,
-            "wrong": 0
-          }
-        }
-      }
+ "reference_step": "tasks/m3_crete/m3_reference_round1.step",
+ "spec": "tasks/m3_crete/m3_reference_assembly.yaml",
+ "runs": {
+  "Reference (self / ceiling)": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 0.0,
+     "bands_pct": {
+      "<= 0.01 mm": 100.0,
+      "<= 1.0 mm": 100.0,
+      "<= 5.0 mm": 100.0,
+      "<= 25.0 mm": 100.0,
+      "<= 50.0 mm": 100.0,
+      "<= 100.0 mm": 100.0
+     }
     },
-    "Claude \u00b7 CadQuery": {
-      "position": {
-        "matched": 101,
-        "total_run": 101,
-        "absolute": {
-          "median_mm": 118.3,
-          "bands_pct": {
-            "<= 0.01 mm": 0.0,
-            "<= 1.0 mm": 0.0,
-            "<= 5.0 mm": 0.0,
-            "<= 25.0 mm": 0.0,
-            "<= 50.0 mm": 4.0,
-            "<= 100.0 mm": 23.8
-          }
-        },
-        "relative": {
-          "median_mm": 49.9,
-          "bands_pct": {
-            "<= 0.01 mm": 0.0,
-            "<= 1.0 mm": 0.0,
-            "<= 5.0 mm": 11.9,
-            "<= 25.0 mm": 22.8,
-            "<= 50.0 mm": 50.5,
-            "<= 100.0 mm": 86.1
-          }
-        }
-      },
-      "gap": {
-        "interface_threshold_mm": 5.0,
-        "total_interfaces": 207,
-        "by_type": {
-          "attachment": {
-            "n": 173,
-            "median_mm": 0.0,
-            "bands_pct": {
-              "<= 0.1 mm": 58.4,
-              "<= 1.0 mm": 58.4,
-              "<= 5.0 mm": 59.5
-            }
-          },
-          "motion": {
-            "n": 21,
-            "median_mm": 2.01,
-            "bands_pct": {
-              "<= 0.1 mm": 9.5,
-              "<= 1.0 mm": 42.9,
-              "<= 5.0 mm": 81.0
-            }
-          },
-          "standoff": {
-            "n": 13,
-            "median_mm": 3.0,
-            "bands_pct": {
-              "<= 0.1 mm": 7.7,
-              "<= 1.0 mm": 7.7,
-              "<= 5.0 mm": 69.2
-            }
-          }
-        },
-        "overall": {
-          "n": 207,
-          "median_mm": 0.0,
-          "bands_pct": {
-            "<= 0.1 mm": 50.2,
-            "<= 1.0 mm": 53.6,
-            "<= 5.0 mm": 62.3
-          }
-        }
-      },
-      "orientation": {
-        "asymmetric_graded": 51,
-        "symmetric_skipped": 50,
-        "aligned_pct": 51.0,
-        "rotated_pct": 49.0,
-        "wrong_pct": 0.0,
-        "counts": {
-          "aligned": 26,
-          "rotated": 25,
-          "wrong": 0
-        },
-        "by_label": {
-          "cbeam_4080": {
-            "aligned": 8,
-            "rotated": 6,
-            "wrong": 0
-          },
-          "vslot_2040": {
-            "aligned": 4,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "plate_2080": {
-            "aligned": 2,
-            "rotated": 8,
-            "wrong": 0
-          },
-          "vslot_2080": {
-            "aligned": 0,
-            "rotated": 2,
-            "wrong": 0
-          },
-          "spacer_flat": {
-            "aligned": 0,
-            "rotated": 4,
-            "wrong": 0
-          },
-          "spacer_zpmm": {
-            "aligned": 0,
-            "rotated": 4,
-            "wrong": 0
-          },
-          "belt": {
-            "aligned": 12,
-            "rotated": 1,
-            "wrong": 0
-          }
-        }
-      }
-    },
-    "Claude \u00b7 Fusion": {
-      "position": {
-        "matched": 101,
-        "total_run": 101,
-        "absolute": {
-          "median_mm": 96.6,
-          "bands_pct": {
-            "<= 0.01 mm": 0.0,
-            "<= 1.0 mm": 0.0,
-            "<= 5.0 mm": 0.0,
-            "<= 25.0 mm": 0.0,
-            "<= 50.0 mm": 4.0,
-            "<= 100.0 mm": 53.5
-          }
-        },
-        "relative": {
-          "median_mm": 47.7,
-          "bands_pct": {
-            "<= 0.01 mm": 0.0,
-            "<= 1.0 mm": 0.0,
-            "<= 5.0 mm": 11.9,
-            "<= 25.0 mm": 24.8,
-            "<= 50.0 mm": 50.5,
-            "<= 100.0 mm": 86.1
-          }
-        }
-      },
-      "gap": {
-        "interface_threshold_mm": 5.0,
-        "total_interfaces": 207,
-        "by_type": {
-          "attachment": {
-            "n": 173,
-            "median_mm": 0.0,
-            "bands_pct": {
-              "<= 0.1 mm": 53.8,
-              "<= 1.0 mm": 53.8,
-              "<= 5.0 mm": 63.6
-            }
-          },
-          "motion": {
-            "n": 21,
-            "median_mm": 2.0,
-            "bands_pct": {
-              "<= 0.1 mm": 0.0,
-              "<= 1.0 mm": 28.6,
-              "<= 5.0 mm": 76.2
-            }
-          },
-          "standoff": {
-            "n": 13,
-            "median_mm": 3.0,
-            "bands_pct": {
-              "<= 0.1 mm": 15.4,
-              "<= 1.0 mm": 15.4,
-              "<= 5.0 mm": 69.2
-            }
-          }
-        },
-        "overall": {
-          "n": 207,
-          "median_mm": 2.0,
-          "bands_pct": {
-            "<= 0.1 mm": 45.9,
-            "<= 1.0 mm": 48.8,
-            "<= 5.0 mm": 65.2
-          }
-        }
-      },
-      "orientation": {
-        "asymmetric_graded": 51,
-        "symmetric_skipped": 50,
-        "aligned_pct": 47.1,
-        "rotated_pct": 52.9,
-        "wrong_pct": 0.0,
-        "counts": {
-          "aligned": 24,
-          "rotated": 27,
-          "wrong": 0
-        },
-        "by_label": {
-          "cbeam_4080": {
-            "aligned": 6,
-            "rotated": 8,
-            "wrong": 0
-          },
-          "vslot_2080": {
-            "aligned": 0,
-            "rotated": 2,
-            "wrong": 0
-          },
-          "vslot_2040": {
-            "aligned": 4,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "plate_2080": {
-            "aligned": 2,
-            "rotated": 8,
-            "wrong": 0
-          },
-          "belt": {
-            "aligned": 12,
-            "rotated": 1,
-            "wrong": 0
-          },
-          "spacer_zpmm": {
-            "aligned": 0,
-            "rotated": 4,
-            "wrong": 0
-          },
-          "spacer_flat": {
-            "aligned": 0,
-            "rotated": 4,
-            "wrong": 0
-          }
-        }
-      }
-    },
-    "Codex \u00b7 CadQuery": {
-      "position": {
-        "matched": 101,
-        "total_run": 101,
-        "absolute": {
-          "median_mm": 110.3,
-          "bands_pct": {
-            "<= 0.01 mm": 0.0,
-            "<= 1.0 mm": 0.0,
-            "<= 5.0 mm": 0.0,
-            "<= 25.0 mm": 0.0,
-            "<= 50.0 mm": 9.9,
-            "<= 100.0 mm": 43.6
-          }
-        },
-        "relative": {
-          "median_mm": 47.2,
-          "bands_pct": {
-            "<= 0.01 mm": 0.0,
-            "<= 1.0 mm": 0.0,
-            "<= 5.0 mm": 4.0,
-            "<= 25.0 mm": 16.8,
-            "<= 50.0 mm": 57.4,
-            "<= 100.0 mm": 88.1
-          }
-        }
-      },
-      "gap": {
-        "interface_threshold_mm": 5.0,
-        "total_interfaces": 207,
-        "by_type": {
-          "attachment": {
-            "n": 173,
-            "median_mm": 7.8,
-            "bands_pct": {
-              "<= 0.1 mm": 35.8,
-              "<= 1.0 mm": 37.0,
-              "<= 5.0 mm": 38.7
-            }
-          },
-          "motion": {
-            "n": 21,
-            "median_mm": 33.7,
-            "bands_pct": {
-              "<= 0.1 mm": 0.0,
-              "<= 1.0 mm": 19.0,
-              "<= 5.0 mm": 28.6
-            }
-          },
-          "standoff": {
-            "n": 13,
-            "median_mm": 3.5,
-            "bands_pct": {
-              "<= 0.1 mm": 0.0,
-              "<= 1.0 mm": 7.7,
-              "<= 5.0 mm": 100.0
-            }
-          }
-        },
-        "overall": {
-          "n": 207,
-          "median_mm": 7.8,
-          "bands_pct": {
-            "<= 0.1 mm": 30.0,
-            "<= 1.0 mm": 33.3,
-            "<= 5.0 mm": 41.5
-          }
-        }
-      },
-      "orientation": {
-        "asymmetric_graded": 51,
-        "symmetric_skipped": 50,
-        "aligned_pct": 68.6,
-        "rotated_pct": 31.4,
-        "wrong_pct": 0.0,
-        "counts": {
-          "aligned": 35,
-          "rotated": 16,
-          "wrong": 0
-        },
-        "by_label": {
-          "cbeam_4080": {
-            "aligned": 8,
-            "rotated": 6,
-            "wrong": 0
-          },
-          "vslot_2080": {
-            "aligned": 0,
-            "rotated": 2,
-            "wrong": 0
-          },
-          "vslot_2040": {
-            "aligned": 4,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "plate_2080": {
-            "aligned": 6,
-            "rotated": 4,
-            "wrong": 0
-          },
-          "spacer_zpmm": {
-            "aligned": 0,
-            "rotated": 4,
-            "wrong": 0
-          },
-          "spacer_flat": {
-            "aligned": 4,
-            "rotated": 0,
-            "wrong": 0
-          },
-          "belt": {
-            "aligned": 13,
-            "rotated": 0,
-            "wrong": 0
-          }
-        }
-      }
+    "relative": {
+     "median_mm": 0.0,
+     "bands_pct": {
+      "<= 0.01 mm": 100.0,
+      "<= 1.0 mm": 100.0,
+      "<= 5.0 mm": 100.0,
+      "<= 25.0 mm": 100.0,
+      "<= 50.0 mm": 100.0,
+      "<= 100.0 mm": 100.0
+     }
     }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 0.0,
+      "bands_pct": {
+       "<= 0.1 mm": 100.0,
+       "<= 1.0 mm": 100.0,
+       "<= 5.0 mm": 100.0
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 0.0,
+      "bands_pct": {
+       "<= 0.1 mm": 100.0,
+       "<= 1.0 mm": 100.0,
+       "<= 5.0 mm": 100.0
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 0.0,
+      "bands_pct": {
+       "<= 0.1 mm": 100.0,
+       "<= 1.0 mm": 100.0,
+       "<= 5.0 mm": 100.0
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 0.0,
+     "bands_pct": {
+      "<= 0.1 mm": 100.0,
+      "<= 1.0 mm": 100.0,
+      "<= 5.0 mm": 100.0
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 100.0,
+    "rotated_pct": 0.0,
+    "wrong_pct": 0.0,
+    "counts": {
+     "aligned": 51,
+     "rotated": 0,
+     "wrong": 0
+    },
+    "by_label": {
+     "cbeam_4080": {
+      "aligned": 14,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "vslot_2040": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "plate_2080": {
+      "aligned": 10,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "vslot_2080": {
+      "aligned": 2,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "spacer_zpmm": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "spacer_flat": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 13,
+      "rotated": 0,
+      "wrong": 0
+     }
+    }
+   }
+  },
+  "Claude · CadQuery": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 118.3,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 0.0,
+      "<= 25.0 mm": 0.0,
+      "<= 50.0 mm": 4.0,
+      "<= 100.0 mm": 23.8
+     }
+    },
+    "relative": {
+     "median_mm": 49.9,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 11.9,
+      "<= 25.0 mm": 22.8,
+      "<= 50.0 mm": 50.5,
+      "<= 100.0 mm": 86.1
+     }
+    }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 0.0,
+      "bands_pct": {
+       "<= 0.1 mm": 58.4,
+       "<= 1.0 mm": 58.4,
+       "<= 5.0 mm": 59.5
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 2.01,
+      "bands_pct": {
+       "<= 0.1 mm": 9.5,
+       "<= 1.0 mm": 42.9,
+       "<= 5.0 mm": 81.0
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 3.0,
+      "bands_pct": {
+       "<= 0.1 mm": 7.7,
+       "<= 1.0 mm": 7.7,
+       "<= 5.0 mm": 69.2
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 0.0,
+     "bands_pct": {
+      "<= 0.1 mm": 50.2,
+      "<= 1.0 mm": 53.6,
+      "<= 5.0 mm": 62.3
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 51.0,
+    "rotated_pct": 49.0,
+    "wrong_pct": 0.0,
+    "counts": {
+     "aligned": 26,
+     "rotated": 25,
+     "wrong": 0
+    },
+    "by_label": {
+     "cbeam_4080": {
+      "aligned": 8,
+      "rotated": 6,
+      "wrong": 0
+     },
+     "vslot_2040": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "plate_2080": {
+      "aligned": 2,
+      "rotated": 8,
+      "wrong": 0
+     },
+     "vslot_2080": {
+      "aligned": 0,
+      "rotated": 2,
+      "wrong": 0
+     },
+     "spacer_flat": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "spacer_zpmm": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 12,
+      "rotated": 1,
+      "wrong": 0
+     }
+    }
+   }
+  },
+  "Claude · Fusion": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 96.6,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 0.0,
+      "<= 25.0 mm": 0.0,
+      "<= 50.0 mm": 4.0,
+      "<= 100.0 mm": 53.5
+     }
+    },
+    "relative": {
+     "median_mm": 47.7,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 11.9,
+      "<= 25.0 mm": 24.8,
+      "<= 50.0 mm": 50.5,
+      "<= 100.0 mm": 86.1
+     }
+    }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 0.0,
+      "bands_pct": {
+       "<= 0.1 mm": 53.8,
+       "<= 1.0 mm": 53.8,
+       "<= 5.0 mm": 63.6
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 2.0,
+      "bands_pct": {
+       "<= 0.1 mm": 0.0,
+       "<= 1.0 mm": 28.6,
+       "<= 5.0 mm": 76.2
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 3.0,
+      "bands_pct": {
+       "<= 0.1 mm": 15.4,
+       "<= 1.0 mm": 15.4,
+       "<= 5.0 mm": 69.2
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 2.0,
+     "bands_pct": {
+      "<= 0.1 mm": 45.9,
+      "<= 1.0 mm": 48.8,
+      "<= 5.0 mm": 65.2
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 47.1,
+    "rotated_pct": 52.9,
+    "wrong_pct": 0.0,
+    "counts": {
+     "aligned": 24,
+     "rotated": 27,
+     "wrong": 0
+    },
+    "by_label": {
+     "cbeam_4080": {
+      "aligned": 6,
+      "rotated": 8,
+      "wrong": 0
+     },
+     "vslot_2080": {
+      "aligned": 0,
+      "rotated": 2,
+      "wrong": 0
+     },
+     "vslot_2040": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "plate_2080": {
+      "aligned": 2,
+      "rotated": 8,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 12,
+      "rotated": 1,
+      "wrong": 0
+     },
+     "spacer_zpmm": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "spacer_flat": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     }
+    }
+   }
+  },
+  "Codex · CadQuery": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 110.3,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 0.0,
+      "<= 25.0 mm": 0.0,
+      "<= 50.0 mm": 9.9,
+      "<= 100.0 mm": 43.6
+     }
+    },
+    "relative": {
+     "median_mm": 47.2,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 4.0,
+      "<= 25.0 mm": 16.8,
+      "<= 50.0 mm": 57.4,
+      "<= 100.0 mm": 88.1
+     }
+    }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 7.8,
+      "bands_pct": {
+       "<= 0.1 mm": 35.8,
+       "<= 1.0 mm": 37.0,
+       "<= 5.0 mm": 38.7
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 33.7,
+      "bands_pct": {
+       "<= 0.1 mm": 0.0,
+       "<= 1.0 mm": 19.0,
+       "<= 5.0 mm": 28.6
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 3.5,
+      "bands_pct": {
+       "<= 0.1 mm": 0.0,
+       "<= 1.0 mm": 7.7,
+       "<= 5.0 mm": 100.0
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 7.8,
+     "bands_pct": {
+      "<= 0.1 mm": 30.0,
+      "<= 1.0 mm": 33.3,
+      "<= 5.0 mm": 41.5
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 68.6,
+    "rotated_pct": 31.4,
+    "wrong_pct": 0.0,
+    "counts": {
+     "aligned": 35,
+     "rotated": 16,
+     "wrong": 0
+    },
+    "by_label": {
+     "cbeam_4080": {
+      "aligned": 8,
+      "rotated": 6,
+      "wrong": 0
+     },
+     "vslot_2080": {
+      "aligned": 0,
+      "rotated": 2,
+      "wrong": 0
+     },
+     "vslot_2040": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "plate_2080": {
+      "aligned": 6,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "spacer_zpmm": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "spacer_flat": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 13,
+      "rotated": 0,
+      "wrong": 0
+     }
+    }
+   }
+  },
+  "Fable 5 (low) · CadQuery": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 147.6,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 0.0,
+      "<= 25.0 mm": 1.0,
+      "<= 50.0 mm": 5.9,
+      "<= 100.0 mm": 36.6
+     }
+    },
+    "relative": {
+     "median_mm": 68.0,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 21.8,
+      "<= 25.0 mm": 28.7,
+      "<= 50.0 mm": 41.6,
+      "<= 100.0 mm": 78.2
+     }
+    }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 3.0,
+      "bands_pct": {
+       "<= 0.1 mm": 45.1,
+       "<= 1.0 mm": 45.1,
+       "<= 5.0 mm": 51.4
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 13.87,
+      "bands_pct": {
+       "<= 0.1 mm": 0.0,
+       "<= 1.0 mm": 4.8,
+       "<= 5.0 mm": 14.3
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 11.1,
+      "bands_pct": {
+       "<= 0.1 mm": 23.1,
+       "<= 1.0 mm": 23.1,
+       "<= 5.0 mm": 46.2
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 7.0,
+     "bands_pct": {
+      "<= 0.1 mm": 39.1,
+      "<= 1.0 mm": 39.6,
+      "<= 5.0 mm": 47.3
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 52.9,
+    "rotated_pct": 25.5,
+    "wrong_pct": 21.6,
+    "counts": {
+     "aligned": 27,
+     "rotated": 13,
+     "wrong": 11
+    },
+    "by_label": {
+     "other": {
+      "aligned": 10,
+      "rotated": 9,
+      "wrong": 11
+     },
+     "spacer_flat": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "spacer_zpmm": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 13,
+      "rotated": 0,
+      "wrong": 0
+     }
+    }
+   },
+   "_agg": {
+    "gap_median_mm": {
+     "n": 1,
+     "median": 7.0,
+     "mean": 7.0,
+     "std": 0.0,
+     "values": [
+      7.0
+     ]
+    },
+    "gap_le1_pct": {
+     "n": 1,
+     "median": 39.6,
+     "mean": 39.6,
+     "std": 0.0,
+     "values": [
+      39.6
+     ]
+    },
+    "pos_rel_mm": {
+     "n": 1,
+     "median": 68.0,
+     "mean": 68.0,
+     "std": 0.0,
+     "values": [
+      68.0
+     ]
+    },
+    "pos_abs_mm": {
+     "n": 1,
+     "median": 147.6,
+     "mean": 147.6,
+     "std": 0.0,
+     "values": [
+      147.6
+     ]
+    },
+    "orient_aligned_pct": {
+     "n": 1,
+     "median": 52.9,
+     "mean": 52.9,
+     "std": 0.0,
+     "values": [
+      52.9
+     ]
+    }
+   },
+   "_n": 1
+  },
+  "Fable 5 (medium) · CadQuery": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 90.3,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 0.0,
+      "<= 25.0 mm": 4.0,
+      "<= 50.0 mm": 9.9,
+      "<= 100.0 mm": 62.4
+     }
+    },
+    "relative": {
+     "median_mm": 48.5,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 4.0,
+      "<= 5.0 mm": 6.9,
+      "<= 25.0 mm": 35.6,
+      "<= 50.0 mm": 52.5,
+      "<= 100.0 mm": 77.2
+     }
+    }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 6.5,
+      "bands_pct": {
+       "<= 0.1 mm": 41.0,
+       "<= 1.0 mm": 41.0,
+       "<= 5.0 mm": 46.2
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 7.0,
+      "bands_pct": {
+       "<= 0.1 mm": 9.5,
+       "<= 1.0 mm": 14.3,
+       "<= 5.0 mm": 23.8
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 0.0,
+      "bands_pct": {
+       "<= 0.1 mm": 53.8,
+       "<= 1.0 mm": 53.8,
+       "<= 5.0 mm": 61.5
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 6.5,
+     "bands_pct": {
+      "<= 0.1 mm": 38.6,
+      "<= 1.0 mm": 39.1,
+      "<= 5.0 mm": 44.9
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 58.8,
+    "rotated_pct": 21.6,
+    "wrong_pct": 19.6,
+    "counts": {
+     "aligned": 30,
+     "rotated": 11,
+     "wrong": 10
+    },
+    "by_label": {
+     "other": {
+      "aligned": 14,
+      "rotated": 6,
+      "wrong": 10
+     },
+     "spacer_flat": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "spacer_zpmm": {
+      "aligned": 4,
+      "rotated": 0,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 12,
+      "rotated": 1,
+      "wrong": 0
+     }
+    }
+   },
+   "_agg": {
+    "gap_median_mm": {
+     "n": 1,
+     "median": 6.5,
+     "mean": 6.5,
+     "std": 0.0,
+     "values": [
+      6.5
+     ]
+    },
+    "gap_le1_pct": {
+     "n": 1,
+     "median": 39.1,
+     "mean": 39.1,
+     "std": 0.0,
+     "values": [
+      39.1
+     ]
+    },
+    "pos_rel_mm": {
+     "n": 1,
+     "median": 48.5,
+     "mean": 48.5,
+     "std": 0.0,
+     "values": [
+      48.5
+     ]
+    },
+    "pos_abs_mm": {
+     "n": 1,
+     "median": 90.3,
+     "mean": 90.3,
+     "std": 0.0,
+     "values": [
+      90.3
+     ]
+    },
+    "orient_aligned_pct": {
+     "n": 1,
+     "median": 58.8,
+     "mean": 58.8,
+     "std": 0.0,
+     "values": [
+      58.8
+     ]
+    }
+   },
+   "_n": 1
+  },
+  "Fable 5 (high) · CadQuery": {
+   "position": {
+    "matched": 101,
+    "total_run": 101,
+    "absolute": {
+     "median_mm": 142.4,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 0.0,
+      "<= 5.0 mm": 0.0,
+      "<= 25.0 mm": 0.0,
+      "<= 50.0 mm": 5.9,
+      "<= 100.0 mm": 20.8
+     }
+    },
+    "relative": {
+     "median_mm": 38.1,
+     "bands_pct": {
+      "<= 0.01 mm": 0.0,
+      "<= 1.0 mm": 5.0,
+      "<= 5.0 mm": 14.9,
+      "<= 25.0 mm": 40.6,
+      "<= 50.0 mm": 53.5,
+      "<= 100.0 mm": 78.2
+     }
+    }
+   },
+   "gap": {
+    "interface_threshold_mm": 5.0,
+    "total_interfaces": 207,
+    "by_type": {
+     "attachment": {
+      "n": 173,
+      "median_mm": 2.5,
+      "bands_pct": {
+       "<= 0.1 mm": 41.0,
+       "<= 1.0 mm": 41.0,
+       "<= 5.0 mm": 50.3
+      }
+     },
+     "motion": {
+      "n": 21,
+      "median_mm": 9.0,
+      "bands_pct": {
+       "<= 0.1 mm": 9.5,
+       "<= 1.0 mm": 33.3,
+       "<= 5.0 mm": 33.3
+      }
+     },
+     "standoff": {
+      "n": 13,
+      "median_mm": 0.0,
+      "bands_pct": {
+       "<= 0.1 mm": 53.8,
+       "<= 1.0 mm": 53.8,
+       "<= 5.0 mm": 53.8
+      }
+     }
+    },
+    "overall": {
+     "n": 207,
+     "median_mm": 7.0,
+     "bands_pct": {
+      "<= 0.1 mm": 38.6,
+      "<= 1.0 mm": 41.1,
+      "<= 5.0 mm": 48.8
+     }
+    }
+   },
+   "orientation": {
+    "asymmetric_graded": 51,
+    "symmetric_skipped": 50,
+    "aligned_pct": 49.0,
+    "rotated_pct": 23.5,
+    "wrong_pct": 27.5,
+    "counts": {
+     "aligned": 25,
+     "rotated": 12,
+     "wrong": 14
+    },
+    "by_label": {
+     "other": {
+      "aligned": 13,
+      "rotated": 3,
+      "wrong": 14
+     },
+     "spacer_flat": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "spacer_zpmm": {
+      "aligned": 0,
+      "rotated": 4,
+      "wrong": 0
+     },
+     "belt": {
+      "aligned": 12,
+      "rotated": 1,
+      "wrong": 0
+     }
+    }
+   },
+   "_agg": {
+    "gap_median_mm": {
+     "n": 1,
+     "median": 7.0,
+     "mean": 7.0,
+     "std": 0.0,
+     "values": [
+      7.0
+     ]
+    },
+    "gap_le1_pct": {
+     "n": 1,
+     "median": 41.1,
+     "mean": 41.1,
+     "std": 0.0,
+     "values": [
+      41.1
+     ]
+    },
+    "pos_rel_mm": {
+     "n": 1,
+     "median": 38.1,
+     "mean": 38.1,
+     "std": 0.0,
+     "values": [
+      38.1
+     ]
+    },
+    "pos_abs_mm": {
+     "n": 1,
+     "median": 142.4,
+     "mean": 142.4,
+     "std": 0.0,
+     "values": [
+      142.4
+     ]
+    },
+    "orient_aligned_pct": {
+     "n": 1,
+     "median": 49.0,
+     "mean": 49.0,
+     "std": 0.0,
+     "values": [
+      49.0
+     ]
+    }
+   },
+   "_n": 1
   }
+ }
 }

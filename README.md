@@ -31,35 +31,41 @@ tight standard (see [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md)):
 
 Buildability stays on as a secondary gate.
 
-## First results
+## Results — the board so far
 
-Three frontier AI workflows each built one machine of about 100 parts, graded
-identically.
+Every run builds the same machine of about 100 parts from the same blind kit
+and is graded identically. The board now spans frontier hosted models down to
+the local open-weight anchor, ranked by GAP median.
 
-| Model · tool | GAP median | ORIENT aligned | POS relative median |
-|---|---|---|---|
-| Claude Opus 4.7 · CadQuery | **0.0 mm** | 51% | 49.9 mm |
-| Claude Opus 4.7 · Fusion | 2.0 mm | 47% | 47.7 mm |
-| GPT-5 Codex · CadQuery | 7.8 mm | **69%** | 47.2 mm |
-| *Reference (answer key)* | *0.0 mm* | *100%* | *0.0 mm* |
+| # | Model · tool | Effort / cohort | GAP median | ORIENT aligned | POS relative median |
+|---|---|---|---|---|---|
+| 1 | Claude Opus 4.7 · CadQuery | max | **0.0 mm** | 51% | 49.9 mm |
+| 2 | Claude Opus 4.7 · Fusion | max | 2.0 mm | 47% | 47.7 mm |
+| 3 | Claude Fable 5 · CadQuery | medium | 6.5 mm | 59% | 48.5 mm |
+| 4 | Claude Fable 5 · CadQuery | low | 7.0 mm | 53% | 68.0 mm |
+| 5 | Claude Fable 5 · CadQuery | high | 7.0 mm | 49% | **38.1 mm** |
+| 6 | GPT-5 Codex · CadQuery | max | 7.8 mm | **69%** | 47.2 mm |
+| 7 | Local · qwen3-coder-next 80B (n=5) | mechanics v2 | 308 ± 96 mm | 30% | 104 ± 43 mm |
+| 8 | Local · qwen3-coder-next 80B (n=5) | lean v5 | 410 ± 72 mm | 29% | 353 ± 157 mm |
+| · | *Reference (answer key)* | | *0.0 mm* | *100%* | *0.0 mm* |
+
+![MARB v0.9 scoreboard](results/figures/marb_scoreboard.png)
 
 None of these results is buildable yet. The target is a machine that could be
-bolted together as is, and that is what the metrics measure. Full write-up:
+bolted together as is, and that is what the metrics measure. Notable in the
+Claude Fable 5 effort sweep: medium effort beat both low and high on GAP and
+ORIENT, while high effort produced the best relative positioning on the whole
+board (38.1 mm). Frontier write-ups:
 [`results/comparison_claude_tracks.md`](results/comparison_claude_tracks.md) and
 [`results/prompt_framework_findings.md`](results/prompt_framework_findings.md).
 
 ## The local-anchor floor
 
-The frontier track shows the current top end. The local-anchor floor shows the
-current low end. It is a single 80B open-weight coder, `qwen3-coder-next`,
-text-only, running on one local AI supercomputer and building the same machine
-blind. This is the model that a shop with no internet and no hosted API could
-run on its own hardware.
-
-| Cell (n = 5) | GAP median | ORIENT aligned | POS relative median |
-|---|---|---|---|
-| Local · qwen3-coder-next (mechanics v2) | 308 ± 96 mm | 30% | 104 ± 43 mm |
-| Local · qwen3-coder-next (lean v5) | 410 ± 72 mm | 29% | 353 ± 157 mm |
+The frontier track shows the current top end. The local-anchor floor (rows 7
+and 8 above) shows the current low end. It is a single 80B open-weight coder,
+`qwen3-coder-next`, text-only, running on one local AI supercomputer and
+building the same machine blind. This is the model that a shop with no internet
+and no hosted API could run on its own hardware.
 
 The model reliably imports the right parts, but it places them loosely rather
 than as a jointed frame. Parts land 100 to 400 mm off on a 2000 mm machine. The
