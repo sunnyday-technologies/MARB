@@ -17,8 +17,10 @@ DATA = Path(sys.argv[1]) if len(sys.argv) > 1 else \
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else \
     REPO / "results" / "figures" / "hero_score_vs_time.png"
 
-# build time per run (minutes), from run logs (see results/comparison_claude_tracks.md)
-TIMES = {"Claude · CadQuery": 48.8, "Claude · Fusion": 33.7, "Codex · CadQuery": 13.0}
+# build time per run (minutes), from run logs (results/marb_runs.json)
+TIMES = {"Claude · CadQuery": 48.8, "Claude · Fusion": 33.7, "Codex · CadQuery": 13.0,
+         "Fable 5 (low) · CadQuery": 38.0, "Fable 5 (medium) · CadQuery": 38.7,
+         "Fable 5 (high) · CadQuery": 44.7, "Fable 5 (ultra) · CadQuery": 83.0}
 HIGHLIGHT = "Claude · CadQuery"   # the gap-leader gets the green marker
 
 apply_base()
@@ -61,19 +63,29 @@ for name, t in TIMES.items():
     ax.scatter([t], [g], s=320, color=c, edgecolor=edge, linewidth=2.5, zorder=4)
     disp = {"Claude · CadQuery": "Claude Opus 4.7 / CadQuery",
             "Claude · Fusion":   "Claude Opus 4.7 / Fusion",
-            "Codex · CadQuery":  "GPT-5 Codex / CadQuery"}.get(name, name.replace(chr(0xb7), '/'))
+            "Codex · CadQuery":  "GPT-5 Codex / CadQuery",
+            "Fable 5 (low) · CadQuery":    "Claude Fable 5 / low",
+            "Fable 5 (medium) · CadQuery": "Claude Fable 5 / medium",
+            "Fable 5 (high) · CadQuery":   "Claude Fable 5 / high",
+            "Fable 5 (ultra) · CadQuery":  "Claude Fable 5 / ultra"}.get(name, name.replace(chr(0xb7), '/'))
     n = runs[name].get("_n")
     spread = f"  ±{std:.1f}" if std else ""
     tag = f"  (n={n})" if n and n > 1 else ""
+    # per-point label nudges so the denser board stays clean
+    NUDGE = {"Fable 5 (low) · CadQuery":    (-14, -44, "right"),
+             "Fable 5 (medium) · CadQuery": (-14, 16, "right"),
+             "Fable 5 (high) · CadQuery":   (16, -10, "left"),
+             "Fable 5 (ultra) · CadQuery":  (-14, 14, "right"),
+             "Claude · Fusion":             (-14, 14, "right")}
     right = t > 0.62 * 60                          # flip label left near the right edge
+    dx, dy, ha = NUDGE.get(name, (-14 if right else 14, 14, "right" if right else "left"))
     ax.annotate(f"{disp}{tag}\n{g:.1f} mm{spread}  ·  {t:.0f} min",
                 (t, g), textcoords="offset points",
-                xytext=(-14 if right else 14, 14),
-                ha="right" if right else "left",
+                xytext=(dx, dy), ha=ha,
                 fontsize=13, color=COLORS["ink"], weight="bold", va="bottom")
 
 _gaps = [_gap(n)[0] for n in TIMES if n in runs] or [0]
-ax.set_xlim(0, 60); ax.set_ylim(-0.6, max(10, max(_gaps) + 1.5))
+ax.set_xlim(0, 92); ax.set_ylim(-0.6, max(10, max(_gaps) + 1.5))
 ax.invert_yaxis()                                 # lower is better, put 0 at top visually
 # direction cues: faster = less time = LEFT (the old "faster ->" pointed the wrong way)
 ax.set_xlabel("← faster          Build time (minutes)          slower →",
@@ -84,7 +96,7 @@ for s in ("top", "right"): ax.spines[s].set_visible(False)
 for s in ("left", "bottom"): ax.spines[s].set_color("#c3ccd4")
 ax.grid(True, color=COLORS["grid"], lw=1); ax.set_axisbelow(True)
 
-fig.text(0.10, 0.905, "Three AIs build a 100-part machine: gap correctness vs speed",
+fig.text(0.10, 0.905, "Seven frontier builds: gap correctness vs speed",
          fontproperties=NUL, fontsize=18, color=COLORS["navy"])
 fig.text(0.10, 0.05,
          "GAP = error vs the answer key's intended interface gap. Lower is closer to correct.",
