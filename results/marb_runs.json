@@ -542,9 +542,9 @@
     "started_utc": "2026-06-10T03:40:19Z"
    },
    "tokens": {
-    "capture_status": "unavailable",
-    "billed": null,
-    "output": null
+    "capture_status": "recovered_from_transcript",
+    "billed": 4244209,
+    "output": 329876
    },
    "effort": {
     "attempts": 3,
@@ -577,9 +577,9 @@
     "started_utc": "2026-06-10T05:33:20Z"
    },
    "tokens": {
-    "capture_status": "unavailable",
-    "billed": null,
-    "output": null
+    "capture_status": "recovered_from_transcript",
+    "billed": 4689495,
+    "output": 374198
    },
    "effort": {
     "attempts": 3,
@@ -612,9 +612,9 @@
     "started_utc": "2026-06-10T06:16:57Z"
    },
    "tokens": {
-    "capture_status": "unavailable",
-    "billed": null,
-    "output": null
+    "capture_status": "recovered_from_transcript",
+    "billed": 18461325,
+    "output": 442313
    },
    "effort": {
     "attempts": 4,
@@ -647,11 +647,10 @@
     "started_utc": "2026-06-11T12:22:51Z"
    },
    "tokens": {
-    "capture_status": "partial",
-    "billed": null,
-    "output": null,
-    "subagent_tokens": 497000,
-    "notes": "Host does not expose main-loop totals; verification subagents alone ~497k (416,814 audit workflow + ~80k focused re-verify)."
+    "capture_status": "recovered_from_transcript",
+    "billed": 22999981,
+    "output": 614207,
+    "notes": "Recovered from the Claude Code session transcript (per-message usage summed; includes the ~497k verification-subagent tokens)."
    },
    "effort": {
     "attempts": 8,
