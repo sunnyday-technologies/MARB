@@ -41,6 +41,11 @@ BODY = "Segoe UI"
 # article readability — small charts were hard to read) ----------------------
 SIZES = dict(big=42, title=28, subtitle=18, axis=19, tick=16, label=17, note=15)
 
+# Padded white backing for in-chart text labels. ALWAYS put this behind point
+# labels/annotations so text never collides with gridlines, target lines, or
+# neighboring marks — every label gets its own legibility border.
+LABEL_BBOX = dict(boxstyle="round,pad=0.40", facecolor="white", edgecolor="none", alpha=0.92)
+
 def apply_base():
     """Set legible, brand-consistent matplotlib defaults. Call once per figure."""
     matplotlib.rcParams.update({

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "grader"))
-from brand_figs import COLORS, NUL, SIZES, apply_base   # noqa: E402
+from brand_figs import COLORS, NUL, SIZES, LABEL_BBOX, apply_base   # noqa: E402
 
 DATA = Path(sys.argv[1]) if len(sys.argv) > 1 else \
     REPO / "results" / "marb_v0_9_grades.json"
@@ -36,8 +36,9 @@ ax = fig.add_axes([0.10, 0.155, 0.855, 0.66]); ax.set_facecolor(COLORS["white"])
 
 # target line at 0 mm (the answer key)
 ax.axhline(0, ls=(0, (7, 5)), color=COLORS["green"], lw=2.8, zorder=1)
-ax.text(2.5, 0.18, "0 mm = the answer key (target)",
-        color="#3d5a00", fontsize=14, ha="left", va="bottom", weight="bold")
+ax.text(2.5, 0.45, "0 mm = the answer key (target)",
+        color="#3d5a00", fontsize=14, ha="left", va="top", weight="bold",
+        bbox=LABEL_BBOX, zorder=6)
 
 # gap value + spread per cell: `_agg` (stats schema) when present, else flat dot.
 def _gap(name):
@@ -82,7 +83,8 @@ for name, t in TIMES.items():
     ax.annotate(f"{disp}{tag}\n{g:.1f} mm{spread}  ·  {t:.0f} min",
                 (t, g), textcoords="offset points",
                 xytext=(dx, dy), ha=ha,
-                fontsize=13, color=COLORS["ink"], weight="bold", va="bottom")
+                fontsize=13, color=COLORS["ink"], weight="bold", va="bottom",
+                bbox=LABEL_BBOX, zorder=5)
 
 _gaps = [_gap(n)[0] for n in TIMES if n in runs] or [0]
 ax.set_xlim(0, 92); ax.set_ylim(-0.6, max(10, max(_gaps) + 1.5))
