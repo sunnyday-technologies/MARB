@@ -12,7 +12,7 @@ from matplotlib.patches import Rectangle as _Rect
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "grader"))
-from brand_figs import COLORS, NUL, SIZES, apply_base   # noqa: E402
+from brand_figs import COLORS, NUL, SIZES, LABEL_BBOX, apply_base   # noqa: E402
 
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else \
     REPO / "results" / "figures" / "marb_token_efficiency.png"
@@ -23,23 +23,24 @@ RUNS = [
     (34.2, 2.0, "Claude Opus 4.7 / Fusion\n34.2M  ·  2.0 mm",     -14, 12,  "right"),
     (23.0, 3.0, "Claude Fable 5 / ultra\n23.0M  ·  3.0 mm",        14, 10,  "left"),
     (18.5, 7.0, "Claude Fable 5 / high\n18.5M  ·  7.0 mm",         14, 10,  "left"),
-    ( 4.7, 6.5, "Claude Fable 5 / medium\n4.7M  ·  6.5 mm",        16, -4,  "left"),
-    ( 4.2, 7.0, "Claude Fable 5 / low\n4.2M  ·  7.0 mm",          -10, -40, "left"),
+    ( 4.7, 6.5, "Claude Fable 5 / medium\n4.7M  ·  6.5 mm",        14, 16,  "left"),
+    ( 4.2, 7.0, "Claude Fable 5 / low\n4.2M  ·  7.0 mm",           -4, -58, "left"),
 ]
 HIGHLIGHT = "medium"   # the value corner gets the green marker
 
 apply_base()
-W, H = 1400, 820
+W, H = 1400, 860
 fig = plt.figure(figsize=(W/100, H/100), dpi=100)
 fig.patch.set_facecolor(COLORS["navy"])                       # navy edge band
 fig.add_artist(_Rect((0.013, 0.016), 0.974, 0.968, transform=fig.transFigure,
                      facecolor=COLORS["white"], zorder=0))    # white interior
-ax = fig.add_axes([0.085, 0.175, 0.875, 0.63]); ax.set_facecolor(COLORS["white"])
+ax = fig.add_axes([0.085, 0.185, 0.875, 0.60]); ax.set_facecolor(COLORS["white"])
 
 # target line at 0 mm (the answer key)
 ax.axhline(0, ls=(0, (7, 5)), color=COLORS["green"], lw=2.8, zorder=1)
-ax.text(0.8, 0.38, "0 mm = the answer key (target)",
-        color="#3d5a00", fontsize=14, ha="left", va="top", weight="bold")
+ax.text(0.8, 0.55, "0 mm = the answer key (target)",
+        color="#3d5a00", fontsize=14, ha="left", va="top", weight="bold",
+        bbox=LABEL_BBOX, zorder=6)
 
 for tokens, gap, label, dx, dy, ha in RUNS:
     is_best = "medium" in label
@@ -48,15 +49,17 @@ for tokens, gap, label, dx, dy, ha in RUNS:
     ax.scatter([tokens], [gap], s=340, color=c, edgecolor=edge, linewidth=2.5, zorder=4)
     ax.annotate(label, (tokens, gap), textcoords="offset points",
                 xytext=(dx, dy), ha=ha, fontsize=13, color=COLORS["ink"],
-                weight="bold", va="bottom", zorder=5)
+                weight="bold", va="bottom", zorder=5, bbox=LABEL_BBOX)
 
 # the value corner cue
-ax.annotate("the value corner:\n~1/5 of the Opus bill", (4.7, 6.5),
-            textcoords="offset points", xytext=(38, -56), fontsize=13,
+ax.annotate("the value corner:\n~1/5 of the Opus bill", (4.9, 6.6),
+            textcoords="offset points", xytext=(96, -10), fontsize=13,
             color="#3d5a00", weight="bold", ha="left", va="top",
-            arrowprops=dict(arrowstyle="-", color="#3d5a00", lw=1.6))
+            bbox=LABEL_BBOX, zorder=6,
+            arrowprops=dict(arrowstyle="-", color="#3d5a00", lw=1.6,
+                            shrinkA=16, shrinkB=14))
 
-ax.set_xlim(0, 37); ax.set_ylim(-0.6, 8.6)
+ax.set_xlim(0, 38); ax.set_ylim(-1.1, 9.0)
 ax.invert_yaxis()                                  # lower GAP is better -> top
 ax.set_xlabel("← cheaper          Billed tokens (millions)          costlier →",
               fontsize=SIZES["axis"], color=COLORS["ink"])
@@ -66,8 +69,9 @@ for s in ("top", "right"): ax.spines[s].set_visible(False)
 for s in ("left", "bottom"): ax.spines[s].set_color("#c3ccd4")
 ax.grid(True, color=COLORS["grid"], lw=1); ax.set_axisbelow(True)
 
-fig.text(0.085, 0.905, "What a millimeter costs: token bill vs GAP, six frontier builds",
-         fontproperties=NUL, fontsize=18, color=COLORS["navy"])
+fig.text(0.085, 0.915, "THE ANGRY MILLIMETER", fontproperties=NUL, fontsize=24, color=COLORS["navy"])
+fig.text(0.085, 0.868, "What tokens cost today for AI-driven CAD assembly",
+         fontsize=16, color=COLORS["ink_dim"])
 fig.text(0.085, 0.085,
          "Token bills recovered from session transcripts.  High effort billed 3.9× medium for a worse score.",
          fontsize=SIZES["note"], color=COLORS["ink_dim"], style="italic")
