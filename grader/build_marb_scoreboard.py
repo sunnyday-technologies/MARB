@@ -25,6 +25,14 @@ apply_base()
 runs = json.loads(DATA.read_text(encoding="utf-8"))["runs"]
 ref = "Reference (self / ceiling)"
 
+# merge the local-anchor cells (graded with the same rubric) into the board,
+# so the ranking shows frontier and local on one ladder
+LOCAL = REPO / "results" / "marb_local_grades.json"
+if len(sys.argv) <= 1 and LOCAL.exists():
+    for name, cell in json.loads(LOCAL.read_text(encoding="utf-8"))["runs"].items():
+        if name != ref:
+            runs[name] = cell
+
 def _drill(d, path):
     for k in path: d = d.get(k) if isinstance(d, dict) else None
     return d
@@ -55,7 +63,7 @@ fig.add_artist(Rectangle((0, 1-hh-0.013), 1, 0.013, transform=fig.transFigure, f
 fig.text(0.035, 1-hh*0.38, "MARB", fontproperties=NUL, fontsize=36, color=COLORS["white"], va="center")
 fig.text(0.19, 1-hh*0.38, "MECHANICAL ASSEMBLY READINESS BENCHMARK",
          fontproperties=NUL, fontsize=14, color=COLORS["green"], va="center")
-fig.text(0.037, 1-hh*0.79, "v0.9 first results:  three AIs, one 100-part machine, three metrics",
+fig.text(0.037, 1-hh*0.79, f"v0.9 results:  {len(runs) - 1} AI builds, frontier to local, one 100-part machine, three metrics",
          fontsize=14, color="#cfe0ee", va="center")
 
 # ---- leaderboard table ----
@@ -86,28 +94,48 @@ def num(x, y, v, std, unit, fs, best, dec=1):
     col = COLORS["green_dk"] if best else COLORS["ink"]
     fig.text(x, y, fmt(v, unit, dec), fontsize=fs, weight="bold", ha="right", color=col)
     if std:
-        fig.text(x, y - 0.037, f"±{std:.{dec}f}", fontsize=11.5, ha="right", color=COLORS["grey"])
+        fig.text(x, y - sub_dy, f"±{std:.{dec}f}", fontsize=max(8.5, 11.5*sc),
+                 ha="right", color=COLORS["grey"])
 
-y = ytop - 0.10
+# row pitch and type scale compress when the board grows past 4 AI rows
+step = 0.11 if len(order_ai) <= 4 else (ytop - 0.24) / len(order_ai)
+sc = min(1.0, step / 0.11)
+sub_dy = 0.037 * sc
+
+y = ytop - 0.10 * sc
 for rank, name in enumerate(order_ai, 1):
     gm, gs = _val_std(name, "gap_median_mm", ["gap","overall","median_mm"])
     oa, os_ = _val_std(name, "orient_aligned_pct", ["orientation","aligned_pct"])
     pm, ps = _val_std(name, "pos_rel_mm", ["position","relative","median_mm"])
     n = runs[name].get("_n")
-    fig.text(x_rank, y, str(rank), fontsize=30, weight="bold", color=COLORS["navy"])
+    fig.text(x_rank, y, str(rank), fontsize=30*sc, weight="bold", color=COLORS["navy"])
     disp = {"Claude · CadQuery": "Claude Opus 4.7  ·  CadQuery",
             "Claude · Fusion":   "Claude Opus 4.7  ·  Fusion",
-            "Codex · CadQuery":  "GPT-5 Codex  ·  CadQuery"}.get(name, name.replace(" · ", "  ·  "))
-    fig.text(x_name, y, disp, fontsize=15, color=COLORS["ink"])
-    if n and n > 1:
-        fig.text(x_name, y - 0.037, f"median of {n} runs", fontsize=11, color=COLORS["grey"], style="italic")
-    num(x_gap, y, gm, gs, " mm", 22, name == best_gap)
-    num(x_ori, y, oa, os_, "%", 22, name == best_ori, dec=0)
-    num(x_pos, y, pm, ps, " mm", 18, name == best_pos)
-    y -= 0.11
+            "Codex · CadQuery":  "GPT-5 Codex  ·  CadQuery",
+            "Fable 5 (low) · CadQuery":    "Claude Fable 5  ·  CadQuery",
+            "Fable 5 (medium) · CadQuery": "Claude Fable 5  ·  CadQuery",
+            "Fable 5 (high) · CadQuery":   "Claude Fable 5  ·  CadQuery",
+            "Local · qwen3-coder-next (mechanics v2)": "qwen3-coder-next 80B  ·  CadQuery",
+            "Local · qwen3-coder-next (lean v5)":      "qwen3-coder-next 80B  ·  CadQuery"}.get(name, name.replace(" · ", "  ·  "))
+    fig.text(x_name, y, disp, fontsize=max(13, 15*sc), color=COLORS["ink"])
+    if name.startswith("Local · "):
+        cohort = name.split("(")[1].split(")")[0]
+        fig.text(x_name, y - sub_dy, f"local open-weight · {cohort} · median of {n} runs",
+                 fontsize=10.5, color=COLORS["grey"], style="italic")
+    elif n and n > 1:
+        fig.text(x_name, y - sub_dy, f"median of {n} runs", fontsize=10.5, color=COLORS["grey"], style="italic")
+    elif name.startswith("Fable 5 ("):
+        eff = name.split("(")[1].split(")")[0]
+        fig.text(x_name, y - sub_dy, f"effort: {eff}", fontsize=10.5, color=COLORS["grey"], style="italic")
+    elif name in ("Claude · CadQuery", "Claude · Fusion", "Codex · CadQuery"):
+        fig.text(x_name, y - sub_dy, "effort: max", fontsize=10.5, color=COLORS["grey"], style="italic")
+    num(x_gap, y, gm, gs, " mm", 22*sc, name == best_gap)
+    num(x_ori, y, oa, os_, "%", 22*sc, name == best_ori, dec=0)
+    num(x_pos, y, pm, ps, " mm", max(14, 18*sc), name == best_pos)
+    y -= step
 
 # reference row (light, "target / answer key")
-fig.add_artist(Rectangle((0.04, y+0.06), 0.92, 0.0014, transform=fig.transFigure, facecolor="#dde3e8"))
+fig.add_artist(Rectangle((0.04, y+step*0.35), 0.92, 0.0014, transform=fig.transFigure, facecolor="#dde3e8"))
 y2 = y + 0.005
 fig.text(x_rank, y2, "·", fontsize=18, color=COLORS["grey"])
 fig.text(x_name, y2, "Reference (answer key)", fontsize=14, color=COLORS["grey"], style="italic")
