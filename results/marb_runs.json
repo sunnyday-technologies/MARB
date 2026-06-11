@@ -1,199 +1,691 @@
 {
-  "_comment": "MARB run registry + provenance manifest. SINGLE SOURCE OF TRUTH for which runs exist and their full version traceability. marb_grade_all.py --manifest reads this: it groups runs by `cell`, grades each `step`, aggregates per cell, and carries `toolchain` + per-seed provenance into marb_v0_9_stats.json. New runs: append an entry (drop the STEP anywhere and point `step` at it, or use the runs/<model>_<driver>_<seed>/ convention). Nothing auto-populates this — a run is a human/agent CAD session; register it here.",
-  "schema": "marb_runs.v1",
-  "marb_scoring_version": "v0.9",
-  "reference_step": "tasks/m3_crete/m3_reference_round1.step",
-  "spec": "tasks/m3_crete/m3_reference_assembly.yaml",
-
-  "grader_toolchain": {
-    "_comment": "Versions of the GRADER stack (the product). Same for every run unless overridden per-run. cadclaw bumped 0.8.0 -> 0.9.0 on 2026-05-31: inventory.sig (the basis for every v0.9 positional metric) is BYTE-IDENTICAL between the two, so all v0.9 grades stay mutually comparable; 0.9.0 only ADDS assembly_compiler (native-track inventory/interference/floating gates).",
-    "cadclaw": "0.9.0",
-    "marb_scoring": "v0.9",
-    "step_io": "CadQuery (Python) 2.7.0 / OCP-OpenCASCADE",
-    "fea_beam_frame": "PyNiteFEA 2.4.1",
-    "fea_solid_mesh": "CalculiX 2.23.0 (not exercised by v0.9 positional metrics)"
+ "_comment": "MARB run registry + provenance manifest. SINGLE SOURCE OF TRUTH for which runs exist and their full version traceability. marb_grade_all.py --manifest reads this: it groups runs by `cell`, grades each `step`, aggregates per cell, and carries `toolchain` + per-seed provenance into marb_v0_9_stats.json. New runs: append an entry (drop the STEP anywhere and point `step` at it, or use the runs/<model>_<driver>_<seed>/ convention). Nothing auto-populates this — a run is a human/agent CAD session; register it here.",
+ "schema": "marb_runs.v1",
+ "marb_scoring_version": "v0.9",
+ "reference_step": "tasks/m3_crete/m3_reference_round1.step",
+ "spec": "tasks/m3_crete/m3_reference_assembly.yaml",
+ "grader_toolchain": {
+  "_comment": "Versions of the GRADER stack (the product). Same for every run unless overridden per-run. cadclaw bumped 0.8.0 -> 0.9.0 on 2026-05-31: inventory.sig (the basis for every v0.9 positional metric) is BYTE-IDENTICAL between the two, so all v0.9 grades stay mutually comparable; 0.9.0 only ADDS assembly_compiler (native-track inventory/interference/floating gates).",
+  "cadclaw": "0.9.0",
+  "marb_scoring": "v0.9",
+  "step_io": "CadQuery (Python) 2.7.0 / OCP-OpenCASCADE",
+  "fea_beam_frame": "PyNiteFEA 2.4.1",
+  "fea_solid_mesh": "CalculiX 2.23.0 (not exercised by v0.9 positional metrics)"
+ },
+ "harness_environment": {
+  "_comment": "Operator harness + kit for the current cohort. Each run records its own client and kit_version. Blind runs use a clean, memoryless context so the answer key cannot leak.",
+  "client": "agentic coding assistant driving the CAD tool",
+  "kit_version": "v1.3 (kits/m3_fusion_blind_kit_v1.3.zip)"
+ },
+ "runs": [
+  {
+   "cell": "Opus 4.7 · CadQuery",
+   "seed": "01",
+   "model": {
+    "name": "Claude Opus 4.7",
+    "id": "claude-opus-4-7",
+    "context": "1M",
+    "host": "Claude Code"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/claude-opus-4-7_cadquery_01/export.step",
+   "run_log": "runs/claude-opus-4-7_cadquery_01/run_log.yaml",
+   "timing": {
+    "elapsed_minutes": 48.8,
+    "started_utc": "2026-05-26T05:02:53Z"
+   },
+   "tokens": {
+    "capture_status": "recovered_from_transcript",
+    "billed": 22100000,
+    "output": 321000
+   },
+   "effort": {
+    "attempts": 9,
+    "retries": 2,
+    "corrections": 4,
+    "human_interventions": 0
+   }
   },
-
-  "harness_environment": {
-    "_comment": "Operator harness + kit for the current cohort. Each run records its own client and kit_version. Blind runs use a clean, memoryless context so the answer key cannot leak.",
-    "client": "agentic coding assistant driving the CAD tool",
-    "kit_version": "v1.3 (kits/m3_fusion_blind_kit_v1.3.zip)"
+  {
+   "cell": "Opus 4.7 · Fusion",
+   "seed": "01",
+   "model": {
+    "name": "Claude Opus 4.7",
+    "id": "claude-opus-4-7",
+    "host": "Claude Code"
+   },
+   "driver": {
+    "tool": "Autodesk Fusion",
+    "version": "2702.1.58",
+    "interface": "Fusion MCP"
+   },
+   "step": "runs/claude-opus-4-7_fusion_01/export.step",
+   "run_log": "runs/claude-opus-4-7_fusion_01/run_log.yaml",
+   "timing": {
+    "elapsed_minutes": 33.7,
+    "started_utc": "2026-05-26T05:58:33Z"
+   },
+   "tokens": {
+    "capture_status": "recovered_from_transcript",
+    "billed": 34200000,
+    "output": 1150000
+   },
+   "effort": {
+    "attempts": 12,
+    "retries": 1,
+    "corrections": 4,
+    "human_interventions": 0
+   }
   },
-
-  "runs": [
-    {
-      "cell": "Opus 4.7 · CadQuery",
-      "seed": "01",
-      "model": {"name": "Claude Opus 4.7", "id": "claude-opus-4-7", "context": "1M", "host": "Claude Code"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/claude-opus-4-7_cadquery_01/export.step",
-      "run_log": "runs/claude-opus-4-7_cadquery_01/run_log.yaml",
-      "timing": {"elapsed_minutes": 48.8, "started_utc": "2026-05-26T05:02:53Z"},
-      "tokens": {"capture_status": "recovered_from_transcript", "billed": 22100000, "output": 321000},
-      "effort": {"attempts": 9, "retries": 2, "corrections": 4, "human_interventions": 0}
-    },
-    {
-      "cell": "Opus 4.7 · Fusion",
-      "seed": "01",
-      "model": {"name": "Claude Opus 4.7", "id": "claude-opus-4-7", "host": "Claude Code"},
-      "driver": {"tool": "Autodesk Fusion", "version": "2702.1.58", "interface": "Fusion MCP"},
-      "step": "runs/claude-opus-4-7_fusion_01/export.step",
-      "run_log": "runs/claude-opus-4-7_fusion_01/run_log.yaml",
-      "timing": {"elapsed_minutes": 33.7, "started_utc": "2026-05-26T05:58:33Z"},
-      "tokens": {"capture_status": "recovered_from_transcript", "billed": 34200000, "output": 1150000},
-      "effort": {"attempts": 12, "retries": 1, "corrections": 4, "human_interventions": 0}
-    },
-    {
-      "cell": "GPT-5 Codex · CadQuery",
-      "seed": "01",
-      "model": {"name": "GPT-5 Codex", "id": "gpt-5-codex", "host": "OpenAI Codex desktop"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "viewer_helper": "cadclaw 0.8.0"},
-      "step": "runs/gpt-5-codex_cadquery_01/export.step",
-      "run_log": "runs/gpt-5-codex_cadquery_01/run_log.yaml",
-      "timing": {"elapsed_minutes": 13.0, "started_utc": "2026-05-26T07:04:44Z"},
-      "tokens": {"capture_status": "unavailable", "billed": null, "output": null},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 1, "human_interventions": 0}
-    },
-
-    {
-      "_comment": "LOCAL-ANCHOR TRACK (cell=local_anchor): qwen3-coder-next 79.7B/3B-active, Q4, TEXT-ONLY, on a local AI supercomputer (Ollama), 8-turn cap, blind. The capability FLOOR. Builds import the right kit parts but place them loosely (GAP ~308 mm, ORIENT ~30%) -- NOT a jointed frame. See results/local_anchor_study.md + results/figures/marb_local_3panel.png. Two prompt cohorts graded n=5 each; positional grades in results/marb_local_grades.json (aggregate via marb_grade_all.py --config). Native-track gates (inventory/interference/floating) in results/marb_native_grades.json (grade_native_step.py): both best builds FAIL inventory (wrong part mix) + interference (20-28 clipping pairs), PASS floating (parts piled, not detached). See results/local_anchor_study.md.",
-      "cell": "Local · qwen3-coder-next (mechanics v2)",
-      "seed": "06",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "params": "79.7B / 3B-active", "quant": "Q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer (single unified-memory box)"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_06/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_06/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_mechanics_v2",
-      "blind_method": "staged kit + frozen brief only; no reference solution, no project memory; harness fairness wall",
-      "builder_metrics": {"loadable": true, "solids": 82, "turns": 8},
-      "timing": {"elapsed_minutes": 3.51},
-      "tokens": {"capture_status": "available", "prompt": 57440, "completion": 8032, "total": 65472},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (mechanics v2)", "seed": "07",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_07/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_07/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_mechanics_v2",
-      "builder_metrics": {"loadable": true, "solids": 98, "turns": 8},
-      "timing": {"elapsed_minutes": 4.45},
-      "tokens": {"capture_status": "available", "prompt": 70106, "completion": 10511, "total": 80617},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (mechanics v2)", "seed": "08",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_08/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_08/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_mechanics_v2",
-      "builder_metrics": {"loadable": true, "solids": 110, "turns": 8},
-      "timing": {"elapsed_minutes": 4.54},
-      "tokens": {"capture_status": "available", "prompt": 53103, "completion": 10526, "total": 63629},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (mechanics v2)", "seed": "09",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_09/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_09/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_mechanics_v2",
-      "builder_metrics": {"loadable": true, "solids": 103, "turns": 8},
-      "timing": {"elapsed_minutes": 4.87},
-      "tokens": {"capture_status": "available", "prompt": 50084, "completion": 11238, "total": 61322},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (mechanics v2)", "seed": "10",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_10/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_10/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_mechanics_v2",
-      "builder_metrics": {"loadable": true, "solids": 37, "turns": 8},
-      "timing": {"elapsed_minutes": 4.06},
-      "tokens": {"capture_status": "available", "prompt": 48171, "completion": 9354, "total": 57525},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-
-    {
-      "_comment": "Lean v5 cohort: sharpened, failure-targeted prompt (harness/cadquery_lean_v5.md). The recommended local default -- best buildability/spiral-free -- but places parts LESS accurately than mechanics v2 (buildability != placement accuracy).",
-      "cell": "Local · qwen3-coder-next (lean v5)", "seed": "26",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_26/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_26/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_lean_v5",
-      "builder_metrics": {"loadable": true, "solids": 102, "turns": 8},
-      "timing": {"elapsed_minutes": 8.32},
-      "tokens": {"capture_status": "available", "prompt": 81582, "completion": 18739, "total": 100321},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (lean v5)", "seed": "27",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_27/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_27/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_lean_v5",
-      "builder_metrics": {"loadable": true, "solids": 30, "turns": 6},
-      "timing": {"elapsed_minutes": 1.99},
-      "tokens": {"capture_status": "available", "prompt": 25097, "completion": 4678, "total": 29775},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (lean v5)", "seed": "28",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_28/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_28/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_lean_v5",
-      "builder_metrics": {"loadable": true, "solids": 88, "turns": 8},
-      "timing": {"elapsed_minutes": 8.26},
-      "tokens": {"capture_status": "available", "prompt": 71990, "completion": 15325, "total": 87315},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (lean v5)", "seed": "29",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_29/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_29/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_lean_v5",
-      "builder_metrics": {"loadable": true, "solids": 26, "turns": 8},
-      "timing": {"elapsed_minutes": 1.85},
-      "tokens": {"capture_status": "available", "prompt": 36466, "completion": 3719, "total": 40185},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    },
-    {
-      "cell": "Local · qwen3-coder-next (lean v5)", "seed": "30",
-      "model": {"name": "Qwen3-Coder-Next", "id": "qwen3-coder-next:q4_K_M", "modality": "text-only", "host": "Ollama on a local AI supercomputer"},
-      "driver": {"tool": "CadQuery", "version": "2.7.0", "python": "3.11.9", "backend": "OCP/OpenCASCADE"},
-      "step": "runs/qwen3-coder-next_cadquery_30/export.step",
-      "run_log": "runs/qwen3-coder-next_cadquery_30/run_log.yaml",
-      "kit_version": "v1.1", "prompt_variant": "cadquery_lean_v5",
-      "builder_metrics": {"loadable": true, "solids": 84, "turns": 8},
-      "timing": {"elapsed_minutes": 3.69},
-      "tokens": {"capture_status": "available", "prompt": 50441, "completion": 7560, "total": 58001},
-      "effort": {"attempts": 1, "retries": 0, "corrections": 0, "human_interventions": 0}
-    }
-  ],
-
-  "_pending_runs_template": {
-    "_comment": "Copy an entry into runs[] when each new STEP lands. Fill driver.version for every tool so the contributing-versions axis stays complete.",
-    "cell": "Opus 4.8 · CadQuery",
-    "seed": "01",
-    "model": {"name": "Claude Opus 4.8", "id": "claude-opus-4-8", "host": "Claude Code"},
-    "driver": {"tool": "CadQuery | Autodesk Fusion | build123d | SolidDesk | <other>", "version": "<exact>"},
-    "step": "runs/claude-opus-4-8_cadquery_01/export.step",
-    "run_log": "runs/claude-opus-4-8_cadquery_01/run_log.yaml",
-    "kit_version": "v1.3",
-    "client": "Claude Code via the VS Code extension (see harness_environment)",
-    "blind_method": "neutral folder, no CLAUDE.md, account memory not in play",
-    "timing": {"elapsed_minutes": null},
-    "tokens": {"capture_status": "unavailable", "billed": null, "output": null}
+  {
+   "cell": "GPT-5 Codex · CadQuery",
+   "seed": "01",
+   "model": {
+    "name": "GPT-5 Codex",
+    "id": "gpt-5-codex",
+    "host": "OpenAI Codex desktop"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "viewer_helper": "cadclaw 0.8.0"
+   },
+   "step": "runs/gpt-5-codex_cadquery_01/export.step",
+   "run_log": "runs/gpt-5-codex_cadquery_01/run_log.yaml",
+   "timing": {
+    "elapsed_minutes": 13.0,
+    "started_utc": "2026-05-26T07:04:44Z"
+   },
+   "tokens": {
+    "capture_status": "unavailable",
+    "billed": null,
+    "output": null
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 1,
+    "human_interventions": 0
+   }
+  },
+  {
+   "_comment": "LOCAL-ANCHOR TRACK (cell=local_anchor): qwen3-coder-next 79.7B/3B-active, Q4, TEXT-ONLY, on a local AI supercomputer (Ollama), 8-turn cap, blind. The capability FLOOR. Builds import the right kit parts but place them loosely (GAP ~308 mm, ORIENT ~30%) -- NOT a jointed frame. See results/local_anchor_study.md + results/figures/marb_local_3panel.png. Two prompt cohorts graded n=5 each; positional grades in results/marb_local_grades.json (aggregate via marb_grade_all.py --config). Native-track gates (inventory/interference/floating) in results/marb_native_grades.json (grade_native_step.py): both best builds FAIL inventory (wrong part mix) + interference (20-28 clipping pairs), PASS floating (parts piled, not detached). See results/local_anchor_study.md.",
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "06",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "params": "79.7B / 3B-active",
+    "quant": "Q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer (single unified-memory box)"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_06/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_06/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "blind_method": "staged kit + frozen brief only; no reference solution, no project memory; harness fairness wall",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 82,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 3.51
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 57440,
+    "completion": 8032,
+    "total": 65472
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "07",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_07/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_07/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 98,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 4.45
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 70106,
+    "completion": 10511,
+    "total": 80617
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "08",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_08/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_08/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 110,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 4.54
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 53103,
+    "completion": 10526,
+    "total": 63629
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "09",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_09/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_09/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 103,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 4.87
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 50084,
+    "completion": 11238,
+    "total": 61322
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "10",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_10/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_10/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 37,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 4.06
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 48171,
+    "completion": 9354,
+    "total": 57525
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "_comment": "Lean v5 cohort: sharpened, failure-targeted prompt (harness/cadquery_lean_v5.md). The recommended local default -- best buildability/spiral-free -- but places parts LESS accurately than mechanics v2 (buildability != placement accuracy).",
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "26",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_26/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_26/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 102,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 8.32
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 81582,
+    "completion": 18739,
+    "total": 100321
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "27",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_27/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_27/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 30,
+    "turns": 6
+   },
+   "timing": {
+    "elapsed_minutes": 1.99
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 25097,
+    "completion": 4678,
+    "total": 29775
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "28",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_28/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_28/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 88,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 8.26
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 71990,
+    "completion": 15325,
+    "total": 87315
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "29",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_29/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_29/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 26,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 1.85
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 36466,
+    "completion": 3719,
+    "total": 40185
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "30",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/qwen3-coder-next_cadquery_30/export.step",
+   "run_log": "runs/qwen3-coder-next_cadquery_30/run_log.yaml",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 84,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 3.69
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 50441,
+    "completion": 7560,
+    "total": 58001
+   },
+   "effort": {
+    "attempts": 1,
+    "retries": 0,
+    "corrections": 0,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Fable 5 (low) · CadQuery",
+   "seed": "01",
+   "model": {
+    "name": "Claude Fable 5",
+    "id": "claude-fable-5",
+    "host": "Claude Code",
+    "reasoning_effort": "low"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE",
+    "viewer_helper": "cadclaw"
+   },
+   "step": "runs/claude-fable-5_cadquery_low/export.step",
+   "run_log": "runs/claude-fable-5_cadquery_low/run_log.yaml",
+   "kit_version": "v1.1",
+   "timing": {
+    "elapsed_minutes": 38.0,
+    "started_utc": "2026-06-10T03:40:19Z"
+   },
+   "tokens": {
+    "capture_status": "unavailable",
+    "billed": null,
+    "output": null
+   },
+   "effort": {
+    "attempts": 3,
+    "retries": 1,
+    "corrections": 1,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Fable 5 (medium) · CadQuery",
+   "seed": "01",
+   "model": {
+    "name": "Claude Fable 5",
+    "id": "claude-fable-5",
+    "host": "Claude Code",
+    "reasoning_effort": "medium"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE",
+    "viewer_helper": "cadclaw"
+   },
+   "step": "runs/claude-fable-5_cadquery_medium/export.step",
+   "run_log": "runs/claude-fable-5_cadquery_medium/run_log.yaml",
+   "kit_version": "v1.1",
+   "timing": {
+    "elapsed_minutes": 38.7,
+    "started_utc": "2026-06-10T05:33:20Z"
+   },
+   "tokens": {
+    "capture_status": "unavailable",
+    "billed": null,
+    "output": null
+   },
+   "effort": {
+    "attempts": 3,
+    "retries": 0,
+    "corrections": 3,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Fable 5 (high) · CadQuery",
+   "seed": "01",
+   "model": {
+    "name": "Claude Fable 5",
+    "id": "claude-fable-5",
+    "host": "Claude Code",
+    "reasoning_effort": "high"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE",
+    "viewer_helper": "cadclaw"
+   },
+   "step": "runs/claude-fable-5_cadquery_high/export.step",
+   "run_log": "runs/claude-fable-5_cadquery_high/run_log.yaml",
+   "kit_version": "v1.1",
+   "timing": {
+    "elapsed_minutes": 44.7,
+    "started_utc": "2026-06-10T06:16:57Z"
+   },
+   "tokens": {
+    "capture_status": "unavailable",
+    "billed": null,
+    "output": null
+   },
+   "effort": {
+    "attempts": 4,
+    "retries": 0,
+    "corrections": 5,
+    "human_interventions": 0
+   }
+  },
+  {
+   "cell": "Fable 5 (ultra) · CadQuery",
+   "seed": "01",
+   "model": {
+    "name": "Claude Fable 5",
+    "id": "claude-fable-5",
+    "host": "Claude Code",
+    "reasoning_effort": "ultra"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE",
+    "viewer_helper": "cadclaw"
+   },
+   "step": "runs/claude-fable-5_cadquery_ultra/export.step",
+   "run_log": "runs/claude-fable-5_cadquery_ultra/run_log.yaml",
+   "kit_version": "v1.1",
+   "timing": {
+    "elapsed_minutes": 83.0,
+    "started_utc": "2026-06-11T12:22:51Z"
+   },
+   "tokens": {
+    "capture_status": "partial",
+    "billed": null,
+    "output": null,
+    "subagent_tokens": 497000,
+    "notes": "Host does not expose main-loop totals; verification subagents alone ~497k (416,814 audit workflow + ~80k focused re-verify)."
+   },
+   "effort": {
+    "attempts": 8,
+    "retries": 2,
+    "corrections": 9,
+    "human_interventions": 0
+   }
   }
+ ],
+ "_pending_runs_template": {
+  "_comment": "Copy an entry into runs[] when each new STEP lands. Fill driver.version for every tool so the contributing-versions axis stays complete.",
+  "cell": "Opus 4.8 · CadQuery",
+  "seed": "01",
+  "model": {
+   "name": "Claude Opus 4.8",
+   "id": "claude-opus-4-8",
+   "host": "Claude Code"
+  },
+  "driver": {
+   "tool": "CadQuery | Autodesk Fusion | build123d | SolidDesk | <other>",
+   "version": "<exact>"
+  },
+  "step": "runs/claude-opus-4-8_cadquery_01/export.step",
+  "run_log": "runs/claude-opus-4-8_cadquery_01/run_log.yaml",
+  "kit_version": "v1.3",
+  "client": "Claude Code via the VS Code extension (see harness_environment)",
+  "blind_method": "neutral folder, no CLAUDE.md, account memory not in play",
+  "timing": {
+   "elapsed_minutes": null
+  },
+  "tokens": {
+   "capture_status": "unavailable",
+   "billed": null,
+   "output": null
+  }
+ }
 }

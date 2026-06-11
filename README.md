@@ -41,21 +41,24 @@ the local open-weight anchor, ranked by GAP median.
 |---|---|---|---|---|---|
 | 1 | Claude Opus 4.7 · CadQuery | max | **0.0 mm** | 51% | 49.9 mm |
 | 2 | Claude Opus 4.7 · Fusion | max | 2.0 mm | 47% | 47.7 mm |
-| 3 | Claude Fable 5 · CadQuery | medium | 6.5 mm | 59% | 48.5 mm |
-| 4 | Claude Fable 5 · CadQuery | low | 7.0 mm | 53% | 68.0 mm |
-| 5 | Claude Fable 5 · CadQuery | high | 7.0 mm | 49% | **38.1 mm** |
-| 6 | GPT-5 Codex · CadQuery | max | 7.8 mm | **69%** | 47.2 mm |
-| 7 | Local · qwen3-coder-next 80B (n=5) | mechanics v2 | 308 ± 96 mm | 30% | 104 ± 43 mm |
-| 8 | Local · qwen3-coder-next 80B (n=5) | lean v5 | 410 ± 72 mm | 29% | 353 ± 157 mm |
+| 3 | Claude Fable 5 · CadQuery | ultra (multi-agent) | 3.0 mm | 47% | **30.4 mm** |
+| 4 | Claude Fable 5 · CadQuery | medium | 6.5 mm | 59% | 48.5 mm |
+| 5 | Claude Fable 5 · CadQuery | low | 7.0 mm | 53% | 68.0 mm |
+| 6 | Claude Fable 5 · CadQuery | high | 7.0 mm | 49% | 38.1 mm |
+| 7 | GPT-5 Codex · CadQuery | max | 7.8 mm | **69%** | 47.2 mm |
+| 8 | Local · qwen3-coder-next 80B (n=5) | mechanics v2 | 308 ± 96 mm | 30% | 104 ± 43 mm |
+| 9 | Local · qwen3-coder-next 80B (n=5) | lean v5 | 410 ± 72 mm | 29% | 353 ± 157 mm |
 | · | *Reference (answer key)* | | *0.0 mm* | *100%* | *0.0 mm* |
 
 ![MARB v0.9 scoreboard](results/figures/marb_scoreboard.png)
 
 None of these results is buildable yet. The target is a machine that could be
 bolted together as is, and that is what the metrics measure. Notable in the
-Claude Fable 5 effort sweep: medium effort beat both low and high on GAP and
-ORIENT, while high effort produced the best relative positioning on the whole
-board (38.1 mm). Frontier write-ups:
+Claude Fable 5 effort sweep: effort does not scale monotonically — medium beat
+both low and high on GAP and ORIENT — but the ultra run (multi-agent
+adversarial audit + fix loop) cut GAP to 3.0 mm and set the board-best
+relative position (30.4 mm), at roughly double the wall-clock of the other
+Fable runs. Frontier write-ups:
 [`results/comparison_claude_tracks.md`](results/comparison_claude_tracks.md) and
 [`results/prompt_framework_findings.md`](results/prompt_framework_findings.md).
 
