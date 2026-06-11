@@ -1,2 +1,4 @@
+# Large CAD answer keys — stored via Git LFS (same convention as M3-CRETE)
+# so clones and pushes do not re-transfer the 38 MB reference STEP.
 tasks/**/*.step filter=lfs diff=lfs merge=lfs -text
 tasks/**/*.STEP filter=lfs diff=lfs merge=lfs -text
