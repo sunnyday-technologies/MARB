@@ -41,6 +41,10 @@ def main():
     ap.add_argument("--guidance-file", default=None)
     ap.add_argument("--multimodal", action="store_true",
                     help="pass --multimodal to the harness (vision cells)")
+    ap.add_argument("--max-tokens", type=int, default=None,
+                    help="pass --max-tokens to the harness (reasoning/vision models)")
+    ap.add_argument("--timeout-s", type=int, default=1800,
+                    help="per-run wall clock cap; vision runs need far more than the 1800 default")
     args = ap.parse_args()
 
     batch = pathlib.Path(args.batch_dir); batch.mkdir(parents=True, exist_ok=True)
@@ -60,9 +64,11 @@ def main():
             cmd += ["--guidance-file", str(pathlib.Path(args.guidance_file).resolve())]
         if args.multimodal:
             cmd += ["--multimodal"]
+        if args.max_tokens:
+            cmd += ["--max-tokens", str(args.max_tokens)]
         print(f"\n===== run {i:02d} -> {rd} =====", flush=True)
         try:
-            subprocess.run(cmd, timeout=1800, check=False)
+            subprocess.run(cmd, timeout=args.timeout_s, check=False)
         except subprocess.TimeoutExpired:
             print(f"run {i:02d} TIMEOUT", flush=True)
 
