@@ -39,6 +39,8 @@ def main():
     ap.add_argument("--model", default="qwen3-coder-next:q4_K_M")
     ap.add_argument("--max-iters", type=int, default=8)
     ap.add_argument("--guidance-file", default=None)
+    ap.add_argument("--multimodal", action="store_true",
+                    help="pass --multimodal to the harness (vision cells)")
     args = ap.parse_args()
 
     batch = pathlib.Path(args.batch_dir); batch.mkdir(parents=True, exist_ok=True)
@@ -56,6 +58,8 @@ def main():
                "--max-iters", str(args.max_iters), "--run-dir", str(rd)]
         if args.guidance_file:
             cmd += ["--guidance-file", str(pathlib.Path(args.guidance_file).resolve())]
+        if args.multimodal:
+            cmd += ["--multimodal"]
         print(f"\n===== run {i:02d} -> {rd} =====", flush=True)
         try:
             subprocess.run(cmd, timeout=1800, check=False)
