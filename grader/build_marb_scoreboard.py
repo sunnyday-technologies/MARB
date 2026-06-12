@@ -127,9 +127,12 @@ for rank, name in enumerate(order_ai, 1):
             "Fable 5 (high) · CadQuery":   "Claude Fable 5  ·  CadQuery",
             "Fable 5 (ultra) · CadQuery":  "Claude Fable 5  ·  CadQuery",
             "Local · qwen3-coder-next (mechanics v2)": "qwen3-coder-next 80B",
-            "Local · qwen3-coder-next (lean v5)":      "qwen3-coder-next 80B"}.get(name, name.replace(" · ", "  ·  "))
+            "Local · qwen3-coder-next (lean v5)":      "qwen3-coder-next 80B",
+            "Sighted · qwen3-vl (lean v5, 8 turns)":   "qwen3-vl 32B (sighted)"}.get(name, name.replace(" · ", "  ·  "))
     fig.text(x_name, y, disp, fontsize=15, color=COLORS["ink"])
-    if name.startswith("Local · "):
+    if name.startswith("Sighted · "):
+        sub = f"local vision · goal image in-loop · lean v5 · n={n}"
+    elif name.startswith("Local · "):
         cohort = name.split("(")[1].split(")")[0]
         sub = f"local open-weight · CadQuery · {cohort} · median, n={n}"
     elif n and n > 1:

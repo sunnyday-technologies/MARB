@@ -658,6 +658,867 @@
     "corrections": 9,
     "human_interventions": 0
    }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "ext-01",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/mech_v2_ext/run_01/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 62,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 10.06
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 70469,
+    "completion": 17596,
+    "total": 88065
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "ext-02",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/mech_v2_ext/run_02/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 97,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 2.95
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 59462,
+    "completion": 6600,
+    "total": 66062
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "ext-03",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/mech_v2_ext/run_03/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 5.14
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 55350,
+    "completion": 12277,
+    "total": 67627
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "ext-04",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/mech_v2_ext/run_04/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 27,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 3.47
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 42681,
+    "completion": 7997,
+    "total": 50678
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (mechanics v2)",
+   "seed": "ext-05",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/mech_v2_ext/run_05/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_mechanics_v2",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 28,
+    "turns": 7
+   },
+   "timing": {
+    "elapsed_minutes": 2.57
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 29973,
+    "completion": 5718,
+    "total": 35691
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "ext-01",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/lean_v5_ext/run_01/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 91,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 2.45
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 46807,
+    "completion": 5332,
+    "total": 52139
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "ext-02",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/lean_v5_ext/run_02/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 6.88
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 67419,
+    "completion": 16109,
+    "total": 83528
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "ext-03",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/lean_v5_ext/run_03/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 88,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 6.04
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 53999,
+    "completion": 11390,
+    "total": 65389
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "ext-04",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/lean_v5_ext/run_04/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 31,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 2.1
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 39075,
+    "completion": 4307,
+    "total": 43382
+   }
+  },
+  {
+   "cell": "Local · qwen3-coder-next (lean v5)",
+   "seed": "ext-05",
+   "model": {
+    "name": "Qwen3-Coder-Next",
+    "id": "qwen3-coder-next:q4_K_M",
+    "modality": "text-only",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/lean_v5_ext/run_05/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 0.49
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 34042,
+    "completion": 619,
+    "total": 34661
+   }
+  },
+  {
+   "cell": "Sighted · nemotron3 (lean v5)",
+   "seed": "s-01",
+   "model": {
+    "name": "NVIDIA Nemotron 3 Nano Omni",
+    "id": "nemotron3:33b-q4_K_M",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_nemotron3/run_01/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 3
+   },
+   "timing": {
+    "elapsed_minutes": 5.47
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 40055,
+    "completion": 16729,
+    "total": 56784
+   },
+   "multimodal": {
+    "goal_image_turn1": true
+   }
+  },
+  {
+   "cell": "Sighted · nemotron3 (lean v5)",
+   "seed": "s-02",
+   "model": {
+    "name": "NVIDIA Nemotron 3 Nano Omni",
+    "id": "nemotron3:33b-q4_K_M",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_nemotron3/run_02/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 4.64
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 128063,
+    "completion": 17637,
+    "total": 145700
+   },
+   "multimodal": {
+    "goal_image_turn1": true
+   }
+  },
+  {
+   "cell": "Sighted · nemotron3 (lean v5)",
+   "seed": "s-03",
+   "model": {
+    "name": "NVIDIA Nemotron 3 Nano Omni",
+    "id": "nemotron3:33b-q4_K_M",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_nemotron3/run_03/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 6.66
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 156957,
+    "completion": 20534,
+    "total": 177491
+   },
+   "multimodal": {
+    "goal_image_turn1": true
+   }
+  },
+  {
+   "cell": "Sighted · nemotron3 (lean v5)",
+   "seed": "s-04",
+   "model": {
+    "name": "NVIDIA Nemotron 3 Nano Omni",
+    "id": "nemotron3:33b-q4_K_M",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_nemotron3/run_04/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 9.0
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 185038,
+    "completion": 34122,
+    "total": 219160
+   },
+   "multimodal": {
+    "goal_image_turn1": true
+   }
+  },
+  {
+   "cell": "Sighted · nemotron3 (lean v5)",
+   "seed": "s-05",
+   "model": {
+    "name": "NVIDIA Nemotron 3 Nano Omni",
+    "id": "nemotron3:33b-q4_K_M",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_nemotron3/run_05/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 5.0
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 133341,
+    "completion": 16203,
+    "total": 149544
+   },
+   "multimodal": {
+    "goal_image_turn1": true
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 8 turns)",
+   "seed": "s-01",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl/run_01/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 12,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 19.89
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 76866,
+    "completion": 10138,
+    "total": 87004
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 8 turns)",
+   "seed": "s-02",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl/run_02/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 16,
+    "turns": 8
+   },
+   "timing": {
+    "elapsed_minutes": 28.19
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 107166,
+    "completion": 14594,
+    "total": 121760
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 8 turns)",
+   "seed": "s-03",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl/run_03/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 12,
+    "turns": 7
+   },
+   "timing": {
+    "elapsed_minutes": 58.48
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 83586,
+    "completion": 14209,
+    "total": 97795
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 8 turns)",
+   "seed": "s-04",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl/run_04/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 17,
+    "turns": 6
+   },
+   "timing": {
+    "elapsed_minutes": 26.44
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 64051,
+    "completion": 13695,
+    "total": 77746
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 8 turns)",
+   "seed": "s-05",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl/run_05/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 12,
+    "turns": 7
+   },
+   "timing": {
+    "elapsed_minutes": 32.36
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 85288,
+    "completion": 16705,
+    "total": 101993
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 12 turns, preliminary)",
+   "seed": "s12-01",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl_t12/run_01/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": null
+   },
+   "timing": {},
+   "tokens": {
+    "capture_status": "n/a",
+    "notes": "run lost to infrastructure before logging"
+   },
+   "_infra_note": "lost to host-side connection drop pre-armor (see harness cold-load armor commit); not a model failure"
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 12 turns, preliminary)",
+   "seed": "s12-02",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl_t12/run_02/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": null
+   },
+   "timing": {},
+   "tokens": {
+    "capture_status": "n/a",
+    "notes": "run lost to infrastructure before logging"
+   },
+   "_infra_note": "lost to host-side connection drop pre-armor (see harness cold-load armor commit); not a model failure"
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 12 turns, preliminary)",
+   "seed": "s12-03",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl_t12/run_03/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 16,
+    "turns": 5
+   },
+   "timing": {
+    "elapsed_minutes": 101.96
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 55181,
+    "completion": 14047,
+    "total": 69228
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 12 turns, preliminary)",
+   "seed": "s12-04",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl_t12/run_04/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": true,
+    "solids": 20,
+    "turns": 5
+   },
+   "timing": {
+    "elapsed_minutes": 40.1
+   },
+   "tokens": {
+    "capture_status": "available",
+    "prompt": 53751,
+    "completion": 13382,
+    "total": 67133
+   }
+  },
+  {
+   "cell": "Sighted · qwen3-vl (lean v5, 12 turns, preliminary)",
+   "seed": "s12-05",
+   "model": {
+    "name": "Qwen3-VL",
+    "id": "qwen3-vl:32b",
+    "modality": "vision+text",
+    "host": "Ollama on a local AI supercomputer"
+   },
+   "driver": {
+    "tool": "CadQuery",
+    "version": "2.7.0",
+    "python": "3.11.9",
+    "backend": "OCP/OpenCASCADE"
+   },
+   "step": "runs/sighted_qwen3vl_t12/run_05/export.step",
+   "kit_version": "v1.1",
+   "prompt_variant": "cadquery_lean_v5",
+   "multimodal": {
+    "goal_image_turn1": true
+   },
+   "builder_metrics": {
+    "loadable": false,
+    "solids": 0,
+    "turns": null
+   },
+   "timing": {},
+   "tokens": {
+    "capture_status": "n/a",
+    "notes": "run lost to infrastructure before logging"
+   },
+   "_infra_note": "lost to host-side connection drop pre-armor (see harness cold-load armor commit); not a model failure"
   }
  ],
  "_pending_runs_template": {
