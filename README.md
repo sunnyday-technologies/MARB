@@ -46,8 +46,9 @@ the local open-weight anchor, ranked by GAP median.
 | 5 | Claude Fable 5 · CadQuery | low | 7.0 mm | 53% | 68.0 mm |
 | 6 | Claude Fable 5 · CadQuery | high | 7.0 mm | 49% | 38.1 mm |
 | 7 | GPT-5 Codex · CadQuery | max | 7.8 mm | **69%** | 47.2 mm |
-| 8 | Local · qwen3-coder-next 80B (n=5) | mechanics v2 | 308 ± 96 mm | 30% | 104 ± 43 mm |
-| 9 | Local · qwen3-coder-next 80B (n=5) | lean v5 | 410 ± 72 mm | 29% | 353 ± 157 mm |
+| 8 | Local · qwen3-coder-next 80B (n=9) | mechanics v2 | 272 ± 149 mm | 12% | 118 ± 47 mm |
+| 9 | Local · qwen3-coder-next 80B (n=8) | lean v5 | 341 ± 133 mm | 20% | 233 ± 139 mm |
+| 10 | Sighted · qwen3-vl 32B (n=5) | lean v5 + goal image | 873 ± 174 mm | 0% | 1005 ± 613 mm |
 | · | *Reference (answer key)* | | *0.0 mm* | *100%* | *0.0 mm* |
 
 ![MARB v0.9 scoreboard](results/figures/marb_scoreboard.png)
@@ -64,13 +65,21 @@ Fable runs. Frontier write-ups:
 
 ## The local-anchor floor
 
-The frontier track shows the current top end. The local-anchor floor (rows 7
-and 8 above) shows the current low end. It is a single 80B open-weight coder,
-`qwen3-coder-next`, text-only, running on one local AI supercomputer and
-building the same machine blind. This is the model that a shop with no internet
-and no hosted API could run on its own hardware.
+The frontier track shows the current top end. The local-anchor floor (rows 8
+to 10 above) shows the current low end: the models a shop with no internet and
+no hosted API could run on its own hardware. The text anchor is an 80B
+open-weight coder, `qwen3-coder-next`, building the same machine blind; its
+cells now aggregate ten seeds each (9/10 and 8/10 produced a loadable STEP —
+the n=5 "5/5 buildable" rate did not survive more seeds, which is the point of
+seeds). The **sighted cell** gives a 32B vision model (`qwen3-vl`) the goal
+image in-loop — and it does *worse* than the blind text model on every metric
+(873 mm GAP, 0% orientation, ~15 parts placed of ~101): at this scale, vision
+tokens crowd out geometry. A 12-turn variant (n=2, preliminary) improves
+placement accuracy but not part count; a second vision model (Nemotron 3 Nano
+Omni) produced 0/5 loadable exports. Full sighted grades:
+[`results/marb_sighted_grades.json`](results/marb_sighted_grades.json).
 
-The model reliably imports the right parts, but it places them loosely rather
+The text-anchor model reliably imports the right parts, but it places them loosely rather
 than as a jointed frame. Parts land 100 to 400 mm off on a 2000 mm machine. The
 native gates agree: the part mix is wrong, and 20 to 28 part-pairs clip, while
 nothing floats free. One CadQuery export-mechanic fix raised the buildable rate
