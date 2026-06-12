@@ -179,7 +179,21 @@ def main():
 
     import os
     api_key = os.environ.get(args.api_key_env, "") if args.api_key_env else "ollama"
-    client = OpenAI(base_url=args.base_url, api_key=api_key)
+    # Cold-load armor: a fresh Ollama load of a 20-50 GB model can take minutes,
+    # which exceeds default HTTP timeouts and killed first-of-batch runs. Generous
+    # timeout + client retries + an explicit warm-up ping with a long keep_alive.
+    client = OpenAI(base_url=args.base_url, api_key=api_key, timeout=900.0, max_retries=5)
+    if is_local:
+        for attempt in range(3):
+            try:
+                client.chat.completions.create(model=args.model,
+                    messages=[{"role": "user", "content": "ping"}], max_tokens=1,
+                    extra_body={"keep_alive": "2h"})
+                print("[harness] warm-up ok (model loaded, keep_alive=2h)")
+                break
+            except Exception as e:
+                print(f"[harness] warm-up attempt {attempt+1} failed: {type(e).__name__}; retrying in 30s")
+                time.sleep(30)
     started = datetime.datetime.now(datetime.timezone.utc); t0 = time.time()
     tok_in = tok_out = tool_calls_made = 0; last_sig = None; stale = 0
     print(f"[harness] model={args.model} run={RUN_DIR} max_iters={args.max_iters}")
@@ -188,7 +202,15 @@ def main():
     if max_tokens is not None:
         create_kwargs["max_tokens"] = max_tokens
     for it in range(1, args.max_iters + 1):
-        resp = client.chat.completions.create(model=args.model, messages=messages, **create_kwargs)
+        resp = None
+        for attempt in range(3):   # transient connection drops must not kill a 30-min run
+            try:
+                resp = client.chat.completions.create(model=args.model, messages=messages, **create_kwargs)
+                break
+            except Exception as e:
+                if attempt == 2: raise
+                print(f"[harness] request failed ({type(e).__name__}), retry {attempt+1}/2 in 20s")
+                time.sleep(20)
         u = getattr(resp, "usage", None)
         if u: tok_in += u.prompt_tokens or 0; tok_out += u.completion_tokens or 0
         msg = resp.choices[0].message
