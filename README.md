@@ -90,6 +90,16 @@ not better. A larger token budget did not improve quality. Write-up:
 
 ## Quickstart
 
+The grader scores a run against the **answer key** (the reference STEP + the
+placement spec). The answer key is gated, so fetch it once and drop it under
+`tasks/m3_crete/`:
+
+- Request access: https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key
+- Place `m3_reference_round1.step` and `m3_reference_assembly.yaml` in `tasks/m3_crete/`.
+
+The benchmark input (kits, brief, scoring spec) is open and needs no gate:
+https://huggingface.co/datasets/SunnydayTech/marb-m3-crete
+
 ```bash
 # Install the cadclaw grading engine and STEP I/O (0.9.0+ is on PyPI). See requirements.txt.
 pip install "cadclaw>=0.9.0"
@@ -119,14 +129,15 @@ python grader/marb_orient_metric.py --ref tasks/m3_crete/m3_reference_round1.ste
 2. Run the model in a sealed, memoryless context so the answer key cannot leak.
    Use a neutral folder with cross-session memory turned off. See the blind-run
    protocol in the spec.
-3. Hand the exported STEP file back and grade it with the commands above.
+3. Fetch the gated answer key (see Quickstart), then hand the exported STEP file
+   back and grade it with the commands above.
 
 ## Layout
 
 ```
 spec/MARB_SCORING.md     the canonical, versioned scoring method
 grader/                  the metrics and figure builders (depend on the cadclaw package)
-tasks/m3_crete/          the reference answer key (STEP and spec) for task 1
+tasks/m3_crete/          where the gated answer key (STEP + spec) goes; fetch from the HF dataset (see Quickstart)
 kits/                    versioned blind kits handed to the driver, plus KIT_VERSIONS.md
 prompts/                 the frozen task brief, per-backend driver stubs, and generator
 results/                 grades, run registry, findings, and figures

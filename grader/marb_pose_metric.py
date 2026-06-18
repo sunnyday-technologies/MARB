@@ -37,6 +37,8 @@ sys.path.insert(0, str(REPO / "grader"))
 from grade_native_step import derive_target, _looks_like_belt   # noqa: E402
 from cadclaw.inventory import sig                                # noqa: E402
 
+from _answer_key import require_answer_key  # noqa: E402
+
 DEFAULT_SPEC = REPO / "tasks" / "m3_crete" / "m3_reference_assembly.yaml"
 POS_BANDS = (0.01, 1.0, 5.0, 25.0, 50.0, 100.0)   # mm; 5 mm == "located"
 
@@ -127,6 +129,7 @@ def main(argv=None) -> int:
     ap.add_argument("--spec", default=str(DEFAULT_SPEC))
     ap.add_argument("--json", default=None)
     a = ap.parse_args(argv)
+    require_answer_key(Path(a.spec), Path(a.ref))
     label = _label_map(Path(a.spec))
     res = grade(parts(Path(a.ref), label), parts(Path(a.run), label))
     body = json.dumps(res, indent=2)
