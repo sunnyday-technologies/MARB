@@ -1,0 +1,20 @@
+{
+  "_comment": "Published MARB board snapshot. Mirrors the table in the MARB README, which is the reviewed source of truth. Regenerate run-level numbers with grader/marb_grade_all.py; this file is the curated published view.",
+  "scoring_version": "v0.9",
+  "task": "M3-CRETE gantry frame (task 1), ~100 parts",
+  "comparability_note": "Results compare only within one kit cohort and one scoring version. The local and sighted cells use different harness cohorts and are anchors, not head-to-head with the frontier rows.",
+  "sort_by": "gap_median_mm",
+  "rows": [
+    {"rank": 1, "model": "Claude Opus 4.7", "tool": "CadQuery", "cohort": "max", "track": "frontier", "gap_median_mm": 0.0, "gap_display": "0.0 mm", "orient_pct": 51, "pos_rel_median_mm": 49.9, "pos_display": "49.9 mm"},
+    {"rank": 2, "model": "Claude Opus 4.7", "tool": "Fusion", "cohort": "max", "track": "frontier", "gap_median_mm": 2.0, "gap_display": "2.0 mm", "orient_pct": 47, "pos_rel_median_mm": 47.7, "pos_display": "47.7 mm"},
+    {"rank": 3, "model": "Claude Fable 5", "tool": "CadQuery", "cohort": "ultra (multi-agent)", "track": "frontier", "gap_median_mm": 3.0, "gap_display": "3.0 mm", "orient_pct": 47, "pos_rel_median_mm": 30.4, "pos_display": "30.4 mm"},
+    {"rank": 4, "model": "Claude Fable 5", "tool": "CadQuery", "cohort": "medium", "track": "frontier", "gap_median_mm": 6.5, "gap_display": "6.5 mm", "orient_pct": 59, "pos_rel_median_mm": 48.5, "pos_display": "48.5 mm"},
+    {"rank": 5, "model": "Claude Fable 5", "tool": "CadQuery", "cohort": "low", "track": "frontier", "gap_median_mm": 7.0, "gap_display": "7.0 mm", "orient_pct": 53, "pos_rel_median_mm": 68.0, "pos_display": "68.0 mm"},
+    {"rank": 6, "model": "Claude Fable 5", "tool": "CadQuery", "cohort": "high", "track": "frontier", "gap_median_mm": 7.0, "gap_display": "7.0 mm", "orient_pct": 49, "pos_rel_median_mm": 38.1, "pos_display": "38.1 mm"},
+    {"rank": 7, "model": "GPT-5 Codex", "tool": "CadQuery", "cohort": "max", "track": "frontier", "gap_median_mm": 7.8, "gap_display": "7.8 mm", "orient_pct": 69, "pos_rel_median_mm": 47.2, "pos_display": "47.2 mm"},
+    {"rank": 8, "model": "qwen3-coder-next 80B (n=9)", "tool": "CadQuery (local)", "cohort": "mechanics v2", "track": "local", "gap_median_mm": 272.0, "gap_display": "272 ± 149 mm", "orient_pct": 12, "pos_rel_median_mm": 118.0, "pos_display": "118 ± 47 mm"},
+    {"rank": 9, "model": "qwen3-coder-next 80B (n=8)", "tool": "CadQuery (local)", "cohort": "lean v5", "track": "local", "gap_median_mm": 341.0, "gap_display": "341 ± 133 mm", "orient_pct": 20, "pos_rel_median_mm": 233.0, "pos_display": "233 ± 139 mm"},
+    {"rank": 10, "model": "qwen3-vl 32B (n=5)", "tool": "CadQuery (local, sighted)", "cohort": "lean v5 + goal image", "track": "sighted", "gap_median_mm": 873.0, "gap_display": "873 ± 174 mm", "orient_pct": 0, "pos_rel_median_mm": 1005.0, "pos_display": "1005 ± 613 mm"},
+    {"rank": null, "model": "Reference (answer key)", "tool": "", "cohort": "ceiling", "track": "reference", "gap_median_mm": 0.0, "gap_display": "0.0 mm", "orient_pct": 100, "pos_rel_median_mm": 0.0, "pos_display": "0.0 mm"}
+  ]
+}
