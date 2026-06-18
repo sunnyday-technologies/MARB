@@ -39,7 +39,8 @@ Project home: [marb.cadclaw.io](https://marb.cadclaw.io). Live board:
 
 This dataset is the **public benchmark input**. It contains the blind kits, the
 goal image, the frozen task brief, and the scoring spec. It does **not** contain
-the answer key. The answer key is a separate, access-gated dataset:
+the answer key. The answer key is a separate, access-gated dataset (gated to
+prevent training-data contamination, not for secrecy):
 [SunnydayTech/marb-m3-crete-answer-key](https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key).
 
 ## What it grades (v0.9)
