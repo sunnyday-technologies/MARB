@@ -4,6 +4,10 @@ The MARB answer key for task 1 is **not** in this repository. It is distributed
 through a gated Hugging Face dataset so it stays out of the open file tree that
 crawlers and training pipelines ingest.
 
+The gate prevents inadvertent training-data contamination. It is not a secrecy or
+security measure: the files are openly licensed and access is granted for any
+legitimate use.
+
 Two files make up the answer key:
 
 - `m3_reference_round1.step` — the reference assembled STEP (the intended machine).

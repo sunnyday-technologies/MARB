@@ -91,8 +91,8 @@ not better. A larger token budget did not improve quality. Write-up:
 ## Quickstart
 
 The grader scores a run against the **answer key** (the reference STEP + the
-placement spec). The answer key is gated, so fetch it once and drop it under
-`tasks/m3_crete/`:
+placement spec). The answer key is gated to prevent training-data contamination
+(not for secrecy), so fetch it once and drop it under `tasks/m3_crete/`:
 
 - Request access: https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key
 - Place `m3_reference_round1.step` and `m3_reference_assembly.yaml` in `tasks/m3_crete/`.

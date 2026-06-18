@@ -21,8 +21,9 @@ tags:
 extra_gated_heading: "Request access to the MARB answer key"
 extra_gated_description: >
   This dataset is the answer key (the reference assembled STEP and the placement
-  spec) for MARB task 1, M3-CRETE. It is gated to keep the benchmark meaningful:
-  access is for grading exported runs and for research, not for training data.
+  spec) for MARB task 1, M3-CRETE. It is gated to prevent inadvertent
+  training-data contamination, not for secrecy or security: the data is openly
+  licensed and access is granted for any legitimate use (grading runs, research).
   Access is logged. The public benchmark input (kits, brief, scoring spec) is in
   the open dataset and does not require this gate.
 extra_gated_fields:
@@ -49,6 +50,12 @@ The stock parts the model places (beams, belts, motor, spacers, pinion) are not
 here. Those are inputs and ship in the open blind kit.
 
 ## Why this is gated
+
+The gate is about **contamination, not secrecy or security**. The answer key is
+openly licensed (see License below) and is not confidential. Gating only keeps it
+out of the crawlable file tree that feeds model training data, so the benchmark
+keeps measuring capability rather than memorization. Access is granted for any
+legitimate use; manual approval is a light check, not a barrier.
 
 MARB grades how well an AI places parts against this reference. If the answer key
 is freely crawlable, it leaks into model training data and the benchmark stops
