@@ -20,6 +20,11 @@ Thumbs.db
 
 # Internal/session notes live in ../MARB-private (separate private repo)
 
+# Answer key — distributed via the gated HF dataset, never version-controlled.
+# (Kept in the working tree locally; see tasks/m3_crete/ANSWER_KEY.md.)
+tasks/m3_crete/m3_reference_round1.step
+tasks/m3_crete/m3_reference_assembly.yaml
+
 # Site deploy source for marb.cadclaw.io — published content only, media-heavy
 # (~34 MB of figures/GIFs), so kept out of the public repo history.
 # See PUBLISHING.md. Deploys go ONLY from this folder.

@@ -34,6 +34,8 @@ from marb_pose_metric import grade as grade_pose, parts as pose_parts, _label_ma
 from marb_gap_metric import grade as grade_gap                                       # noqa: E402
 from marb_orient_metric import grade as grade_orient                                 # noqa: E402
 
+from _answer_key import require_answer_key  # noqa: E402
+
 DEFAULT_REF = REPO / "tasks" / "m3_crete" / "m3_reference_round1.step"
 DEFAULT_SPEC = REPO / "tasks" / "m3_crete" / "m3_reference_assembly.yaml"
 RUNS = {
@@ -192,6 +194,7 @@ def main(argv=None) -> int:
     aggregate_mode = bool(a.manifest or a.config or a.runs_dir)
 
     if not aggregate_mode:
+        require_answer_key(ref, spec)
         rows = {}
         for name, p in RUNS.items():
             if not p.exists():
@@ -216,6 +219,7 @@ def main(argv=None) -> int:
             cells = _discover(Path(a.runs_dir))
         # Always include the reference ceiling as a single-seed cell for context.
         cells = {"Reference (self / ceiling)": [ref], **cells}
+        require_answer_key(ref, spec)
 
         rows = {}
         for name, paths in cells.items():

@@ -35,6 +35,8 @@ from grade_native_step import derive_target, _looks_like_belt   # noqa: E402
 from cadclaw.inventory import sig                                # noqa: E402
 from marb_pose_metric import _kabsch, _match                     # noqa: E402
 
+from _answer_key import require_answer_key  # noqa: E402
+
 DEFAULT_SPEC = REPO / "tasks" / "m3_crete" / "m3_reference_assembly.yaml"
 SYM_TOL = 0.05            # 5% -> two near-equal extents = symmetric in that axis pair
 DIM_TOL_MM = 1.0          # match if |Δdim| <= max(1mm, 1% of dim)
@@ -123,6 +125,7 @@ def main(argv=None) -> int:
     ap.add_argument("--ref", required=True); ap.add_argument("--run", required=True)
     ap.add_argument("--spec", default=str(DEFAULT_SPEC)); ap.add_argument("--json", default=None)
     a = ap.parse_args(argv)
+    require_answer_key(Path(a.ref), Path(a.spec))
     res = grade(Path(a.ref), Path(a.run), Path(a.spec))
     body = json.dumps(res, indent=2)
     Path(a.json).write_text(body + "\n", encoding="utf-8") if a.json else print(body)
