@@ -1519,6 +1519,42 @@
     "notes": "run lost to infrastructure before logging"
    },
    "_infra_note": "lost to host-side connection drop pre-armor (see harness cold-load armor commit); not a model failure"
+  },
+  {
+   "cell": "Opus 4.8 · Fusion",
+   "seed": "01",
+   "model": {
+    "name": "Claude Opus 4.8",
+    "id": "claude-opus-4-8[1m]",
+    "context": "1M",
+    "host": "Claude Code (Fusion MCP over JSON-RPC)"
+   },
+   "driver": {
+    "tool": "Autodesk Fusion",
+    "version": "2703.1.11",
+    "interface": "Fusion MCP (JSON-RPC)"
+   },
+   "step": "runs/claude-opus-4-8_fusion_01/export.step",
+   "run_log": "runs/claude-opus-4-8_fusion_01/run_log.yaml",
+   "kit_version": "v1.3",
+   "blind_method": "imported only from local kit/; no answer key / project / memory consulted (fairness wall intact)",
+   "cohort_note": "kit v1.3 (hint-equipped Fusion stub); NOT directly comparable to the v1.1 no-hint Opus 4.7 Fusion run",
+   "timing": {
+    "started_utc": "2026-05-30T07:50:49Z",
+    "ended_utc": "2026-05-30T08:31:43Z",
+    "elapsed_minutes": 40.9
+   },
+   "tokens": {
+    "capture_status": "unavailable",
+    "billed": null,
+    "output": null
+   },
+   "effort": {
+    "attempts": 9,
+    "retries": 1,
+    "corrections": 9,
+    "human_interventions": 0
+   }
   }
  ],
  "_pending_runs_template": {
