@@ -122,6 +122,7 @@ for rank, name in enumerate(order_ai, 1):
     disp = {"Claude · CadQuery": "Claude Opus 4.7  ·  CadQuery",
             "Claude · Fusion":   "Claude Opus 4.7  ·  Fusion",
             "Codex · CadQuery":  "GPT-5 Codex  ·  CadQuery",
+            "Opus 4.8 · Fusion": "Claude Opus 4.8  ·  Fusion",
             "Fable 5 (low) · CadQuery":    "Claude Fable 5  ·  CadQuery",
             "Fable 5 (medium) · CadQuery": "Claude Fable 5  ·  CadQuery",
             "Fable 5 (high) · CadQuery":   "Claude Fable 5  ·  CadQuery",
@@ -141,6 +142,8 @@ for rank, name in enumerate(order_ai, 1):
         sub = "effort: " + name.split("(")[1].split(")")[0]
     elif name in ("Claude · CadQuery", "Claude · Fusion", "Codex · CadQuery"):
         sub = "effort: max"
+    elif name == "Opus 4.8 · Fusion":
+        sub = "kit v1.3 (hint) · n=1"
     else:
         sub = None
     if sub:

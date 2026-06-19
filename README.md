@@ -42,13 +42,14 @@ the local open-weight anchor, ranked by GAP median.
 | 1 | Claude Opus 4.7 · CadQuery | max | **0.0 mm** | 51% | 49.9 mm |
 | 2 | Claude Opus 4.7 · Fusion | max | 2.0 mm | 47% | 47.7 mm |
 | 3 | Claude Fable 5 · CadQuery | ultra (multi-agent) | 3.0 mm | 47% | **30.4 mm** |
-| 4 | Claude Fable 5 · CadQuery | medium | 6.5 mm | 59% | 48.5 mm |
-| 5 | Claude Fable 5 · CadQuery | low | 7.0 mm | 53% | 68.0 mm |
-| 6 | Claude Fable 5 · CadQuery | high | 7.0 mm | 49% | 38.1 mm |
-| 7 | GPT-5 Codex · CadQuery | max | 7.8 mm | **69%** | 47.2 mm |
-| 8 | Local · qwen3-coder-next 80B (n=9) | mechanics v2 | 272 ± 149 mm | 12% | 118 ± 47 mm |
-| 9 | Local · qwen3-coder-next 80B (n=8) | lean v5 | 341 ± 133 mm | 20% | 233 ± 139 mm |
-| 10 | Sighted · qwen3-vl 32B (n=5) | lean v5 + goal image | 873 ± 174 mm | 0% | 1005 ± 613 mm |
+| 4 | Claude Opus 4.8 · Fusion | v1.3 (hint), n=1 | 5.7 mm | 39% | 52.5 mm |
+| 5 | Claude Fable 5 · CadQuery | medium | 6.5 mm | 59% | 48.5 mm |
+| 6 | Claude Fable 5 · CadQuery | low | 7.0 mm | 53% | 68.0 mm |
+| 7 | Claude Fable 5 · CadQuery | high | 7.0 mm | 49% | 38.1 mm |
+| 8 | GPT-5 Codex · CadQuery | max | 7.8 mm | **69%** | 47.2 mm |
+| 9 | Local · qwen3-coder-next 80B (n=9) | mechanics v2 | 272 ± 149 mm | 12% | 118 ± 47 mm |
+| 10 | Local · qwen3-coder-next 80B (n=8) | lean v5 | 341 ± 133 mm | 20% | 233 ± 139 mm |
+| 11 | Sighted · qwen3-vl 32B (n=5) | lean v5 + goal image | 873 ± 174 mm | 0% | 1005 ± 613 mm |
 | · | *Reference (answer key)* | | *0.0 mm* | *100%* | *0.0 mm* |
 
 ![MARB v0.9 scoreboard](results/figures/marb_scoreboard.png)
@@ -59,14 +60,17 @@ Claude Fable 5 effort sweep: effort does not scale monotonically — medium beat
 both low and high on GAP and ORIENT — but the ultra run (multi-agent
 adversarial audit + fix loop) cut GAP to 3.0 mm and set the board-best
 relative position (30.4 mm), at roughly double the wall-clock of the other
-Fable runs. Frontier write-ups:
+Fable runs. The Claude Opus 4.8 Fusion run (rank 4) lands the frame less
+precisely than Opus 4.7 did, but it ran on the hint-equipped v1.3 kit while the
+Opus 4.7 Fusion run used the no-hint v1.1 kit, so the two are different cohorts,
+not a clean head-to-head. Frontier write-ups:
 [`results/comparison_claude_tracks.md`](results/comparison_claude_tracks.md) and
 [`results/prompt_framework_findings.md`](results/prompt_framework_findings.md).
 
 ## The local-anchor floor
 
-The frontier track shows the current top end. The local-anchor floor (rows 8
-to 10 above) shows the current low end: the models a shop with no internet and
+The frontier track shows the current top end. The local-anchor floor (rows 9
+to 11 above) shows the current low end: the models a shop with no internet and
 no hosted API could run on its own hardware. The text anchor is an 80B
 open-weight coder, `qwen3-coder-next`, building the same machine blind; its
 cells now aggregate ten seeds each (9/10 and 8/10 produced a loadable STEP —
