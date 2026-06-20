@@ -81,7 +81,7 @@ sighted cells are anchors in their own cohorts, not head-to-head with the fronti
 run_it = f"""
 ### Run a model against it
 1. Hand the model a blind kit from the [public dataset]({DATASET}): authored parts,
-   one goal image, the task brief. No answer key, no build steps.
+   four goal renders (overview + front/top/side), the task brief. No answer key, no build steps.
 2. Run it in a sealed, memoryless context so the answer key cannot leak.
 3. Export a STEP and grade it with the [MARB grader]({GITHUB}/tree/main/grader)
    (`pip install "cadclaw>=0.9.0"`). The answer key is access-gated: [request it here]({ANSWER_KEY}).

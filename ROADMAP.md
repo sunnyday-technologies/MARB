@@ -24,10 +24,17 @@ change.
   split to control for contamination.
 - **Metric hardening.** Add a random-floor baseline. Add principal-axis (OBB or PCA)
   orientation. Add a separate manufacturing-tolerance axis.
+- **Occlusion-aware goal views.** Today the goal is shown as surface renders — a 3/4
+  isometric overview plus front, top, and side views — which already expose more
+  spatial relationships and components than a single view. But in denser assemblies,
+  parts nested inside the machine are hidden in every surface view, so their placement
+  cannot be read from the renders alone. Add a way to reveal occluded parts —
+  transparency stacking, exploded views, or section cuts — so the goal stays legible
+  for accurate placement as assemblies grow more complex. Contributions welcome.
 
 ## Method principles
 
-- **Blind by design.** Drivers receive only the kit and the goal image, never the
+- **Blind by design.** Drivers receive only the kit and the goal renders, never the
   answer key. Each driver runs in a sealed context with no memory between runs.
 - **Tight, fixed standard.** Tolerances are graded exactly and stay the same for
   every model. The headline number is a median error that gets smaller as models

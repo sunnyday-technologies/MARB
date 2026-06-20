@@ -27,7 +27,9 @@ tags:
 MARB is a tool-independent, automatically graded benchmark. It measures how
 correctly AI-assisted CAD places the parts of a real machine: the right
 position, the right orientation, and the right gap at every interface. The model
-is given only the authored parts and a single goal image. It receives no build
+is given only the authored parts and a set of goal renders — a 3/4 isometric
+overview plus front, top, and side views, which show how the parts relate in
+space and reveal components a single view would hide. It receives no build
 steps. Any tool or agent can be tested, including Autodesk Fusion, CadQuery, or a
 custom agent.
 
@@ -38,7 +40,7 @@ Project home: [marb.cadclaw.io](https://marb.cadclaw.io). Live board:
 [SunnydayTech/marb-leaderboard](https://huggingface.co/spaces/SunnydayTech/marb-leaderboard).
 
 This dataset is the **public benchmark input**. It contains the blind kits, the
-goal image, the frozen task brief, and the scoring spec. It does **not** contain
+goal renders, the frozen task brief, and the scoring spec. It does **not** contain
 the answer key. The answer key is a separate, access-gated dataset (gated to
 prevent training-data contamination, not for secrecy):
 [SunnydayTech/marb-m3-crete-answer-key](https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key).
@@ -64,8 +66,9 @@ Buildability stays on as a secondary gate.
 ## What is in this dataset
 
 - `kits/` — versioned blind kits (one zip per version). A kit holds the authored
-  parts, the goal image, and the task brief. No answer key. Versions are tracked
-  in `kits/KIT_VERSIONS.md`.
+  parts, the goal renders (a 3/4 isometric overview plus front, top, and side
+  views), and the task brief. No answer key. Versions are tracked in
+  `kits/KIT_VERSIONS.md`.
 - `prompts/` — the frozen task brief and the per-backend driver stubs.
 - `spec/MARB_SCORING.md` — the canonical, versioned scoring method.
 - `benchmark.yaml` — gate weights for the secondary buildability score.
