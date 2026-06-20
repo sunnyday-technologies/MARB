@@ -3,7 +3,9 @@
 MARB is a tool-independent, automatically graded benchmark. It measures how
 correctly AI-assisted CAD places the parts of a real machine: the right
 position, the right orientation, and the right gap at every interface. The model
-is given only the authored parts and a single goal image. It receives no build
+is given only the authored parts and a set of goal renders — a 3/4 isometric
+overview plus front, top, and side views, which show how the parts relate in
+space and reveal components a single view would hide. It receives no build
 steps. Any tool or agent can be tested, including Autodesk Fusion, CadQuery, or
 a custom agent.
 
@@ -128,7 +130,8 @@ python grader/marb_orient_metric.py --ref tasks/m3_crete/m3_reference_round1.ste
 ## Run a model against it
 
 1. Give the model a **blind kit** from [`kits/`](kits/). A kit holds the
-   authored parts, the goal image, and the task brief, with no answer key.
+   authored parts, the goal renders (overview + front/top/side), and the task
+   brief, with no answer key.
    Versions are tracked in [`kits/KIT_VERSIONS.md`](kits/KIT_VERSIONS.md).
 2. Run the model in a sealed, memoryless context so the answer key cannot leak.
    Use a neutral folder with cross-session memory turned off. See the blind-run
