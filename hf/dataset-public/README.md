@@ -1,5 +1,5 @@
 ---
-pretty_name: "MARB: Mechanical Assembly Readiness Benchmark (M3-CRETE, task 1)"
+pretty_name: "MARB — Mechanical Assembly Readiness Benchmark (M3-CRETE, task 1)"
 license: other
 license_name: mixed-mit-and-cc-by-sa-4.0
 license_link: https://github.com/sunnyday-technologies/MARB/blob/main/kits/LICENSE.md
@@ -22,7 +22,9 @@ tags:
   - llm
 ---
 
-# MARB: Mechanical Assembly Readiness Benchmark
+# MARB — Mechanical Assembly Readiness Benchmark
+
+*Can AI assemble a real machine?*
 
 MARB is a tool-independent, automatically graded benchmark. It measures how
 correctly AI-assisted CAD places the parts of a real machine: the right

@@ -1,5 +1,5 @@
 ---
-title: MARB Leaderboard
+title: MARB — Mechanical Assembly Readiness Benchmark
 emoji: 🦾
 colorFrom: blue
 colorTo: gray
@@ -9,7 +9,17 @@ python_version: "3.12"
 app_file: app.py
 pinned: false
 license: mit
-short_description: Can AI assemble a real machine? The MARB board.
+short_description: Can AI assemble a real machine? Mechanical assembly benchmark.
+tags:
+  - benchmark
+  - leaderboard
+  - mechanical-engineering
+  - cad
+  - assembly
+  - spatial-reasoning
+  - step-files
+  - agents
+  - evaluation
 ---
 
 # MARB Leaderboard
