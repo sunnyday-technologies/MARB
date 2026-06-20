@@ -36,7 +36,11 @@ extra_gated_fields:
 extra_gated_button_content: "Request access"
 ---
 
-# MARB Answer Key (M3-CRETE, task 1) — gated
+# MARB — Mechanical Assembly Readiness Benchmark
+
+*Can AI assemble a real machine?*
+
+## Answer key (gated) — M3-CRETE, task 1
 
 This is the **answer key** for MARB task 1, the M3-CRETE gantry frame. It holds
 the reference assembled geometry and the placement spec that the MARB grader
