@@ -6,6 +6,8 @@ license_link: https://github.com/sunnyday-technologies/MARB/blob/main/kits/LICEN
 language:
   - en
 task_categories:
+  - image-to-3d
+  - text-to-3d
   - other
 size_categories:
   - n<1K
