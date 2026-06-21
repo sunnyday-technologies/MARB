@@ -9,7 +9,7 @@ python_version: "3.12"
 app_file: app.py
 pinned: false
 license: mit
-short_description: Can AI assemble a real machine? Mechanical assembly benchmark.
+short_description: Can AI assemble a real machine? Mechanical CAD benchmark.
 tags:
   - benchmark
   - leaderboard
