@@ -17,6 +17,7 @@ tags:
   - cad
   - step-files
   - mechanical-engineering
+  - assembly
   - answer-key
   - held-out
   - evaluation
