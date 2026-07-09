@@ -1,0 +1,34 @@
+schema_version: pascal_house_run_log.v0.1
+run_id: pascal_gpt5_codex_20260709_1
+benchmark_id: pascal_house_ph1
+track: pascal_mcp
+status: complete
+driver:
+  ai_driver: "GPT-5 Codex"
+  host_application: "@pascal-app/mcp 0.1.0 / core 0.9.1 manifest"
+timing: {started_utc: "2026-07-09T05:18:13.873Z", ended_utc: "2026-07-09T05:18:14.398Z", elapsed_minutes: 0.009}
+token_usage: {capture_status: unavailable, total_tokens: null}
+attempts:
+  - attempt_id: A01
+    is_retry: false
+    driver_action: "Built PH-1 from the task brief via Pascal MCP stdio using create_story_shell, create_wall, set_zone, add_door, add_window, place_item, validate_scene, verify_scene, check_collisions, and export_json."
+    result: complete
+    corrections: []
+    human_interventions: []
+    notes: "validate_scene clean. verify_scene clean. check_collisions reported 2 axis-aligned item hits; kept specified placements because rotated furniture can produce false positives. Exported 56209 bytes. All scheduled catalog ids found."
+summary:
+  attempt_count: 1
+  retry_count: 0
+  correction_count: 0
+  human_intervention_count: 0
+  residual_not_built: []
+privacy_review: {secrets_checked: false, notes: "No credentials or private fields inspected."}
+tool_results:
+  validate_scene_valid: true
+  validate_scene_error_count: 0
+  verify_scene_ok: true
+  verify_scene_valid: true
+  verify_scene_has_issues: false
+  collision_count: 2
+  collision_notes: "check_collisions reported 2 axis-aligned item hits; kept specified placements because rotated furniture can produce false positives."
+  server_stderr_summary: "[pascal-mcp] stdio server running"

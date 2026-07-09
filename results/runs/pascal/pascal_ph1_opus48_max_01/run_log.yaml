@@ -1,0 +1,47 @@
+schema_version: pascal_house_run_log.v0.1
+run_id: pascal_opus48_20260709_01
+benchmark_id: pascal_house_ph1
+track: pascal_mcp
+status: complete
+driver:
+  ai_driver: "Claude Opus 4.8 (1M context) / claude-opus-4-8[1m]"
+  host_application: "@pascal-app/mcp 0.3.1 / core 0.9.1"
+timing: {started_utc: "2026-07-09T05:10:57Z", ended_utc: "2026-07-09T05:29:00Z", elapsed_minutes: 18.0}
+token_usage: {capture_status: unavailable, total_tokens: null}
+
+# Build approach: explicit wall network rather than 6 create_room calls, to avoid
+# duplicating the 5 shared partition walls and the ambiguity of which duplicate wall
+# hosts each shared opening. Geometry uses wall centerlines with 0.2 m thickness so
+# the outer face of the SW corner lands exactly on the origin (exterior centerlines
+# west x=0.1 / east x=11.9 / south z=0.1 / north z=7.9; partitions x=6.1, x=8.1,
+# west-z=4.7, east-z=4.7, x=4.1). Openings placed by parametric t computed from the
+# actual start/end read back via get_walls. Furniture facing mapped from a calibrated
+# rotation convention (see A06 / residual note).
+
+attempts:
+  - {attempt_id: A01, is_retry: false, driver_action: "Read brief + reference_floorplan.png + catalog_manifest.yaml; verified all 6 room clear dims and partition centerlines resolve consistently against the 12x8 footprint; inspected initial scene (get_scene/list_levels) -> pre-seeded site+building+empty level_t3z6bpgjftwcw2yo; loaded Pascal MCP tool schemas.", result: pass, corrections: [], human_interventions: [], notes: "Fairness wall respected: built only from brief + kit; no reference scene, answer key, grader source, or project memory consulted."}
+  - {attempt_id: A02, is_retry: false, driver_action: "create_story_shell (exterior walls+slab+ceiling, footprint on centerlines, thickness 0.2, height 2.6) + 5 create_wall interior partitions; search_assets(sofa) sanity check vs manifest.", result: pass, corrections: [], human_interventions: [], notes: "9 walls created; sofa id/dims matched manifest exactly."}
+  - {attempt_id: A03, is_retry: false, driver_action: "get_walls to read actual start/end/length, then add_door x6 + add_window x9 with t computed from real geometry. Batched openings across distinct walls (3 batches) to avoid parallel writes to the same wall node.", result: pass, corrections: [], human_interventions: [], notes: "All 15 openings reported exact wall-local X (e.g. front door localX=7 -> world x=7.1); no clamping."}
+  - {attempt_id: A04, is_retry: false, driver_action: "set_zone x6 for the six rooms using interior clear (inner-face) rectangles.", result: pass, corrections: [], human_interventions: [], notes: "get_zones bounds matched schedule exactly: Living 5.8x4.4, Kitchen-dining 3.8x3.0, Bathroom 1.8x3.0, Hallway 1.8x7.6, Bedroom2 3.6x4.4, Bedroom1 3.6x3.0."}
+  - {attempt_id: A05, is_retry: false, driver_action: "Mid-build checkpoint: validate_scene + verify_scene + get_zones before furniture.", result: pass, corrections: [], human_interventions: [], notes: "valid=true, hasIssues=false. Fault-early check per brief."}
+  - {attempt_id: A06, is_retry: false, driver_action: "Calibrated rotation convention: placed 2 disposable test sofas (yaw 0 and yaw 90), read back via get_node. Determined rotation param is DEGREES stored as Euler Y ([0,yaw,0]); position stored world-frame; zone-target reparents item to level. Deleted both test items.", result: pass, corrections: ["deleted 2 calibration test items before final furniture placement"], human_interventions: [], notes: "Adopted convention front=+Z at yaw 0 with makeRotationY sign: North=0, East=90, South=180, West=270. Verified positions are convention-robust (wall items offset by depth/2 into room; footprints symmetric) so any facing-convention error can only flip yaw 180deg, never move an item."}
+  - {attempt_id: A07, is_retry: false, driver_action: "place_item x22 (all catalog ids, target=level, world positions, calibrated yaw) in 3 batches: living+kitchen fixtures, dining chairs+bathroom, hallway+both bedrooms.", result: pass, corrections: [], human_interventions: [], notes: "22 items = brief schedule total (bedroom quantities sum to 7, not the 6 first estimated). All wall-adjacent items seated back-to-wall via depth/2 offset from inner face."}
+  - {attempt_id: A08, is_retry: false, driver_action: "Final validate_scene + verify_scene + check_collisions + get_level_summary; audited every item position/rotation and every opening localX against plan.", result: pass, corrections: [], human_interventions: [], notes: "valid=true, hasIssues=false. check_collisions returned 2 hits (sofa<->coffee-table, coffee-table<->livingroom-chair); both investigated and confirmed FALSE POSITIVES from the unrotated-footprint test on the yaw-90 coffee-table (actual X-extent 1.75-3.25 vs unrotated 1.5-3.5). Items left on their specified positions per brief guidance."}
+  - {attempt_id: A09, is_retry: false, driver_action: "export_json(pretty) -> extracted inner json string -> wrote run_scene.json (55808 bytes, 57 nodes: site+building+level + 9 walls + 15 openings + 6 zones + slab + ceiling + 22 items).", result: pass, corrections: [], human_interventions: [], notes: "GLB export intentionally skipped (unavailable headless, per brief)."}
+
+summary:
+  attempt_count: 9
+  retry_count: 0
+  correction_count: 1
+  human_intervention_count: 0
+  residual_not_built:
+    - "roof (out-of-scope this round)"
+    - "stairs (out-of-scope; single story)"
+    - "landscaping (out-of-scope)"
+    - "materials / material presets (out-of-scope)"
+    - "second level (out-of-scope)"
+  residual_risks:
+    - "Furniture yaw depends on the core library's authored-front convention, which is not observable headlessly (no GLB/render). Adopted the standard Three.js mapping N=0/E=90/S=180/W=270 with front=+Z. If the core authors front=-Z, all facings are a uniform 180deg flip; item positions/footprints are unaffected."
+    - "check_collisions reports 2 benign false positives on the correctly-placed yaw-90 coffee-table (documented in A08)."
+
+privacy_review: {secrets_checked: true, notes: No credentials or private fields.}

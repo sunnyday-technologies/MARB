@@ -1,0 +1,33 @@
+# PH-1 blind-kit catalog manifest — the architecture-lane "parts kit".
+#
+# All furnishings come from the built-in headless catalog of @pascal-app/mcp.
+# This pins the tool-surface versions and the catalog dimensions the grader's
+# collision gate uses. If the installed package's catalog dimensions differ
+# from these, the run is a different cohort — record it.
+schema_version: pascal_house_catalog_manifest.v0.1
+tool_surface:
+  mcp_package: "@pascal-app/mcp"
+  mcp_version: "0.3.1"
+  core_package: "@pascal-app/core"
+  core_version: "0.9.1"
+  launch: "bunx pascal-mcp"
+units: meters
+# asset id -> catalog dimensions [width, height, depth] at scale 1.
+assets_used:
+  sofa:             [2.5, 0.8, 1.5]
+  coffee-table:     [2.0, 0.4, 1.5]
+  tv-stand:         [2.0, 0.4, 0.5]
+  livingroom-chair: [1.5, 0.8, 1.5]
+  kitchen:          [2.5, 1.1, 1.0]
+  fridge:           [1.0, 2.0, 1.0]
+  dining-table:     [2.5, 0.8, 1.0]
+  dining-chair:     [0.5, 1.0, 0.5]
+  shower-square:    [1.0, 2.0, 1.0]
+  washing-machine:  [1.0, 1.0, 1.0]
+  toilet:           [1.0, 0.9, 1.0]
+  coat-rack:        [0.5, 1.8, 0.5]
+  double-bed:       [2.0, 0.8, 2.5]
+  single-bed:       [1.5, 0.7, 2.5]
+  bedside-table:    [0.5, 0.5, 0.5]
+  closet:           [2.0, 2.5, 1.0]
+  dresser:          [1.5, 0.8, 1.0]

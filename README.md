@@ -94,6 +94,42 @@ not better. A larger token budget did not improve quality. Write-up:
 [`results/local_anchor_study.md`](results/local_anchor_study.md). Figure:
 [`results/figures/marb_local_3panel.png`](results/figures/marb_local_3panel.png).
 
+## MARB-A — the architecture lane (new, v0.1)
+
+MARB was built to grow beyond one machine and one grading engine, and this is
+the first expansion: **MARB-A** grades an AI building a fully specified house
+in [Pascal](https://github.com/pascalorg/editor), an open-source 3D building
+editor, driven headlessly through Pascal's own MCP agent interface. It is the
+first MARB lane graded entirely outside the CADCLAW engine — the submitted
+artifact is the tool's scene export, scored against a reference layout
+(WALL / OPEN / POS-A / ORIENT-A plus BOM, collision, and envelope gates).
+
+First cohort (task PH-1 "Bungalow", kit `pascal-v0.1`, grader v0.1.1, n=1 per
+cell — all three placed every wall, opening, and furniture item at 0.0 mm
+median error; orientation and cost separate them):
+
+| Model · effort | ORIENT-A | Gates | Wall-clock | Tokens billed |
+|---|---|---|---|---|
+| GPT-5.5 · Codex · xhigh | **100%** | all PASS | **9.9 min** | **2.11 M** (22k out) |
+| Claude Opus 4.8 · max | 31.6% | collisions FAIL | 19.9 min | 13.50 M (313k out) |
+| Claude Fable 5 · medium | 31.6% | collisions FAIL | 117.8 min¹ | 4.83 M (129k out) |
+
+Both Claude runs fell into the same trap: they wrote degree values into
+Pascal's radians rotation field — a field the published tool exposes as a bare
+number with no unit documentation — and their calibration probes couldn't
+detect it, because the tool echoes whatever it is given. Full story, method,
+per-run findings, and our own grader's disclosed mistakes:
+[`tasks/pascal_house/`](tasks/pascal_house/) and
+[`results/pascal_runs.json`](results/pascal_runs.json).
+
+The lane pattern — drive an open scene tool through its agent interface,
+grade the exported scene against a reference — is designed to extend to
+similar agent-drivable design tools; Pascal is the first. MARB-A results are
+a separate cohort family and are never pooled with the mechanical board.
+
+¹ Includes operator approval latency (run predates auto-approval); the other
+two ran fully auto-approved.
+
 ## Quickstart
 
 The grader scores a run against the **answer key** (the reference STEP + the
