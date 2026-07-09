@@ -13,6 +13,15 @@ single kit version. This page lists each version and the change that defines it.
 | **v1.2** | `m3_fusion_blind_kit_v1.2.zip` | Fusion stub only. Added the `addExistingComponent` matrix law (`stored = M·T_bake`, `world_center = M·C0`, the dynamic-C0 re-anchor trap, and re-inventory before mutating). Also added the instruction to create a new named project rather than work in root or Admin. These are tool mechanics; they do not leak the answer key. The CadQuery kit is unchanged and stays at v1.1. | Fusion runs from 2026-05-30. |
 | **v1.3** | `m3_fusion_blind_kit_v1.3.zip` | Fusion stub only. Added a guard to use the provided Fusion MCP tools (`fusion_mcp_execute` and `fusion_mcp_read`) directly, rather than write a self-rolled access harness, and to let MCP tool discovery finish before assuming the tools are missing. The cause was a VS Code run that improvised its own Fusion bridge during tool discovery. The CadQuery kit is unchanged. | Current Fusion kit, runs from 2026-05-30 onward. |
 
+## Architecture lane (MARB-A) kits
+
+The architecture lane grades Pascal MCP scene authoring, not STEP assembly.
+Its kits are a separate cohort family — never pool them with M3-CRETE rows.
+
+| Version | Zip | Change | Cohort |
+|---|---|---|---|
+| **pascal-v0.1** | `pascal_house_blind_kit_v0.1.zip` | First PH-1 "Bungalow" kit: task brief (`PASCAL_TASK_BRIEF.md`), dimensioned goal floorplan render, catalog manifest pinning `@pascal-app/mcp` 0.3.1 / core 0.9.1. Answer key = `tasks/pascal_house/ph1_reference_layout.yaml`; grader = `grader/pascal_scene_grade.py`. Validated 2026-07-08: self-test, rotated-frame test, and a live smoke build through the real `@pascal-app/mcp` 0.3.1 server (`tasks/pascal_house/smoke_build_via_mcp.py`) all grade 0.0 mm / 100% / gates PASS. Brief warns that Pascal's `check_collisions` ignores item yaw (false positives on rotated furniture). Launch from a clean folder is `bunx @pascal-app/mcp` (NOT `bunx pascal-mcp` — that package name only resolves inside the Pascal repo). | No runs yet. |
+
 ## Why v1.2 exists
 
 Every Fusion run spent a large share of its token budget re-deriving the

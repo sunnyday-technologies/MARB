@@ -1,0 +1,217 @@
+{
+  "schema_version": "pascal_house_runs.v0.1",
+  "lane_notes": [
+    "Verification-loop gap (all v0.1 runs): unlike the mechanical lane, where drivers can view/render their in-progress assembly, headless Pascal offers no way for a model to see its own build (GLB export stubbed, no render tool). One self-render after the first placed item would have exposed the rotation-units trap; both Claude runs flagged or suffered exactly this blindness. Kit v0.2 will ship a sanctioned self-render tool (plan + elevation views from the scene JSON); adding it starts a new cohort. Building one's own renderer was technically permitted and no model attempted it.",
+    "Tool-contract documentation (all v0.1 runs): the published @pascal-app/mcp 0.3.1 exposes place_item.rotation as a bare {type:number} with no description or units. Pascal's unreleased main branch adds unit documentation and natural-language angle parsing ('90\u00b0' accepted). All three models saw the same undocumented schema, so the cohort is internally fair; the trap is real on the published tool."
+  ],
+  "runs": [
+    {
+      "run_id": "pascal_ph1_opus48_max_01",
+      "benchmark_id": "pascal_house_ph1",
+      "lane": "MARB-A architecture",
+      "kit_version": "pascal-v0.1",
+      "grader_version": "v0.1.1 (frozen)",
+      "date_utc": "2026-07-09",
+      "driver": {
+        "model": "claude-opus-4-8",
+        "model_source": "session transcript metadata (146 messages, authoritative)",
+        "model_self_report": "Claude Opus 4.8 (1M context) \u2014 model name correct; [1m] variant per operator settings",
+        "effort": "max (launch flag)",
+        "host": "Claude Code CLI",
+        "tool_surface": "@pascal-app/mcp 0.3.1 via bunx"
+      },
+      "artifacts": {
+        "scene": "results/runs/pascal/pascal_ph1_opus48_max_01/run_scene.json",
+        "run_log": "results/runs/pascal/pascal_ph1_opus48_max_01/run_log.yaml",
+        "grades": "results/pascal_ph1_opus48_max_01.json",
+        "timelapse": "results/figures/pascal_ph1_opus48_max_01_timelapse.gif",
+        "final_comparison": "results/figures/pascal_ph1_opus48_max_01_final.png",
+        "hero_3d_render": "results/figures/pascal_ph1_opus48_max_01_hero3d.png",
+        "transcript_dir": "operator-held session transcript (available for audit)"
+      },
+      "scores": {
+        "WALL_median_mm": 0.0,
+        "WALL_covered": "9/9",
+        "WALL_extra_length_m": 0.0,
+        "OPEN_doors_median_mm": 0.0,
+        "OPEN_windows_median_mm": 0.0,
+        "POS_A_median_mm": 0.0,
+        "POS_A_matched": "22/22",
+        "ORIENT_A_pct": 31.6,
+        "gates": {
+          "bom": "PASS",
+          "collisions": "FAIL (4 clips)",
+          "envelope": "PASS"
+        }
+      },
+      "effort_measured": {
+        "wall_clock_minutes": 19.9,
+        "wall_clock_source": "transcript timestamps 05:10:39Z -> 05:30:31Z; fully auto-approved, no human latency",
+        "tokens": {
+          "capture_status": "recovered_from_transcript",
+          "input_uncached": 23620,
+          "cache_creation": 566467,
+          "cache_read": 12599405,
+          "output": 313123,
+          "billed_total": 13502615
+        },
+        "self_reported": {
+          "elapsed_minutes": 18.0,
+          "attempts": 9,
+          "retries": 0,
+          "corrections": 1,
+          "human_interventions": 0
+        }
+      },
+      "findings": [
+        "Identical failure signature to Fable 5 medium: ORIENT-A 31.6%, 4 collision clips, everything else perfect (0.0 mm across walls/openings/items, BOM exact).",
+        "Ran the most rigorous probe of the three: placed two disposable calibration sofas (yaw 0 and 90), read them back, deleted them \u2014 and still concluded DEGREES, because the tool echoes stored values regardless of unit. Empirical calibration cannot distinguish units through a passthrough field.",
+        "Explicitly flagged the residual risk in its own run log: furniture yaw convention 'not observable headlessly (no GLB/render)' \u2014 the model knew it was flying blind on orientation.",
+        "Correctly dismissed Pascal's 2 check_collisions false positives with quantified reasoning (rotated X-extent 1.75-3.25 vs unrotated 1.5-3.5).",
+        "Highest spend of the cohort: 13.5M tokens billed (313k output) in 19.9 min, vs Codex 2.1M/9.9min (correct) and Fable 5 4.8M/~118min (same failure). Max effort bought a better process, not a better outcome."
+      ],
+      "caveats": [
+        "Fully auto-approved sealed run; no human latency in wall-clock.",
+        "Same verification-loop and schema-documentation lane notes as all v0.1 runs (see lane_notes)."
+      ]
+    },
+    {
+      "run_id": "pascal_ph1_codex55_xhigh_01",
+      "benchmark_id": "pascal_house_ph1",
+      "lane": "MARB-A architecture",
+      "kit_version": "pascal-v0.1",
+      "grader_version": "v0.1.1 (frozen)",
+      "date_utc": "2026-07-09",
+      "driver": {
+        "model": "gpt-5.5",
+        "model_source": "Codex session rollout metadata (authoritative)",
+        "model_self_report": "GPT-5 Codex (close but imprecise; also cited @pascal-app/mcp 0.1.0 instead of 0.3.1)",
+        "effort": "xhigh (operator-set)",
+        "host": "Codex CLI",
+        "tool_surface": "@pascal-app/mcp 0.3.1 via bunx"
+      },
+      "artifacts": {
+        "scene": "results/runs/pascal/pascal_ph1_codex55_xhigh_01/run_scene.json",
+        "run_log": "results/runs/pascal/pascal_ph1_codex55_xhigh_01/run_log.yaml",
+        "grades": "results/pascal_ph1_codex55_xhigh_01.json",
+        "transcript": "operator-held Codex rollout (available for audit)",
+        "timelapse": "results/figures/pascal_ph1_codex55_xhigh_01_timelapse.gif",
+        "final_comparison": "results/figures/pascal_ph1_codex55_xhigh_01_final.png",
+        "hero_3d_render": "results/figures/pascal_ph1_codex55_xhigh_01_hero3d.png"
+      },
+      "scores": {
+        "WALL_median_mm": 0.0,
+        "WALL_covered": "9/9",
+        "WALL_extra_length_m": 0.0,
+        "OPEN_doors_median_mm": 0.0,
+        "OPEN_windows_median_mm": 0.0,
+        "POS_A_median_mm": 0.0,
+        "POS_A_matched": "22/22",
+        "ORIENT_A_pct": 100.0,
+        "gates": {
+          "bom": "PASS",
+          "collisions": "PASS",
+          "envelope": "PASS"
+        }
+      },
+      "effort_measured": {
+        "wall_clock_minutes": 9.9,
+        "wall_clock_source": "Codex rollout timestamps 05:09:29Z -> 05:19:24Z; fully auto-approved (Codex auto-review), no human latency",
+        "tokens": {
+          "capture_status": "recovered_from_codex_rollout",
+          "input": 2086774,
+          "input_cached": 1931008,
+          "output": 21564,
+          "output_reasoning": 11537,
+          "billed_total": 2108338,
+          "auto_review_overhead_total": 223717
+        },
+        "self_reported": {
+          "elapsed_minutes": 0.009,
+          "note": "self-reported timing is the log-write timestamp, not the run \u2014 ignored"
+        }
+      },
+      "findings": [
+        "First flawless artifact on the lane: every metric 0.0 mm, ORIENT-A 100%, all gates PASS.",
+        "Got the radians contract right where Fable 5 (medium) did not: rotations stored as pi/2, pi, -pi/2 exactly.",
+        "Correctly identified Pascal's check_collisions 2 hits as unrotated-AABB false positives and left items at spec (same judgment call as Fable).",
+        "57-node scene (create_story_shell + set_zone route) vs Fable's 82 \u2014 different construction path, identical graded geometry.",
+        "9.9 min and 2.1M tokens vs Fable-medium's ~118 min (incl. approval waits) and 4.8M \u2014 an order of magnitude faster.",
+        "Run-log self-report again unreliable (nonsense elapsed time, wrong MCP version) \u2014 transcript metadata remains the only trusted source."
+      ],
+      "caveats": [
+        "Executed under Codex CLI with workspace root pinned to the run folder; transcript scan shows no access to MARB paths or the answer key.",
+        "Codex auto-review adds 224k tokens of platform overhead not attributable to the driver; reported separately."
+      ]
+    },
+    {
+      "run_id": "pascal_ph1_fable5_medium_01",
+      "benchmark_id": "pascal_house_ph1",
+      "lane": "MARB-A architecture",
+      "kit_version": "pascal-v0.1",
+      "date_utc": "2026-07-09",
+      "driver": {
+        "model": "claude-fable-5",
+        "model_source": "session transcript metadata (authoritative)",
+        "model_self_report": "Claude Opus 4.6 \u2014 WRONG; models misreport their own identity; never trust run_log self-ID",
+        "effort": "medium",
+        "host": "Claude Code CLI",
+        "tool_surface": "@pascal-app/mcp 0.3.1 / core 0.9.1 via bunx"
+      },
+      "artifacts": {
+        "scene": "results/runs/pascal/pascal_ph1_fable5_medium_01/run_scene.json",
+        "run_log": "results/runs/pascal/pascal_ph1_fable5_medium_01/run_log.yaml",
+        "grades": "results/pascal_ph1_fable5_medium_01.json",
+        "timelapse": "results/figures/pascal_ph1_fable5_medium_01_timelapse.gif",
+        "final_comparison": "results/figures/pascal_ph1_fable5_medium_01_final.png",
+        "hero_3d_render": "results/figures/pascal_ph1_fable5_medium_01_hero3d.png",
+        "transcript_dir": "operator-held session transcript (available for audit)"
+      },
+      "scores": {
+        "WALL_median_mm": 0.0,
+        "WALL_covered": "9/9",
+        "WALL_extra_length_m": 0.0,
+        "OPEN_doors_median_mm": 0.002,
+        "OPEN_windows_median_mm": 0.0,
+        "POS_A_median_mm": 0.0,
+        "POS_A_matched": "22/22",
+        "ORIENT_A_pct": 31.6,
+        "gates": {
+          "bom": "PASS",
+          "collisions": "FAIL (4 clips)",
+          "envelope": "PASS"
+        }
+      },
+      "effort_measured": {
+        "wall_clock_minutes": 117.8,
+        "wall_clock_source": "transcript timestamps; includes manual approval latency (run predates auto-approve settings)",
+        "tokens": {
+          "capture_status": "recovered_from_transcript",
+          "input_uncached": 7094,
+          "cache_creation": 508774,
+          "cache_read": 4189230,
+          "output": 128956,
+          "billed_total": 4834054
+        },
+        "self_reported": {
+          "elapsed_minutes": 116.7,
+          "attempts": 7,
+          "retries": 0,
+          "human_interventions": 0
+        }
+      },
+      "findings": [
+        "Structure flawless: all wall centerlines exact (built via create_room + planned dedup of 8 shared walls -> 16 segments), every door/window at spec within 0.002 mm, all 22 items at exact positions, BOM exact.",
+        "Single fatal error: wrote DEGREE values (90/180/270) into ItemNode.rotation, a radians field (three.js euler). Intended yaws all match the reference exactly; as stored, furniture renders at non-cardinal nonsense angles. Its own probe (run_log A05) concluded 'degrees' because place_item passes bare numbers through unvalidated.",
+        "Collision gate FAIL (4 clips) is a downstream consequence of the rotation error, not an independent placement fault.",
+        "Model correctly hand-verified Pascal's check_collisions false positives (unrotated AABB) and left items in place per the brief warning.",
+        "export_json exceeded the host tool-result cap; model recovered the payload losslessly from the host's saved tool-result file without re-calling the tool."
+      ],
+      "caveats": [
+        "Run executed in D:/tmp/ph1_run_01 with manual permission approvals; wall-clock is an upper bound.",
+        "Kit files were accidentally deleted from the run folder mid-run by a cleanup command in the operator session; the driver had already loaded the brief and completed normally. No evidence of impact.",
+        "Graded with the segmentation-invariant WALL metric (grader v0.1.1); the original midpoint matcher scored this run WALL 0.0 mm with only 5/9 walls matched and 11 'extra' (a mis-score of valid segmentation). Post-fix: 0.0 mm, 9/9 covered, 0.0 m extra. Both scores retained here; the fix direction was score-improving, which is why the pre-fix number, the grader self-test, and the rotated-frame test are all published. Grader frozen at v0.1.1 for the Opus 4.8 max run."
+      ]
+    }
+  ]
+}

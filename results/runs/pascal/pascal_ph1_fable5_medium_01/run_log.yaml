@@ -1,0 +1,20 @@
+schema_version: pascal_house_run_log.v0.1
+run_id: pascal_claude-opus-4-6_20260709_1
+benchmark_id: pascal_house_ph1
+track: pascal_mcp
+status: complete
+driver:
+  ai_driver: Claude Opus 4.6 (claude-opus-4-6, Claude Code CLI)
+  host_application: "@pascal-app/mcp 0.3.1 / core 0.9.1 (per kit catalog_manifest; versions not independently queryable headlessly)"
+timing: {started_utc: "2026-07-09T02:10:34Z", ended_utc: "2026-07-09T04:07:17Z", elapsed_minutes: 116.7}
+token_usage: {capture_status: unavailable, total_tokens: null}
+attempts:
+  - {attempt_id: A01, is_retry: false, driver_action: "Read brief, reference floorplan, catalog manifest; inspected default scene graph (site/building/level pre-existing)", result: ok, corrections: [], human_interventions: [], notes: null}
+  - {attempt_id: A02, is_retry: false, driver_action: "Created 6 rooms via create_room with wall-centerline polygons (exterior centerlines at 0.1/11.9/7.9; partitions x=6.1, x=8.1, x=4.1, z=4.7); verified interior clear dims match room schedule", result: ok, corrections: [], human_interventions: [], notes: "Confirmed polygon = wall centerline from returned areas (hallway 15.6 = 2.0 x 7.8)"}
+  - {attempt_id: A03, is_retry: false, driver_action: "Deleted 8 duplicate/overlapping partition walls from adjacent rooms in one atomic apply_patch, keeping one wall per shared boundary (16 walls remain)", result: ok, corrections: [], human_interventions: [], notes: "Planned dedup, not a fix: create_room per room necessarily doubles shared walls"}
+  - {attempt_id: A04, is_retry: false, driver_action: "Added 6 doors (0.9x2.1) and 9 windows (1.2x1.2, sill 0.9) via add_door/add_window with t computed from get_walls start/end directions", result: ok, corrections: [], human_interventions: [], notes: "All openings landed unclamped at specified centers; all windows at t=0.5 of their wall segments"}
+  - {attempt_id: A05, is_retry: false, driver_action: "Placed probe sofa, inspected node to confirm rotation = yaw degrees [0,y,0]; adopted facing convention 0=N(+Z), 90=E, 180=S, 270=W; placed remaining 21 catalog items per furnishing schedule", result: ok, corrections: [], human_interventions: [], notes: "Authored front axis of GLB assets not exposed by tool surface; yaw values follow the stated convention consistently"}
+  - {attempt_id: A06, is_retry: false, driver_action: "validate_scene + verify_scene + check_collisions", result: ok, corrections: [], human_interventions: [], notes: "valid=true, no issues; 2 collision hits (sofa/coffee-table, coffee-table/livingroom-chair) hand-verified as unrotated-AABB false positives (rotated footprints disjoint: sofa x 0.2-1.7, table x 1.75-3.25, chair x 3.45-4.95); items left at specified positions per brief"}
+  - {attempt_id: A07, is_retry: false, driver_action: "export_json (pretty) saved as run_scene.json", result: ok, corrections: [], human_interventions: [], notes: "Export exceeded MCP result token cap; recovered losslessly from host's saved tool-result file (67,275 chars, 82 nodes) without re-calling the tool"}
+summary: {attempt_count: 7, retry_count: 0, correction_count: 0, human_intervention_count: 0, residual_not_built: [roof, stairs, landscaping, materials, second_level]}
+privacy_review: {secrets_checked: true, notes: No credentials or private fields in scene export or log.}
