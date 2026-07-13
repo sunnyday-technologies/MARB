@@ -63,7 +63,12 @@ hf upload SunnydayTech/marb-m3-crete benchmark.yaml benchmark.yaml --repo-type d
 
 ## 3. Gated answer-key dataset
 
-Upload only the answer key (reference STEP + placement spec):
+Upload only the answer key (reference STEP + placement spec). The
+`tasks/m3_crete/` paths below are gitignored synced copies of the canonical
+private storage — before uploading, confirm their sha256 digests match
+`tasks/m3_crete/ANSWER_KEY.md`. New task keys skip this section entirely and
+follow the born-gated flow in `PUBLISHING.md` (upload from private storage;
+only the hash lands here):
 
 ```powershell
 hf upload SunnydayTech/marb-m3-crete-answer-key hf/dataset-gated/README.md README.md --repo-type dataset

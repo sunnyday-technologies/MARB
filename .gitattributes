@@ -2,3 +2,8 @@
 # so clones and pushes do not re-transfer the 38 MB reference STEP.
 tasks/**/*.step filter=lfs diff=lfs merge=lfs -text
 tasks/**/*.STEP filter=lfs diff=lfs merge=lfs -text
+
+# Shell scripts and hooks must stay LF — they run under Git Bash on Windows
+# and dash on the ubuntu CI runners; CRLF breaks both.
+*.sh text eol=lf
+scripts/hooks/* text eol=lf
