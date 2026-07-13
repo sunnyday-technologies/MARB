@@ -1,0 +1,46 @@
+# Server-side backstop for the answer-key guard (scripts/check_no_answer_keys.sh).
+# The local pre-push hook (scripts/hooks/pre-push) runs the same check; this
+# workflow catches pushes from clones that never installed the hook.
+#
+# Scope is deliberately the tree + the pushed range, NOT full history: the one
+# pre-gating M3 key revision (LFS pointer at 4fb186c, untracked in ba7534d) is
+# known and accepted — a full-history scan would flag it forever.
+name: key-guard
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  no-answer-keys:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false   # path check only — never download key-sized blobs
+
+      - name: No tracked answer-key paths in the tree
+        run: sh scripts/check_no_answer_keys.sh --tree
+
+      - name: No answer-key paths in the pushed commits
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            # New branch or force-push with unreachable before-sha: scan the
+            # commits this branch adds over the default branch instead.
+            git fetch --no-tags origin main
+            sh scripts/check_no_answer_keys.sh --range "$AFTER" --not origin/main
+          else
+            sh scripts/check_no_answer_keys.sh --range "$BEFORE..$AFTER"
+          fi
+
+      - name: No answer-key paths in the PR commits
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: sh scripts/check_no_answer_keys.sh --range "$BASE..$HEAD"
