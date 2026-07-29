@@ -10,8 +10,9 @@ steps. Any tool or agent can be tested, including Autodesk Fusion, CadQuery, or
 a custom agent.
 
 MARB is developed by **Sunnyday Technologies**. It runs on the open-source
-[CADCLAW](https://github.com/sunnyday-technologies/CADCLAW) verification engine.
-Project home: [cadclaw.io/benchmark](https://cadclaw.io/benchmark).
+[CADCLAW](https://github.com/sunnyday-technologies/CADCLAW) assembly and
+verification framework; MARB's graders import CADCLAW's gates.
+Project home: [marb.cadclaw.io](https://marb.cadclaw.io).
 
 ---
 
