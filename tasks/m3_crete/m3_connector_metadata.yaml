@@ -41,27 +41,27 @@ components:
           Local open-channel side; the channel opens toward +local-X (verified by
           inspect-component: bbox X -20..20, and consistent with open_channel_face
           at +20 and the open_channel_orientation gate's local_open_axis [1,0,0]).
-          Descriptive reference; the resolver uses open_channel_face/axis_center.
+          Descriptive reference.
       - id: z_end_a
         kind: extrusion_end
         origin_mm: [0.0, 0.0, 0.0]
         z_axis: [0.0, 0.0, -1.0]
-        tags: [rail_end, resolver_datum]
+        tags: [rail_end]
         notes: >
           True local long-axis end of the authored STEP, inspected as Z 0..1000
           (cross-section 40mm X by 80mm Y). The legacy negative_x_end frame above
-          assumed an X long axis and does not match the asset; the resolver uses
+          assumed an X long axis and does not match the asset; prefer
           z_end_a/z_end_b for relative placement.
       - id: z_end_b
         kind: extrusion_end
         origin_mm: [0.0, 0.0, 1000.0]
         z_axis: [0.0, 0.0, 1.0]
-        tags: [rail_end, resolver_datum]
+        tags: [rail_end]
         notes: Far local long-axis end (Z = 1000mm) from inspect-component bbox.
       - id: axis_center
         kind: reference
         origin_mm: [0.0, 0.0, 0.0]
-        tags: [resolver, axis_center]
+        tags: [axis_center]
         notes: >
           Cross-section centroid on the long axis (inspect-component bbox is
           X -20..20, Y -40..40). Used as the parent datum for axis-locked
@@ -70,7 +70,7 @@ components:
         kind: mount_face
         origin_mm: [20.0, 0.0, 0.0]
         x_axis: [1.0, 0.0, 0.0]
-        tags: [resolver, cbeam_opening, inward_facing]
+        tags: [cbeam_opening, inward_facing]
         notes: >
           Local +X cross-section face (the open-channel side, 40mm width so the
           face is at +20mm). This is the rail face that meets the X-to-Y plate;
@@ -97,43 +97,43 @@ components:
       - id: face_y0
         kind: mount_face
         origin_mm: [0.0, 0.0, 0.0]
-        tags: [gantry_plate, seat_face, resolver]
+        tags: [gantry_plate, seat_face]
       - id: face_y3
         kind: mount_face
         origin_mm: [0.0, 3.0, 0.0]
-        tags: [gantry_plate, seat_face, resolver]
+        tags: [gantry_plate, seat_face]
       - id: hole_y3_yneg_lower
         kind: wheel_contact
         origin_mm: [-29.85, 3.0, -30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_y3_yneg_upper
         kind: wheel_contact
         origin_mm: [-29.85, 3.0, 30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_y3_ypos_lower
         kind: wheel_contact
         origin_mm: [29.85, 3.0, -30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_y3_ypos_upper
         kind: wheel_contact
         origin_mm: [29.85, 3.0, 30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_y0_yneg_lower
         kind: wheel_contact
         origin_mm: [-29.85, 0.0, -30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_y0_yneg_upper
         kind: wheel_contact
         origin_mm: [-29.85, 0.0, 30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_y0_ypos_lower
         kind: wheel_contact
         origin_mm: [29.85, 0.0, -30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_y0_ypos_upper
         kind: wheel_contact
         origin_mm: [29.85, 0.0, 30.32]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
 
   - id: cbeam_gantry_plate_xlarge
     source_path: CAD/Advanced/Plates/C-Beam Gantry Plate XLarge.STEP
@@ -157,43 +157,43 @@ components:
       - id: face_z0
         kind: mount_face
         origin_mm: [0.0, 0.0, 0.0]
-        tags: [gantry_plate, seat_face, resolver]
+        tags: [gantry_plate, seat_face]
       - id: face_z6
         kind: mount_face
         origin_mm: [0.0, 0.0, 6.0]
-        tags: [gantry_plate, seat_face, resolver]
+        tags: [gantry_plate, seat_face]
       - id: hole_z6_xneg_yneg
         kind: wheel_contact
         origin_mm: [-30.0, -30.0, 6.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_z6_xneg_ypos
         kind: wheel_contact
         origin_mm: [-30.0, 30.0, 6.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_z6_xpos_yneg
         kind: wheel_contact
         origin_mm: [30.0, -30.0, 6.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_z6_xpos_ypos
         kind: wheel_contact
         origin_mm: [30.0, 30.0, 6.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_z0_xneg_yneg
         kind: wheel_contact
         origin_mm: [-30.0, -30.0, 0.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_z0_xneg_ypos
         kind: wheel_contact
         origin_mm: [-30.0, 30.0, 0.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_z0_xpos_yneg
         kind: wheel_contact
         origin_mm: [30.0, -30.0, 0.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
       - id: hole_z0_xpos_ypos
         kind: wheel_contact
         origin_mm: [30.0, 30.0, 0.0]
-        tags: [gantry_plate, wheel_hole, resolver]
+        tags: [gantry_plate, wheel_hole]
 
   - id: solid_v_wheel_standard
     source_path: CAD/Components/Wheels/Solid V Wheel.step
@@ -204,17 +204,17 @@ components:
         origin_mm: [0.0, 0.0, 0.0]
         tags: [wheel, v_wheel, standard, solid]
       # Inspected envelope 10.2mm along local X (the hub axis); the two hub
-      # faces are at +/-5.1. The resolver seats the face that points at the plate
+      # faces are at +/-5.1.
       # onto a plate wheel-hole frame, plus the declared standoff, so the
       # plate-face-to-wheel-inner-face distance falls out as offset_mm.
       - id: hub_seat_pos_x
         kind: wheel_contact
         origin_mm: [5.1, 0.0, 0.0]
-        tags: [wheel, v_wheel, hub_face, resolver]
+        tags: [wheel, v_wheel, hub_face]
       - id: hub_seat_neg_x
         kind: wheel_contact
         origin_mm: [-5.1, 0.0, 0.0]
-        tags: [wheel, v_wheel, hub_face, resolver]
+        tags: [wheel, v_wheel, hub_face]
 
   - id: vslot_2080_1000
     source_path: CAD/Components/V-Slot/V-Slot 20x80x1000 Linear Rail.step
@@ -271,7 +271,7 @@ components:
   # --- Drive-train parts: each carries a center reference frame so the placed
   # cosmetic drive geometry (pulleys, idlers, belts, motors, belt-pinion) is
   # covered by connector metadata. These are first-pass/absolute placements, not
-  # resolver-driven; the center frame is a placeholder until (if ever) a real
+  # the center frame is a placeholder until (if ever) a real
   # mount/shaft frame is needed.
   - id: gt2_pulley_20t
     source_path: CAD/Components/Pulleys/GT2 Timing Pulley 20 Tooth.step
