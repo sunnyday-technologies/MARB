@@ -34,6 +34,13 @@ tasks/**/*reference*layout*.yaml
 tasks/**/*reference*scene*.json
 tasks/**/ph*_reference*
 
+# Leak signature — the fingerprint used to detect a submission that reproduced
+# superseded reference data instead of solving. Publishing what the detector
+# looks for would let an entrant avoid it, leaving a filter that only catches
+# the honest. Gated alongside the answer key.
+tasks/**/leak_signature.yaml
+tasks/**/*leak_signature*.y*ml
+
 # Site deploy source for marb.cadclaw.io — published content only, media-heavy
 # (~34 MB of figures/GIFs), so kept out of the public repo history.
 # See PUBLISHING.md. Deploys go ONLY from this folder.

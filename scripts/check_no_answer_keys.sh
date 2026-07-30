@@ -19,7 +19,7 @@
 # not match — the patterns require .step, an assembly/layout/scene spec
 # extension, or the ph*_reference key naming.
 
-KEY_PATH_REGEX='(^|/)[^/]*reference[^/]*\.step$|(^|/)[^/]*reference[^/]*assembly[^/]*\.ya?ml$|(^|/)[^/]*reference[^/]*(layout|scene)[^/]*\.(ya?ml|json)$|(^|/)ph[0-9]+_reference'
+KEY_PATH_REGEX='(^|/)[^/]*reference[^/]*\.step$|(^|/)[^/]*reference[^/]*assembly[^/]*\.ya?ml$|(^|/)[^/]*reference[^/]*(layout|scene)[^/]*\.(ya?ml|json)$|(^|/)ph[0-9]+_reference|(^|/)[^/]*leak_signature[^/]*\.ya?ml$'
 
 mode="${1:---tree}"
 case "$mode" in
