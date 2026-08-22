@@ -41,10 +41,20 @@ tasks/**/ph*_reference*
 tasks/**/leak_signature.yaml
 tasks/**/*leak_signature*.y*ml
 
-# Site deploy source for marb.cadclaw.io — published content only, media-heavy
-# (~34 MB of figures/GIFs), so kept out of the public repo history.
-# See PUBLISHING.md. Deploys go ONLY from this folder.
-/publishing/
+# The marb.cadclaw.io source must be reviewable and reproducible from Git.
+# A locally held display font remains excluded from the release artifact until
+# its redistribution rights are documented; the site uses system fallbacks.
+/publishing/fonts/
+/.cloudflare/
 analysis/pascal-editor/runs/
 tasks/pascal_house/ph1_reference_layout.yaml
 tasks/pascal_house/ph1_reference_scene.json
+
+# Unpublished media pulled from the site 2026-08-21 (kept locally, never served)
+_unpublished_media_*/
+
+# Licensed display faces (Typodermic Nulshock/Sifonn) are NOT redistributable.
+# They must never re-enter this public repository.
+*.otf
+*.ttf
+**/Nulshock*
