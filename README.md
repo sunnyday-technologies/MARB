@@ -206,5 +206,30 @@ The MARB code is released under the MIT license. Copyright (c) 2026 Sunnyday
 Technologies. See [`LICENSE`](LICENSE). The CAD parts bundled in the blind kits
 are licensed separately. OpenBuilds-derived parts are under CC BY-SA 4.0, and
 Sunnyday-authored parts are under the repository MIT license. See
-[`kits/LICENSE.md`](kits/LICENSE.md). Product and company names used to identify
+[`kits/LICENSE.md`](kits/LICENSE.md) — that notice covers those parts wherever
+they appear in this repository, including the loose copies under
+[`tasks/m3_crete/`](tasks/m3_crete/). Product and company names used to identify
 the tools tested are trademarks of their respective owners.
+
+### Third-party runtime dependencies
+
+MARB's graders run on CADCLAW and CadQuery, which reach Open CASCADE Technology
+through the OCP bindings. **This software makes use of, and is based on,
+facilities provided by the Open CASCADE Technology software.**
+
+| Component | Role | License |
+| --- | --- | --- |
+| [CADCLAW](https://github.com/sunnyday-technologies/CADCLAW) | grading engine, STEP I/O | MIT |
+| [CadQuery](https://github.com/CadQuery/cadquery) | geometry, metric builders | Apache-2.0 |
+| [OCP (`cadquery-ocp`)](https://github.com/CadQuery/OCP) | Python bindings to OCCT | Apache-2.0 |
+| [Open CASCADE Technology](https://dev.opencascade.org/) | B-rep kernel, STEP reader | LGPL-2.1 with the Open CASCADE Exception |
+| [CasADi](https://web.casadi.org/) (pulled in by CadQuery) | constraint solving | LGPL-3.0-or-later |
+| numpy, scipy, matplotlib, Pillow, PyYAML | metrics and figures | BSD-3-Clause / PSF-style / MIT-CMU / MIT |
+
+Installing `requirements.txt` places LGPL-licensed binaries in your environment
+(OCCT via `cadquery-ocp`, CasADi via CadQuery). MARB imports them as ordinary
+Python modules and redistributes none of them: this repository ships no
+compiled libraries, and the STEP files it does ship are geometry data produced
+by those tools, not derivative works of them. If you bundle MARB into a frozen
+or containerised artifact that embeds those libraries, the LGPL terms attach to
+that artifact and are yours to satisfy.

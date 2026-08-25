@@ -3,10 +3,16 @@
 The blind kits in this directory (`kits/*.zip`) bundle STEP CAD parts. A model uses
 these parts to build the M3-CRETE assembly. The parts fall under **two** licenses.
 
+**Scope.** This notice governs these parts wherever they appear in this repository, not
+only inside `kits/*.zip`. Several of them are also tracked as loose files under
+`tasks/m3_crete/` and `tasks/m3_crete/generated/`, and three of those are byte-identical
+to their kit copies. The license that applies to a part follows the part, not the
+directory it happens to sit in.
+
 This notice does **not** change the repository's root [`LICENSE`](../LICENSE) (MIT).
 The MIT license governs the MARB code: the harness, the grader, the figures, and the
-docs. This notice documents only the third-party and authored CAD assets that the kits
-redistribute.
+docs. This notice documents only the third-party and authored CAD assets that this
+repository redistributes.
 
 ## OpenBuilds-derived parts: CC BY-SA 4.0
 
@@ -17,7 +23,7 @@ library. They are redistributed under the
 **Original source:** OpenBuilds LLC — https://openbuilds.com/
 **License:** CC BY-SA 4.0
 
-Files (in `kits/m3_*_blind_kit*.zip`):
+Files (in `kits/m3_*_blind_kit*.zip`, and where noted also tracked loose under `tasks/`):
 
 - `C-Beam 40x80x1000 Linear Rail.step`
 - `C-Beam Gantry Plate XLarge.STEP`
@@ -27,10 +33,10 @@ Files (in `kits/m3_*_blind_kit*.zip`):
 - `Solid V Wheel.step`
 - `Smooth Idler Pulley Wheel.step`
 - `GT2 Timing Pulley 20 Tooth.step`
-- `M3_GT2_belt_Y_958mm.step`
-- `M3_GT2_belt_Z_942mm.step`
-- `M3_NEMA23_motor.step`
-- `VS_Belt_Pinion.step`
+- `M3_GT2_belt_Y_958mm.step` — also `tasks/m3_crete/generated/`
+- `M3_GT2_belt_Z_942mm.step` — also `tasks/m3_crete/generated/`
+- `M3_NEMA23_motor.step` — also `tasks/m3_crete/generated/`
+- `VS_Belt_Pinion.step` — also `tasks/m3_crete/`
 
 If you redistribute or modify these files you must (1) preserve the OpenBuilds attribution,
 (2) link to the CC BY-SA 4.0 text, and (3) release modifications under CC BY-SA 4.0 or a
@@ -45,8 +51,8 @@ does not imply endorsement or affiliation.
 Sunnyday Technologies authored these parts. They are covered by the repository's root
 [`LICENSE`](../LICENSE):
 
-- `M3_6mm_frame_shim_4080.step`
-- `ZPMM_6p1_motor_mount_spacer_6mm_holes.step`
+- `M3_6mm_frame_shim_4080.step` — also `tasks/m3_crete/generated/`
+- `ZPMM_6p1_motor_mount_spacer_6mm_holes.step` — also `tasks/m3_crete/generated/`
 
 Sunnyday's M3-CRETE project licenses its custom hardware under CERN-OHL-W-2.0. If you
 prefer these two parts to match that license, relicense them to CERN-OHL-W-2.0. They are
