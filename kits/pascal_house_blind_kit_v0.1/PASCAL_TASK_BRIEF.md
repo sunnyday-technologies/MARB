@@ -108,7 +108,7 @@ anything you skip as out-of-scope rather than improvising extras.
 
 ## How to drive (Pascal stub)
 
-- Launch headless: `bunx pascal-mcp` (stdio). Requires Bun; no browser.
+- Launch headless: `bunx @pascal-app/mcp` (stdio). Requires Bun; no browser.
 - Scene units are **meters**; X/Z are the floor-plan axes, Y is up — the same
   frame as the design program.
 - `place_item` accepts **Y-axis (yaw) rotation only**. That is sufficient for

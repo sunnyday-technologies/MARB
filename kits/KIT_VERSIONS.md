@@ -20,7 +20,22 @@ Its kits are a separate cohort family — never pool them with M3-CRETE rows.
 
 | Version | Zip | Change | Cohort |
 |---|---|---|---|
-| **pascal-v0.1** | `pascal_house_blind_kit_v0.1.zip` | First PH-1 "Bungalow" kit: task brief (`PASCAL_TASK_BRIEF.md`), dimensioned goal floorplan render, catalog manifest pinning `@pascal-app/mcp` 0.3.1 / core 0.9.1. Answer key = `tasks/pascal_house/ph1_reference_layout.yaml`; grader = `grader/pascal_scene_grade.py`. Validated 2026-07-08: self-test, rotated-frame test, and a live smoke build through the real `@pascal-app/mcp` 0.3.1 server (`tasks/pascal_house/smoke_build_via_mcp.py`) all grade 0.0 mm / 100% / gates PASS. Brief warns that Pascal's `check_collisions` ignores item yaw (false positives on rotated furniture). Launch from a clean folder is `bunx @pascal-app/mcp` (NOT `bunx pascal-mcp` — that package name only resolves inside the Pascal repo). | No runs yet. |
+| **pascal-v0.1** | `pascal_house_blind_kit_v0.1.zip` | First PH-1 "Bungalow" kit: task brief (`PASCAL_TASK_BRIEF.md`), dimensioned goal floorplan render, catalog manifest pinning `@pascal-app/mcp` 0.3.1 / core 0.9.1. Answer key = `tasks/pascal_house/ph1_reference_layout.yaml`; grader = `grader/pascal_scene_grade.py`. Validated 2026-07-08: self-test, rotated-frame test, and a live smoke build through the real `@pascal-app/mcp` 0.3.1 server (`tasks/pascal_house/smoke_build_via_mcp.py`) all grade 0.0 mm / 100% / gates PASS. Brief warns that Pascal's `check_collisions` ignores item yaw (false positives on rotated furniture). Launch from a clean folder is `bunx @pascal-app/mcp` (NOT `bunx pascal-mcp` — that package name only resolves inside the Pascal repo). | Three graded runs, 2026-07-09: GPT-5.5 Codex xhigh (ORIENT-A 100%, all gates PASS); Claude Opus 4.8 max and Claude Fable 5 medium (both ORIENT-A 31.6%, collisions FAIL on the rotation-units error). Registry: `results/pascal_runs.json`. |
+
+### pascal-v0.1 correction, 2026-08-25 — launch command
+
+The shipped brief and catalog manifest told the driver to launch with
+`bunx pascal-mcp`. That package name only resolves inside the Pascal repo; from a
+clean folder it fails, which is exactly where a blind run starts. Both files now
+read `bunx @pascal-app/mcp`, in `prompts/`, in `kits/pascal_house_blind_kit_v0.1/`,
+and inside the kit zip.
+
+**This does not open a new cohort.** The task, the reference layout, the grader,
+and the pinned catalog dimensions are untouched; only an operational instruction
+was corrected. The three 2026-07-09 runs launched successfully despite the wrong
+string and remain comparable to each other and to future `pascal-v0.1` runs. The
+kit zip's `reference_floorplan.png` is byte-identical to the archive those runs
+received.
 
 ## Why v1.2 exists
 

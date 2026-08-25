@@ -10,7 +10,7 @@ tool_surface:
   mcp_version: "0.3.1"
   core_package: "@pascal-app/core"
   core_version: "0.9.1"
-  launch: "bunx pascal-mcp"
+  launch: "bunx @pascal-app/mcp"
 units: meters
 # asset id -> catalog dimensions [width, height, depth] at scale 1.
 assets_used:
