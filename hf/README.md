@@ -3,6 +3,10 @@
 Mirror of MARB onto Hugging Face. GitHub stays the source of truth; these files
 define the HF surfaces and how to push them.
 
+The current public method is v0.12. L2-RESOLVE remains task-local v0.11 and
+L4-ECO is defined but unmeasured at v0.12; neither has a board row. These files
+are staging metadata only and do not imply an upload or deployment occurred.
+
 - `dataset-public/README.md` — card for the public benchmark-input dataset
   (`SunnydayTech/marb-m3-crete`): kits, prompts, scoring spec.
 - `dataset-gated/README.md` — card for the gated answer-key dataset

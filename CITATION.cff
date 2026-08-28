@@ -14,5 +14,5 @@ abstract: >-
 url: "https://marb.cadclaw.io"
 repository-code: "https://github.com/sunnyday-technologies/MARB"
 license: MIT
-version: "0.11"
+version: "0.12"
 date-released: "2026-08-28"

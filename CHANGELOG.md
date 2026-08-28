@@ -4,6 +4,30 @@ Scoring-method versions describe the method and publication contract. Every
 published cell keeps the version that was used when it was graded; a method
 release never relabels an older result.
 
+## v0.12 — 2026-08-28
+
+- Freeze the public `L4-ECO` task revision
+  `second-top-cross-spreader-midright-r1`: add one existing authored
+  20x40x1000 rail as a second top cross-spreader at the requested midpoint,
+  while preserving all 100 baseline instances.
+- Add the fail-closed `marb_l4_eco_invariant.v0.12.0` public gate, built only on
+  `cadclaw.roundtrip.snapshot_geometry` at audited CADCLAW 0.10.0 commit
+  `60fc271f68c8a794a4741f856b2dd4c9878416a6`. It uses deterministic maximum
+  matching and emits aggregate-only evidence.
+- Require both a passing public invariant report and a task-local private-key
+  requested-change grade attested by immutable gated-dataset readback in every
+  graded L4 run record, with frozen methods, paths,
+  and SHA-256 provenance.
+- Record L4 as `defined_unmeasured`, with a locally validated private key whose
+  gated distribution remains pending, zero registered runs, and a versioned
+  blocker. The public gate has synthetic regression evidence only; the non-
+  blind key-authoring/team session is not a benchmark run.
+
+This is a method-only release. It adds no score row, does not rescore any
+historical run, does not add L4 to the currently scored ladder, and does not
+establish manufacturability, safety, certification, physical validation, or
+increased readiness.
+
 ## v0.11 — 2026-08-28
 
 - Freeze the public `L2-RESOLVE` task revision `top-spreader-x+200-r1`: continue

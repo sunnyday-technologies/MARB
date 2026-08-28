@@ -122,7 +122,9 @@ run_it = f"""
    four goal renders (overview + front/top/side), the task brief. No answer key, no build steps.
 2. Run it in a sealed, memoryless context so the answer key cannot leak.
 3. Export a STEP and grade it with the [MARB grader]({GITHUB}/tree/main/grader)
-   (`pip install "cadclaw>=0.9.0"`). The answer key is access-gated: [request it here]({ANSWER_KEY}).
+   (the L1 positional graders use `pip install "cadclaw>=0.9.0"`). The L4 public
+   invariant gate instead uses the exact audited commit in
+   `requirements-l4-eco.txt`. The answer key is access-gated: [request it here]({ANSWER_KEY}).
 """
 
 with gr.Blocks(title="MARB Leaderboard", theme=gr.themes.Soft()) as demo:

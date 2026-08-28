@@ -5,7 +5,7 @@ AI-assisted CAD assembly improves over time. It grades at the levels mechanical
 design actually requires, and it keeps results reproducible as models and tools
 change.
 
-## Now (v0.11)
+## Now (v0.12)
 
 - Three positional metrics: GAP, ORIENT, and POS. See [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md).
 - One measured reference task: the M3-CRETE gantry frame (task 1), about 100 parts, with versioned blind kits.
@@ -23,6 +23,12 @@ change.
   global X while preserving the other 95 instances. It is
   `defined_unmeasured`: the private resolver key is locally validated, but no
   gated revision or qualifying run is published.
+- A frozen L4-ECO definition, `second-top-cross-spreader-midright-r1`, adds one
+  authored top cross-spreader while preserving every baseline instance. Its
+  public AABB invariant gate is synthetically tested and pinned to audited
+  CADCLAW 0.10.0. L4 is `defined_unmeasured`: its private requested-placement
+  key is locally validated, but gated upload/readback has not been performed and
+  no qualifying runs exist.
 
 ## Next
 
@@ -32,9 +38,11 @@ change.
   a gated dataset revision, capture the same driver's editable source before and
   after the change, and register at least three genuine independent gradeable
   runs. Until then, keep L2 off the board and out of `currently_scored`.
-- **Engineering-change task.** Publish L4-ECO only after its frozen requested-
-  change check and scripted invariant regression gate are validated. L4 is not
-  measured today.
+- **Finish L4 evidence.** Upload and read back the validated task-specific
+  private key through a gated revision, then
+  capture at least three genuine gradeable ECO loops with both the public
+  invariant and private requested-change gates passing. Until then, keep L4 off
+  the board and out of `currently_scored`.
 - **More drivers.** CadQuery and Autodesk Fusion are covered today. Add more tools
   such as build123d, all graded the same way. Contributions are welcome.
 - **A second task.** Add a different machine type to show the benchmark generalizes.

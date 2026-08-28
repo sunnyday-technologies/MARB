@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MARB v0.11 scoring spec | Mechanical Assembly Readiness Benchmark</title>
-  <meta name="description" content="The canonical, versioned scoring method for MARB: GAP, POS, ORIENT, repeat-run provenance, and the defined-unmeasured L2-RESOLVE change loop. Graded by the open-source CADCLAW engine." />
+  <title>MARB v0.12 scoring spec | Mechanical Assembly Readiness Benchmark</title>
+  <meta name="description" content="The canonical, versioned scoring method for MARB: GAP, POS, ORIENT, repeat-run provenance, and defined-unmeasured L2-RESOLVE and L4-ECO tasks. Graded by the open-source CADCLAW engine." />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://marb.cadclaw.io/scoring/" />
   <style>
@@ -32,18 +32,18 @@
 </head>
 <body>
 <main>
-  <p class="nav"><a href="https://marb.cadclaw.io/">MARB benchmark</a> &middot; <a href="https://cadclaw.io/">CADCLAW</a> &middot; scoring spec v0.11</p>
+  <p class="nav"><a href="https://marb.cadclaw.io/">MARB benchmark</a> &middot; <a href="https://cadclaw.io/">CADCLAW</a> &middot; scoring spec v0.12</p>
 
-  <h1>MARB scoring spec (v0.11)</h1>
+  <h1>MARB scoring spec (v0.12)</h1>
   <p class="sub">The canonical, versioned scoring method for the Mechanical Assembly Readiness Benchmark. MARB grades how correctly AI-assisted CAD places the parts of a real machine. It is developed by Sunnyday Technologies and runs on the open-source <a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW</a> verification engine.</p>
 
   <div class="disclosure">
-    <strong>Read this first.</strong> Sunnyday Technologies authored MARB, runs the CADCLAW engine that grades every score, and supplies the reference machine (our own M3-CRETE assembly), which scores the rubric ceiling (0.0 mm gap, 100% oriented) by construction. CADCLAW is the floor and the referee, not a contender. The eight existing frontier cells are dated <strong>single runs under v0.9</strong>; local and sighted cells are repeat-run medians with spread. New frontier cells require at least three attempted and three graded independent runs. L2-RESOLVE is defined but unmeasured and has no score row. Read all results as bounded observations, not statements about a product's overall quality or readiness.
+    <strong>Read this first.</strong> Sunnyday Technologies authored MARB, runs the CADCLAW engine that grades every score, and supplies the reference machine (our own M3-CRETE assembly), which scores the rubric ceiling (0.0 mm gap, 100% oriented) by construction. CADCLAW is the floor and the referee, not a contender. The eight existing frontier cells are dated <strong>single runs under v0.9</strong>; local and sighted cells are repeat-run medians with spread. New frontier cells require at least three attempted and three graded independent runs. L2-RESOLVE and L4-ECO are defined but unmeasured and have no score rows. Read all results as bounded observations, not statements about a product's overall quality or readiness.
   </div>
 
   <h2>1. What MARB measures, and why the metric changed</h2>
   <p>The earlier v0.3 headline was a single buildability score, dominated by interference. It collapsed every run to roughly 12 to 15 out of 100 and barely separated models. For an early-stage test that is the wrong signal. The useful question, and the one that separates models, is: how many parts did the AI place in the correct position and orientation, and are the gaps between parts functionally correct?</p>
-  <p>MARB v0.11 retains the three v0.9 positional metrics and fixed bands:</p>
+  <p>MARB v0.12 retains the three v0.9 positional metrics and fixed bands:</p>
   <ul>
     <li><strong>GAP</strong> is the error between the actual and intended interface gap. It is the primary functional score.</li>
     <li><strong>POS</strong> is the position error of each part versus the answer key, after a best-fit rigid alignment.</li>
@@ -91,6 +91,11 @@
   <p>Each attempt must preserve versioned editable source and STEP artifacts before and after the change, a run log, the frozen request identity, and lowercase SHA-256 digests. An opaque driver-continuity ID records the same-session boundary. Three genuine independent attempts and three gradeable changed outputs are required before publication.</p>
   <p>At v0.11 the task-specific private resolver key is locally authored and self-validated, but it has not been uploaded to a gated dataset revision. The registry has zero L2 runs and no qualifying same-driver editable before/after pair. No L2 score or board row is published, historical L1 runs are not rescored, and the scored ladder remains L0/L1.</p>
 
+  <h3>L4-ECO engineering change (defined, unmeasured)</h3>
+  <p>Task revision <code>second-top-cross-spreader-midright-r1</code> freezes one ECO: the same driver session must add one existing authored 20x40x1000 rail as a second top-frame cross-spreader at the requested midpoint, parallel and top-flush, while preserving all 100 baseline authored instances.</p>
+  <p>The public <code>marb_l4_eco_invariant.v0.12.0</code> gate uses only geometry snapshots from audited CADCLAW 0.10.0 commit <code>60fc271f68c8a794a4741f856b2dd4c9878416a6</code>. Deterministic maximum matching checks the one-shape delta, the added rail's rounded AABB-dimension signature and requested axis orientation, and unchanged AABB poses, then emits aggregate-only evidence. This does not establish source-asset identity or topology. CADCLAW renderable-shape counts are distinct from the task's 100-to-101 authored-instance contract. A separate task-local private reference grade is required for the midpoint/top-flush placement.</p>
+  <p>At v0.12 the private key is locally authored and validated, but no gated revision has been uploaded/read back. The registry has zero L4 runs, the key-authoring/team session is non-blind, and the public gate has synthetic regression evidence only. No L4 score or board row is published, historical results are not rescored, and the scored ladder remains L0/L1. The AABB gate does not establish topology, feature history, PMI, material, native constraint state, manufacturability, safety, certification, or physical validity.</p>
+
   <h2>6. First-run findings (three frontier runs, 2026-05-26)</h2>
   <p>Median placement error under the tight standard. These are one run per cell: hypotheses and a starting line, not a statistically significant ranking.</p>
   <table>
@@ -112,6 +117,7 @@
   <ol>
     <li>Populate new frontier cells under the v0.10 repeat-run rule. Retrospective reruns of legacy cells are a separate, budgeted study.</li>
     <li>Complete L2-RESOLVE evidence: upload and read back the validated key through a gated revision, capture same-driver editable before/after artifacts, and register at least three genuine independent gradeable change loops.</li>
+    <li>Complete L4-ECO evidence: upload and read back its validated private key through a gated revision, and register at least three independent gradeable loops that pass both frozen gates.</li>
     <li>A random-floor baseline: grade shuffled positions to establish a true floor beneath the current relative median of about 47 mm.</li>
     <li>Principal-axes orientation refinement (OBB or PCA) to catch off-axis rotations the current axis-aligned metric misses.</li>
     <li>A second task on a different machine type, to support a claim of generality.</li>

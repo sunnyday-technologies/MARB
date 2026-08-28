@@ -49,7 +49,7 @@ the answer key. The answer key is a separate, access-gated dataset (gated to
 prevent training-data contamination, not for secrecy):
 [SunnydayTech/marb-m3-crete-answer-key](https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key).
 
-## What it grades (v0.11)
+## What it grades (v0.12)
 
 MARB grades three positional metrics against the answer key, under a fixed, tight
 standard:
@@ -96,6 +96,22 @@ uploaded. There are zero registered L2 runs and no qualifying same-driver
 editable before/after pair, so no L2 score or board row is published. Historical
 L1 results are unchanged.
 
+### L4-ECO definition (unmeasured)
+
+MARB v0.12 freezes task revision
+`second-top-cross-spreader-midright-r1`: add one authored 20x40x1000 rail as a
+second top-frame cross-spreader at the requested midpoint while preserving all
+100 baseline authored instances. The public gate uses deterministic matching
+over audited CADCLAW 0.10.0 geometry snapshots and emits aggregate-only
+evidence. A separate task-local private reference grade is required for the
+midpoint/top-flush placement.
+
+The L4 private key is locally authored and validated, but gated upload/readback
+is pending. There are zero registered L4 runs, the key-authoring/team session is
+non-blind, and no three-run cohort exists. L4 is therefore
+`defined_unmeasured`; no score or board row is published and historical results
+are unchanged.
+
 ## What is in this dataset
 
 - `kits/` — versioned blind kits (one zip per version). A kit holds the authored
@@ -105,11 +121,18 @@ L1 results are unchanged.
 - `prompts/` — the frozen task brief and the per-backend driver stubs.
 - `tasks/m3_crete_l2_resolve/` — the frozen L2 change request, machine-readable
   contract, and pending gated-key metadata. It contains no answer-key geometry.
+- `tasks/m3_crete_l4_eco/` — the frozen L4 ECO request, machine-readable
+  contract, public-gate definition, and locally validated/gated-pending key
+  metadata. It contains no answer-key geometry.
+- `requirements-l4-eco.txt` — the exact audited CADCLAW commit required by the
+  L4 public invariant gate.
 - `spec/MARB_SCORING.md` — the canonical, versioned scoring method.
 - `benchmark.yaml` — gate weights for the secondary buildability score.
 
-The grader code lives on GitHub, depends on the `cadclaw` PyPI package, and is
-kept there as the single source of truth.
+The grader code lives on GitHub and is kept there as the single source of truth.
+The existing L1 positional graders use the `cadclaw>=0.9.0` PyPI line. The L4
+public invariant gate instead requires the exact audited Git commit pinned in
+`requirements-l4-eco.txt`; do not substitute the floating PyPI lower bound.
 
 ## Run a model against it
 
@@ -122,11 +145,15 @@ kept there as the single source of truth.
 To grade, install the engine and request the gated answer key:
 
 ```bash
+# L1 positional grading:
 pip install "cadclaw>=0.9.0"
 # Download the gated answer key (see the answer-key dataset card for access).
 python grader/marb_pose_metric.py   --ref m3_reference_round1.step --run your_export.step
 python grader/marb_gap_metric.py    --ref m3_reference_round1.step --run your_export.step
 python grader/marb_orient_metric.py --ref m3_reference_round1.step --run your_export.step
+
+# L4 public invariant gate only (exact audited CADCLAW commit):
+pip install -r requirements-l4-eco.txt
 ```
 
 Grader source: [github.com/sunnyday-technologies/MARB/tree/main/grader](https://github.com/sunnyday-technologies/MARB/tree/main/grader).
@@ -137,7 +164,7 @@ Results are comparable only within a single kit cohort and a fixed scoring
 version. Each run records its kit version, its model and tool versions, and the
 client environment. Do not pool runs across kit versions without noting it.
 Published cells retain the scoring-version tag used to produce them. The
-current method is v0.11; the checked-in mechanical board rows retain their
+current method is v0.12; the checked-in mechanical board rows retain their
 historical v0.9 tags.
 
 ## License
