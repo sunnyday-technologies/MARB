@@ -1,6 +1,6 @@
 {
   "_comment": "Published MARB board snapshot. Mirrors the table in the MARB README, which is the reviewed source of truth. Regenerate run-level numbers with grader/marb_grade_all.py; this file is the curated published view.",
-  "scoring_version": "v0.10",
+  "scoring_version": "v0.11",
   "results_through": "2026-06-11",
   "task": "M3-CRETE gantry frame (task 1), ~100 parts",
   "comparability_note": "Results compare only within one kit cohort and one scoring version. Opus 4.8 Fusion ran on kit v1.3 (hint-equipped) while Opus 4.7 Fusion ran on v1.1 (no-hint), so those two are different cohorts, not a head-to-head. The local and sighted cells use different harness cohorts and are anchors.",

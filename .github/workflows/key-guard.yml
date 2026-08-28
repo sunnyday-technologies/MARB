@@ -23,6 +23,9 @@ jobs:
       - name: No tracked answer-key paths in the tree
         run: sh scripts/check_no_answer_keys.sh --tree
 
+      - name: No high-confidence secrets in the tree
+        run: python scripts/check_no_secrets.py --tree
+
       - name: No answer-key paths in the pushed commits
         if: github.event_name == 'push'
         env:
@@ -38,9 +41,29 @@ jobs:
             sh scripts/check_no_answer_keys.sh --range "$BEFORE..$AFTER"
           fi
 
+      - name: No secrets in the pushed commits
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            git fetch --no-tags origin main
+            python scripts/check_no_secrets.py --range "$AFTER" "^origin/main"
+          else
+            python scripts/check_no_secrets.py --range "$BEFORE..$AFTER"
+          fi
+
       - name: No answer-key paths in the PR commits
         if: github.event_name == 'pull_request'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: sh scripts/check_no_answer_keys.sh --range "$BASE..$HEAD"
+
+      - name: No secrets in the PR commits
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python scripts/check_no_secrets.py --range "$BASE..$HEAD"

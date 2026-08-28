@@ -56,6 +56,12 @@ scores runs against:
 The stock parts the model places (beams, belts, motor, spacers, pinion) are not
 here. Those are inputs and ship in the open blind kit.
 
+This dataset revision does not contain an L2-RESOLVE key. MARB v0.11 freezes
+that public change-loop definition as `defined_unmeasured`; its task-specific
+private resolver key is locally authored and validated, but no gated upload or
+revision readback has been performed. No L2 result can be graded from the task-1
+files listed above, and no L2 result is published.
+
 ## Why this is gated
 
 The gate is about **contamination, not secrecy or security**. The answer key is

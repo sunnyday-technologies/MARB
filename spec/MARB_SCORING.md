@@ -1,12 +1,13 @@
-# MARB — Mechanical Assembly Readiness Benchmark: scoring spec (v0.10)
+# MARB — Mechanical Assembly Readiness Benchmark: scoring spec (v0.11)
 
 This is the canonical scoring reference for MARB. All grader and figure builders
 live in `grader/` and are listed in Section 5. Update this document whenever a
 builder changes, so the method stays versioned and reproducible.
 
-Status: v0.10. This version retains the v0.9 metrics and fixed bands, adds
-repeat-run publication controls, and makes the current answer-key equivalence
-limits explicit. Existing board cells keep their original v0.9 tag.
+Status: v0.11. This version retains the v0.9 metrics and fixed bands, retains
+the v0.10 repeat-run publication controls and answer-key equivalence limits,
+and freezes the unmeasured L2-RESOLVE change-loop contract. Existing board cells
+keep their original v0.9 tag.
 
 ---
 
@@ -20,7 +21,7 @@ that separates models, is this:
 > How many parts did the AI place in the correct position and the correct
 > orientation, and are the gaps between parts functionally correct?
 
-MARB v0.10 grades positional accuracy with the same three metrics introduced in
+MARB v0.11 grades positional accuracy with the same three metrics introduced in
 v0.9:
 
 - GAP: the error between the actual and intended interface gap. This is the
@@ -144,6 +145,41 @@ resolver-built classes, but one complete class must be selected for the whole
 grade; MARB must not cherry-pick GAP from one reference and POS or ORIENT from
 another.
 
+### 5.2 L2-RESOLVE change-loop contract (defined, unmeasured)
+
+Task revision `top-spreader-x+200-r1` freezes one parameter change on the
+existing M3-CRETE assembly. Starting from the editable source produced by its
+initial build, the same driver session must translate these five existing
+instances +200.0 mm along global X, without rotation:
+
+- `top_center_spreader`
+- `top_center_spreader_plate_front`
+- `top_center_spreader_plate_front_2`
+- `top_center_spreader_plate_back`
+- `top_center_spreader_plate_back_2`
+
+Their internal relative transforms remain fixed. The other 95 baseline
+instances must retain their geometry, orientation, relative placement, and
+instance count. The normative public inputs are
+`tasks/m3_crete_l2_resolve/CHANGE_REQUEST.md` and `task.yaml`.
+
+Each attempt is one uninterrupted before/after change loop. Its registry record
+must bind the baseline STEP, baseline editable source, changed editable source,
+changed STEP, run log, and frozen change request through paths and lowercase
+SHA-256 digests. An opaque `driver_continuity_id` records the same-session
+boundary and must not contain credentials or user identifiers. Retries inside
+one session are not independent attempts. A published cell still requires at
+least three genuine independent attempts and three gradeable changed outputs,
+reported as median plus population standard deviation.
+
+At v0.11 the task is `defined_unmeasured`: its task-specific private resolver
+key is locally authored and self-validated, but no gated dataset revision has
+been uploaded. The registry has zero L2 runs and no qualifying same-driver
+editable before/after pair is available. Therefore no L2 board row or score is
+published, no historical L1 run is rescored, and `currently_scored` remains
+`[L0, L1]`. The versioned evidence boundary is
+`results/evidence/l2_resolve/v0.11/blocker.json`.
+
 ## 6. First-run findings (three frontier runs, 2026-05-26)
 
 Median placement error under the tight standard:
@@ -198,16 +234,20 @@ and graded counts are reported separately so failed exports do not disappear.
 1. Populate new frontier cells under the v0.10 repeat-run rule. Re-running the
    historical v0.9 cells is a separate, budgeted study rather than a condition
    of this method release.
-2. Random-floor baseline. Grade shuffled positions to establish a true floor
+2. Complete L2-RESOLVE evidence: upload and read back the validated private key
+   through a gated revision, capture the same driver's editable before/after
+   artifacts, and register at least three genuine independent gradeable change
+   loops before publishing a score.
+3. Random-floor baseline. Grade shuffled positions to establish a true floor
    beneath the current POS relative median of about 47 mm.
-3. Principal-axes orientation refinement. The current ORIENT metric uses
+4. Principal-axes orientation refinement. The current ORIENT metric uses
    axis-aligned bounding-box extents. Principal axes (OBB or PCA) would catch
    off-axis rotations that the current metric misses.
-4. A second task on a different machine type, to support a claim of generality.
-5. The manufacturing-tolerance axis, to grade the real-world plus-or-minus of
+5. A second task on a different machine type, to support a claim of generality.
+6. The manufacturing-tolerance axis, to grade the real-world plus-or-minus of
    made parts. This is a separate axis that the AI is not tested on yet (see
    Section 2).
-6. Keep the buildability gate as the secondary gate.
+7. Keep the buildability gate as the secondary gate.
 
 ## 8. Prompt framework: eliciting the right CAD actions
 

@@ -2,7 +2,106 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
+
+
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_L2_CHANGE_LOOP_FIELDS = (
+    "task_definition",
+    "task_definition_sha256",
+    "kit",
+    "kit_sha256",
+    "prompt",
+    "prompt_sha256",
+    "driver_brief",
+    "driver_brief_sha256",
+    "baseline_step",
+    "baseline_artifact_sha256",
+    "baseline_editable_source",
+    "baseline_editable_source_sha256",
+    "changed_editable_source",
+    "changed_editable_source_sha256",
+    "change_request",
+    "change_request_sha256",
+    "change_request_id",
+    "driver_continuity_id",
+    "artifact_sha256",
+    "run_log",
+    "run_log_sha256",
+)
+
+
+def _validate_l2_change_loop(run: dict, task_cfg: dict) -> None:
+    """Fail closed on incomplete same-driver change-loop provenance.
+
+    Values are never included in an exception: a malformed manifest reports
+    only the run identity and field names.
+    """
+    run_id = run.get("run_id", "<unnamed>")
+    missing = [field for field in _L2_CHANGE_LOOP_FIELDS if not run.get(field)]
+    if missing:
+        raise ValueError(
+            f"L2 change-loop run {run_id!r} is missing provenance fields: "
+            + ", ".join(missing)
+        )
+    hash_fields = (
+        "task_definition_sha256",
+        "kit_sha256",
+        "prompt_sha256",
+        "driver_brief_sha256",
+        "baseline_artifact_sha256",
+        "baseline_editable_source_sha256",
+        "changed_editable_source_sha256",
+        "change_request_sha256",
+        "artifact_sha256",
+        "run_log_sha256",
+    )
+    malformed = [
+        field for field in hash_fields
+        if not _SHA256_RE.fullmatch(str(run.get(field, "")))
+    ]
+    if malformed:
+        raise ValueError(
+            f"L2 change-loop run {run_id!r} has malformed SHA-256 fields: "
+            + ", ".join(malformed)
+        )
+    frozen_fields = (
+        ("task_definition", "task_definition"),
+        ("task_definition_sha256", "task_definition_sha256"),
+        ("change_request", "change_request"),
+        ("change_request_sha256", "change_request_sha256"),
+        ("change_request_id", "change_request_id"),
+        ("prompt", "prompt"),
+        ("prompt_sha256", "prompt_sha256"),
+    )
+    mismatched = [
+        run_field for run_field, task_field in frozen_fields
+        if run.get(run_field) != task_cfg.get(task_field)
+    ]
+    if mismatched:
+        raise ValueError(
+            f"L2 change-loop run {run_id!r} does not match the frozen task: "
+            + ", ".join(mismatched)
+        )
+    allowed_kits = task_cfg.get("allowed_kits") or {}
+    if allowed_kits.get(run.get("kit")) != run.get("kit_sha256"):
+        raise ValueError(
+            f"L2 change-loop run {run_id!r} does not match a frozen kit"
+        )
+    allowed_briefs = task_cfg.get("allowed_driver_briefs") or {}
+    if allowed_briefs.get(run.get("driver_brief")) != run.get("driver_brief_sha256"):
+        raise ValueError(
+            f"L2 change-loop run {run_id!r} does not match a frozen driver brief"
+        )
+    if run["baseline_step"] == run["step"]:
+        raise ValueError(
+            f"L2 change-loop run {run_id!r} must preserve distinct before/after STEP paths"
+        )
+    if run["baseline_editable_source"] == run["changed_editable_source"]:
+        raise ValueError(
+            f"L2 change-loop run {run_id!r} must preserve distinct before/after source paths"
+        )
 
 
 def load_manifest(path: Path, task_id: str | None = None,
@@ -48,6 +147,8 @@ def load_manifest(path: Path, task_id: str | None = None,
             raise ValueError(
                 f"task-aware run {run.get('run_id', '<unnamed>')!r} is missing cell_id"
             )
+        if task_cfg.get("provenance_contract") == "l2_change_loop.v1":
+            _validate_l2_change_loop(run, task_cfg)
         run_version = run.get("scoring_version")
         if run_version is None:
             run_version = legacy_version if "task" not in run else task_cfg.get(
@@ -65,7 +166,14 @@ def load_manifest(path: Path, task_id: str | None = None,
             "run_id", "cell_id", "task", "seed", "model", "driver",
             "kit_version", "prompt_variant", "cohort_id", "track",
             "outcome", "artifact_sha256", "run_log", "run_log_sha256",
-            "baseline_step", "timing", "tokens", "effort",
+            "task_definition", "task_definition_sha256",
+            "kit", "kit_sha256", "prompt", "prompt_sha256",
+            "driver_brief", "driver_brief_sha256",
+            "baseline_step", "baseline_artifact_sha256",
+            "baseline_editable_source", "baseline_editable_source_sha256",
+            "changed_editable_source", "changed_editable_source_sha256",
+            "change_request", "change_request_sha256", "change_request_id",
+            "driver_continuity_id", "timing", "tokens", "effort",
         )
         provenance = {key: run[key] for key in provenance_fields if key in run}
         provenance["step"] = run["step"]

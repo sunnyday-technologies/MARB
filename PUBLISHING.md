@@ -62,3 +62,9 @@ Enforcement (all three fire on the same patterns —
   commits touch a key path, even a forced `git add -f`;
 - the `key-guard` GitHub Actions workflow re-runs the same check server-side
   on every push and PR, so an uninstalled hook is not a bypass.
+
+The same workflow also runs `scripts/check_no_secrets.py` over the tracked tree
+and every pushed/PR commit. It detects a small set of high-confidence credential
+formats and reports only the affected path, rule name, and commit identity; it
+never prints the matched value. This is a backstop, not a substitute for
+reviewing the staged diff before commit.

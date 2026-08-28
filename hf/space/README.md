@@ -50,4 +50,10 @@ median plus population standard deviation. Validate the curated snapshot with
 The gate also reconciles stable run IDs, per-attempt run-log digests, graded
 STEP digests, and grade-source provenance for every post-policy cell.
 
+MARB v0.11 also defines `L2-RESOLVE` revision
+`top-spreader-x+200-r1`, but it is `defined_unmeasured`: the private resolver
+key is locally validated while gated distribution and qualifying runs remain
+pending, so there is no L2 score or board row. The visible board and historical
+rows are unchanged by that method-only release.
+
 Developed by Sunnyday Technologies. Contact: info@sunn3d.com
