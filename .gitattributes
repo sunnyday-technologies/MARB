@@ -1,5 +1,6 @@
 # Large CAD answer keys — stored via Git LFS (same convention as M3-CRETE)
 # so clones and pushes do not re-transfer the 38 MB reference STEP.
+/.gitattributes text eol=lf
 tasks/**/*.step filter=lfs diff=lfs merge=lfs -text
 tasks/**/*.STEP filter=lfs diff=lfs merge=lfs -text
 
@@ -7,3 +8,13 @@ tasks/**/*.STEP filter=lfs diff=lfs merge=lfs -text
 # and dash on the ubuntu CI runners; CRLF breaks both.
 *.sh text eol=lf
 scripts/hooks/* text eol=lf
+
+# H2b authorization and offline-build identities must be stable across fresh
+# Windows/Linux checkouts. Keep these narrowly scoped exact inputs LF-only.
+/harness/cohort_runner.py text eol=lf
+/harness/cohort_executor.py text eol=lf
+/harness/provider_transport.py text eol=lf
+/harness/isolated_container.py text eol=lf
+/harness/container/run_limited.py text eol=lf
+/harness/container/Dockerfile text eol=lf
+/harness/container/requirements.lock text eol=lf

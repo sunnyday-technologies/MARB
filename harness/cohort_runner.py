@@ -20,7 +20,20 @@ from typing import Any, NoReturn, Sequence
 
 
 PLAN_SCHEMA = "marb_cohort_plan.v1"
+CANONICAL_PROMPT_VARIANT = "frozen-core"
 REGISTRY_PATH = "results/marb_runs.json"
+L1_CONTRACT_PATH = "harness/l1_execution_contract.json"
+L1_CONTRACT_SCHEMA = "marb_l1_execution_contract.v1"
+L1_EDITABLE_SOURCE_CAPTURE = "marb_deterministic_editable_source_zip.v1"
+ATTEMPT_UUID_TOKEN = "{attempt_uuid}"
+CADQUERY_RUNTIME_VERSION = "2.7.0"
+L1_OUTPUT_NAMES = {
+    "baseline_step": "baseline.step",
+    "baseline_editable_source_zip": "baseline_source.zip",
+    "final_step": "final.step",
+    "final_editable_source_zip": "final_source.zip",
+    "run_log": "run_log.json",
+}
 MIN_SHA256 = re.compile(r"[0-9a-f]{64}")
 FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 IMMUTABLE_REVISION = re.compile(r"[0-9a-f]{40}(?:[0-9a-f]{24})?")
@@ -44,6 +57,12 @@ PROTECTED_PATH_WORDS = re.compile(
 
 
 TASKS: dict[str, dict[str, Any]] = {
+    "L1-ASSEMBLE": {
+        "contract": "l1_assemble.v1",
+        "rung": "L1",
+        "scoring_version": "v0.10",
+        "task_definition": L1_CONTRACT_PATH,
+    },
     "L2-RESOLVE": {
         "contract": "l2_change_loop.v1",
         "rung": "L2",
@@ -464,20 +483,156 @@ def _read_registry(repo_root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     }
 
 
+def _read_l1_execution_contract(
+    repo_root: Path, selected_driver_id: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read the public L1 contract without consulting grading-key metadata."""
+    path = _validated_repo_file(repo_root, L1_CONTRACT_PATH, "L1 execution contract")
+    raw = _stable_read(path, "L1 execution contract")
+    value, canonical = _decode_json(raw, "L1 execution contract")
+    contract = _exact_keys(
+        value,
+        {"schema", "task", "change_request", "prompt", "drivers", "outputs"},
+        "L1 execution contract",
+    )
+    if contract.get("schema") != L1_CONTRACT_SCHEMA:
+        _fail("L1 execution contract has an unsupported schema")
+
+    task = _exact_keys(
+        contract.get("task"),
+        {
+            "id",
+            "rung",
+            "scoring_version",
+            "task_revision",
+            "provenance_contract",
+            "status",
+        },
+        "L1 execution contract task",
+    )
+    task_rule = TASKS["L1-ASSEMBLE"]
+    if (
+        task.get("id") != "L1-ASSEMBLE"
+        or task.get("rung") != task_rule["rung"]
+        or task.get("scoring_version") != task_rule["scoring_version"]
+        or task.get("provenance_contract") != task_rule["contract"]
+        or task.get("status") != "measured"
+    ):
+        _fail("L1 execution contract task identity is inconsistent")
+    _safe_config_token(task.get("task_revision"), "L1 task revision")
+    if contract.get("change_request") is not None:
+        _fail("L1 execution contract must not define a change request")
+
+    prompt = contract.get("prompt")
+    _verify_file_identity(prompt, "L1 execution contract prompt")
+    if (
+        prompt.get("path") != "prompts/standard_prompt.md"
+        or prompt.get("hash_mode") != "utf8-lf"
+    ):
+        _fail("L1 execution contract prompt identity is inconsistent")
+    observed_prompt = _digest_public_input(
+        repo_root,
+        prompt["path"],
+        prompt["sha256"],
+        "L1 frozen prompt",
+        text=True,
+    )
+    if observed_prompt != prompt:
+        _fail("L1 execution contract prompt byte count is inconsistent")
+
+    drivers = _exact_keys(
+        contract.get("drivers"), set(DRIVERS), "L1 execution contract drivers"
+    )
+    if selected_driver_id not in drivers:
+        _fail("selected driver is absent from the L1 execution contract")
+    allowed_kits: dict[str, str] = {}
+    allowed_briefs: dict[str, str] = {}
+    for driver_id, expected in DRIVERS.items():
+        driver = _exact_keys(
+            drivers.get(driver_id),
+            {"tool", "kit_version", "kit", "driver_brief"},
+            f"L1 execution contract {driver_id} driver",
+        )
+        if (
+            driver.get("tool") != expected["tool"]
+            or driver.get("kit_version") != expected["kit_version"]
+        ):
+            _fail(f"L1 execution contract {driver_id} identity is inconsistent")
+        kit = driver.get("kit")
+        brief = driver.get("driver_brief")
+        _verify_file_identity(kit, f"L1 execution contract {driver_id} kit")
+        _verify_file_identity(
+            brief, f"L1 execution contract {driver_id} driver brief"
+        )
+        if (
+            kit.get("path") != expected["kit"]
+            or kit.get("hash_mode") != "raw-bytes"
+            or brief.get("path") != expected["brief"]
+            or brief.get("hash_mode") != "utf8-lf"
+        ):
+            _fail(f"L1 execution contract {driver_id} input identity is inconsistent")
+        if driver_id == selected_driver_id:
+            observed_kit = _digest_public_input(
+                repo_root,
+                kit["path"],
+                kit["sha256"],
+                f"L1 {driver_id} kit",
+                text=False,
+            )
+            observed_brief = _digest_public_input(
+                repo_root,
+                brief["path"],
+                brief["sha256"],
+                f"L1 {driver_id} driver brief",
+                text=True,
+            )
+            if observed_kit != kit or observed_brief != brief:
+                _fail(f"L1 execution contract {driver_id} byte count is inconsistent")
+        allowed_kits[kit["path"]] = kit["sha256"]
+        allowed_briefs[brief["path"]] = brief["sha256"]
+
+    outputs = _exact_keys(
+        contract.get("outputs"),
+        {"editable_source_capture", *L1_OUTPUT_NAMES},
+        "L1 execution contract outputs",
+    )
+    if outputs.get("editable_source_capture") != L1_EDITABLE_SOURCE_CAPTURE:
+        _fail("L1 execution contract editable-source capture is unsupported")
+    if {key: outputs.get(key) for key in L1_OUTPUT_NAMES} != L1_OUTPUT_NAMES:
+        _fail("L1 execution contract output names are inconsistent")
+
+    contract_identity = {
+        "path": L1_CONTRACT_PATH,
+        "sha256": hashlib.sha256(canonical).hexdigest(),
+        "bytes": len(canonical),
+        "hash_mode": "utf8-lf",
+    }
+    task_definition = {
+        "rung": task["rung"],
+        "scoring_version": task["scoring_version"],
+        "status": task["status"],
+        "provenance_contract": task["provenance_contract"],
+        "task_revision": task["task_revision"],
+        "task_definition": L1_CONTRACT_PATH,
+        "task_definition_sha256": contract_identity["sha256"],
+        "allowed_kits": allowed_kits,
+        "prompt": prompt["path"],
+        "prompt_sha256": prompt["sha256"],
+        "allowed_driver_briefs": allowed_briefs,
+    }
+    return task_definition, contract_identity
+
+
 def _frozen_inputs(
     repo_root: Path, task_id: str, task: dict[str, Any], driver: dict[str, str]
 ) -> dict[str, Any]:
     task_rule = TASKS[task_id]
     task_definition = _required_string(task, "task_definition", "task registry entry")
     prompt = _required_string(task, "prompt", "task registry entry")
-    request = _required_string(task, task_rule["request_path_key"], "task registry entry")
     _repo_relative_parts(task_definition, "task definition")
     _repo_relative_parts(prompt, "frozen prompt")
-    _repo_relative_parts(request, "frozen change request")
     if task_definition != task_rule["task_definition"]:
         _fail("task definition path is not the canonical public path")
-    if request != task_rule["request_path"]:
-        _fail("change request path is not the canonical public path")
     if prompt != "prompts/standard_prompt.md":
         _fail("frozen prompt path is not the canonical public path")
     allowed_kits = task.get("allowed_kits")
@@ -515,14 +670,29 @@ def _frozen_inputs(
             "selected driver brief",
             text=True,
         ),
-        "change_request": _digest_public_input(
+    }
+    if task_id == "L1-ASSEMBLE":
+        frozen["task_definition"] = _observed_public_input(
+            repo_root, task_definition, "L1 task definition", text=True
+        )
+        if frozen["task_definition"]["sha256"] != task["task_definition_sha256"]:
+            _fail("L1 task definition does not match its execution contract identity")
+    else:
+        request = _required_string(
+            task, task_rule["request_path_key"], "task registry entry"
+        )
+        _repo_relative_parts(request, "frozen change request")
+        if request != task_rule["request_path"]:
+            _fail("change request path is not the canonical public path")
+        frozen["change_request"] = _digest_public_input(
             repo_root,
             request,
-            _required_string(task, task_rule["request_hash_key"], "task registry entry"),
+            _required_string(
+                task, task_rule["request_hash_key"], "task registry entry"
+            ),
             "frozen change request",
             text=True,
-        ),
-    }
+        )
     if task_id == "L4-ECO":
         connector = _required_string(task, "connector_metadata", "L4 task registry entry")
         if connector != "tasks/m3_crete/m3_connector_metadata.yaml":
@@ -567,24 +737,33 @@ def _windows_path_identity(value: str) -> str:
     )
 
 
-def _planned_outputs(run_id: str, task_id: str, driver: dict[str, str]) -> dict[str, str]:
-    base = f"runs/{run_id}"
-    suffix = driver["editable_suffix"]
-    outputs = {
-        "baseline_step": f"{base}/baseline.step",
-        "baseline_editable_source": f"{base}/baseline_source{suffix}",
-        "changed_step": f"{base}/changed.step",
-        "changed_editable_source": f"{base}/changed_source{suffix}",
-        "run_log": f"{base}/run_log.yaml",
+def _planned_outputs(
+    run_id: str, task_id: str, driver: dict[str, str]
+) -> dict[str, dict[str, str]]:
+    base = f"runs/{run_id}--{ATTEMPT_UUID_TOKEN}"
+    evidence = f"{base}/evidence"
+    if task_id == "L1-ASSEMBLE":
+        executor = {
+            key: f"{base}/{name}" if key == "run_log" else f"{evidence}/{name}"
+            for key, name in L1_OUTPUT_NAMES.items()
+        }
+        return {"executor": executor, "downstream": {}}
+    executor = {
+        "baseline_step": f"{evidence}/baseline.step",
+        "baseline_editable_source": f"{evidence}/baseline_source.zip",
+        "changed_step": f"{evidence}/changed.step",
+        "changed_editable_source": f"{evidence}/changed_source.zip",
+        "run_log": f"{base}/run_log.json",
     }
+    downstream: dict[str, str] = {}
     if task_id == "L4-ECO":
-        outputs.update(
+        downstream.update(
             {
-                "public_invariant_report": f"{base}/public_invariant.json",
-                "public_requested_change_attestation": f"{base}/requested_change_attestation.json",
+                "public_invariant_report": f"{evidence}/public_invariant.json",
+                "public_requested_change_attestation": f"{evidence}/requested_change_attestation.json",
             }
         )
-    return outputs
+    return {"executor": executor, "downstream": downstream}
 
 
 def _existing_run_checks(
@@ -616,6 +795,10 @@ def _existing_run_checks(
         "run_log",
         "baseline_step",
         "baseline_editable_source",
+        "baseline_editable_source_zip",
+        "final_step",
+        "final_editable_source_zip",
+        "changed_step",
         "changed_editable_source",
         "invariant_report",
         "requested_change_report",
@@ -665,10 +848,15 @@ def _existing_run_checks(
             "driver_brief_sha256": allowed_briefs[driver["brief"]],
             "task_definition": task["task_definition"],
             "task_definition_sha256": task["task_definition_sha256"],
-            task_rule["request_path_key"]: task[task_rule["request_path_key"]],
-            task_rule["request_hash_key"]: task[task_rule["request_hash_key"]],
-            task_rule["request_id_key"]: task[task_rule["request_id_key"]],
         }
+        if task_id != "L1-ASSEMBLE":
+            identity_fields.update(
+                {
+                    task_rule["request_path_key"]: task[task_rule["request_path_key"]],
+                    task_rule["request_hash_key"]: task[task_rule["request_hash_key"]],
+                    task_rule["request_id_key"]: task[task_rule["request_id_key"]],
+                }
+            )
         if task_id == "L4-ECO":
             for key in (
                 "cadclaw_commit",
@@ -704,6 +892,14 @@ def _existing_run_checks(
     for path in generated_output_paths:
         if _windows_path_identity(path) in existing_path_identities:
             _fail("planned output path collides with registered run evidence")
+    for path_identity in existing_path_identities:
+        for run_id in generated_run_ids:
+            legacy_prefix = _windows_path_identity(f"runs/{run_id}/")
+            attempt_prefix = _windows_path_identity(f"runs/{run_id}--")
+            if path_identity.startswith(legacy_prefix) or path_identity.startswith(
+                attempt_prefix
+            ):
+                _fail("planned output path collides with registered run evidence")
     for seed in seeds:
         identity = f"numeric:{int(seed)}" if seed.isdecimal() else f"text:{seed.casefold()}"
         if identity in existing_seed_identities:
@@ -740,6 +936,8 @@ def build_plan(
     cell_id = _safe_slug(cell_id, "cell_id")
     cohort_id = _safe_slug(cohort_id, "cohort_id")
     prompt_variant = _safe_slug(prompt_variant, "prompt_variant")
+    if prompt_variant != CANONICAL_PROMPT_VARIANT:
+        _fail("prompt_variant must be the canonical byte-bound frozen-core variant")
     cell_label = _safe_display(cell_label, "cell label")
     model_name = _safe_display(model_name, "model name")
     if not isinstance(model_id, str) or not SAFE_MODEL_ID.fullmatch(model_id) or "://" in model_id:
@@ -757,12 +955,27 @@ def build_plan(
     if not isinstance(minimum, int) or isinstance(minimum, bool) or minimum < 3:
         _fail("run registry publication minimum must be an integer of at least three")
     seeds = _safe_seed_list(seeds, minimum)
+    if seed_basis == "provider-seed" and any(
+        not seed.isdecimal() or int(seed) > 2**31 - 1 for seed in seeds
+    ):
+        _fail("provider-seed values must be decimal integers in the executor range")
 
     task_map = registry.get("tasks")
     if not isinstance(task_map, dict) or not isinstance(task_map.get(task_id), dict):
         _fail("selected task is absent from the run registry")
-    task = task_map[task_id]
     task_rule = TASKS[task_id]
+    registered_task = task_map[task_id]
+    if task_id == "L1-ASSEMBLE":
+        if (
+            registered_task.get("rung") != task_rule["rung"]
+            or registered_task.get("scoring_version") != task_rule["scoring_version"]
+        ):
+            _fail("selected L1 registry task contradicts its public execution contract")
+        task, _l1_contract_identity = _read_l1_execution_contract(
+            repo_root, driver_id
+        )
+    else:
+        task = registered_task
     if task.get("provenance_contract") != task_rule["contract"]:
         _fail("selected task has an unsupported provenance contract")
     if task.get("rung") != task_rule["rung"]:
@@ -774,9 +987,11 @@ def build_plan(
     if policy.get("summary") != "median" or policy.get("spread") != "population_std":
         _fail("run registry publication statistics are unsupported")
     driver = DRIVERS[driver_id]
+    if driver_id == "cadquery" and driver_version != CADQUERY_RUNTIME_VERSION:
+        _fail("CadQuery driver version must match the executor runtime contract")
     if task_id == "L4-ECO" and driver_id == "cadquery":
         if driver_version != task.get("cadquery_version"):
-            _fail("L4 CadQuery driver version must match the frozen runtime contract")
+            _fail("L4 CadQuery driver version must match the frozen task runtime contract")
     frozen = _frozen_inputs(repo_root, task_id, task, driver)
 
     generated_run_ids = [f"{cohort_id}-{seed}" for seed in seeds]
@@ -785,7 +1000,8 @@ def build_plan(
     generated_output_paths = [
         path
         for run_id in generated_run_ids
-        for path in _planned_outputs(run_id, task_id, driver).values()
+        for owner in _planned_outputs(run_id, task_id, driver).values()
+        for path in owner.values()
     ]
     existing_cell_attempts = _existing_run_checks(
         registry,
@@ -804,9 +1020,21 @@ def build_plan(
         generated_output_paths=generated_output_paths,
     )
 
-    request_path_key = task_rule["request_path_key"]
-    request_hash_key = task_rule["request_hash_key"]
-    request_id_key = task_rule["request_id_key"]
+    request_path_key = task_rule.get("request_path_key")
+    request_hash_key = task_rule.get("request_hash_key")
+    request_id_key = task_rule.get("request_id_key")
+    change_request_id: str | None = None
+    change_request: dict[str, str] | None = None
+    if task_id != "L1-ASSEMBLE":
+        change_request_id = _safe_config_token(
+            task.get(request_id_key), "change request id"
+        )
+        change_request = {
+            "path": _required_string(task, request_path_key, "task registry entry"),
+            "sha256": _required_string(
+                task, request_hash_key, "task registry entry"
+            ),
+        }
     runtime_contract: dict[str, Any] = {}
     if task_id == "L4-ECO":
         for key in (
@@ -844,10 +1072,11 @@ def build_plan(
         "this plan does not authorize execution, provider access, or spend",
         "planned slots are not benchmark attempts or run evidence",
     ]
-    if task.get("evidence_status") != "complete":
-        blockers.append("task run evidence is not complete")
-    if task.get("answer_key_status") != "ready":
-        blockers.append("task-local grading-key distribution is not ready")
+    if task_id != "L1-ASSEMBLE":
+        if task.get("evidence_status") != "complete":
+            blockers.append("task run evidence is not complete")
+        if task.get("answer_key_status") != "ready":
+            blockers.append("task-local grading-key distribution is not ready")
     gated_revision = task.get("gated_distribution_revision")
     if task_id == "L4-ECO" and (
         not isinstance(gated_revision, str)
@@ -885,13 +1114,8 @@ def build_plan(
                 task.get("task_revision"), "task revision"
             ),
             "provenance_contract": task_rule["contract"],
-            "change_request_id": _safe_config_token(
-                task.get(request_id_key), "change request id"
-            ),
-            "change_request": {
-                "path": _required_string(task, request_path_key, "task registry entry"),
-                "sha256": _required_string(task, request_hash_key, "task registry entry"),
-            },
+            "change_request_id": change_request_id,
+            "change_request": change_request,
             "runtime_contract": runtime_contract,
         },
         "cohort": {
@@ -923,7 +1147,17 @@ def build_plan(
             "registered_task_runs": sum(
                 1
                 for run in registry["runs"]
-                if isinstance(run, dict) and run.get("task") == task_id
+                if isinstance(run, dict)
+                and (
+                    run.get("task")
+                    if isinstance(run.get("task"), str)
+                    else (
+                        registry.get("legacy_defaults", {}).get("task")
+                        if isinstance(registry.get("legacy_defaults"), dict)
+                        else registry.get("default_task")
+                    )
+                )
+                == task_id
             ),
             "blockers": blockers,
         },
@@ -1065,17 +1299,31 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
     ):
         _fail("cohort plan task identity is inconsistent")
     _safe_config_token(task.get("task_revision"), "cohort plan task revision")
-    _safe_config_token(task.get("change_request_id"), "cohort plan change request id")
-    change_request = _exact_keys(
-        task.get("change_request"), {"path", "sha256"}, "cohort plan change request"
-    )
-    _repo_relative_parts(change_request.get("path"), "cohort plan change request path")
-    if not isinstance(change_request.get("sha256"), str) or not MIN_SHA256.fullmatch(change_request["sha256"]):
-        _fail("cohort plan change request has a malformed SHA-256")
+    change_request: dict[str, Any] | None = None
+    if task_id == "L1-ASSEMBLE":
+        if task.get("change_request_id") is not None or task.get("change_request") is not None:
+            _fail("L1 cohort plan must not invent a change request")
+    else:
+        _safe_config_token(
+            task.get("change_request_id"), "cohort plan change request id"
+        )
+        change_request = _exact_keys(
+            task.get("change_request"),
+            {"path", "sha256"},
+            "cohort plan change request",
+        )
+        _repo_relative_parts(
+            change_request.get("path"), "cohort plan change request path"
+        )
+        if (
+            not isinstance(change_request.get("sha256"), str)
+            or not MIN_SHA256.fullmatch(change_request["sha256"])
+        ):
+            _fail("cohort plan change request has a malformed SHA-256")
     runtime = task.get("runtime_contract")
-    if task_id == "L2-RESOLVE":
+    if task_id in {"L1-ASSEMBLE", "L2-RESOLVE"}:
         if runtime != {}:
-            _fail("L2 cohort plan must not invent a runtime contract")
+            _fail(f"{task_id} cohort plan must not invent a runtime contract")
     else:
         runtime = _exact_keys(
             runtime,
@@ -1116,7 +1364,11 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
     )
     cell_id = _safe_slug(cohort.get("cell_id"), "cohort plan cell_id")
     cohort_id = _safe_slug(cohort.get("cohort_id"), "cohort plan cohort_id")
-    _safe_slug(cohort.get("prompt_variant"), "cohort plan prompt_variant")
+    if (
+        _safe_slug(cohort.get("prompt_variant"), "cohort plan prompt_variant")
+        != CANONICAL_PROMPT_VARIANT
+    ):
+        _fail("cohort plan prompt_variant is not the canonical byte-bound variant")
     _safe_display(cohort.get("cell_label"), "cohort plan cell label")
     if cohort.get("track") != "frontier":
         _fail("cohort plan track must be frontier")
@@ -1176,8 +1428,9 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
         "kit",
         "prompt",
         "driver_brief",
-        "change_request",
     }
+    if task_id != "L1-ASSEMBLE":
+        expected_frozen.add("change_request")
     if task_id == "L4-ECO":
         expected_frozen.update(
             {
@@ -1195,8 +1448,9 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
         "kit": DRIVERS[driver_id]["kit"],
         "prompt": "prompts/standard_prompt.md",
         "driver_brief": DRIVERS[driver_id]["brief"],
-        "change_request": task_rule["request_path"],
     }
+    if task_id != "L1-ASSEMBLE":
+        canonical_paths["change_request"] = task_rule["request_path"]
     if task_id == "L4-ECO":
         canonical_paths.update(
             {
@@ -1217,7 +1471,7 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
         _fail("cohort plan selected kit is inconsistent")
     if frozen["driver_brief"].get("path") != DRIVERS[driver_id]["brief"]:
         _fail("cohort plan selected driver brief is inconsistent")
-    if change_request != {
+    if task_id != "L1-ASSEMBLE" and change_request != {
         "path": frozen["change_request"].get("path"),
         "sha256": frozen["change_request"].get("sha256"),
     }:
@@ -1258,21 +1512,24 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
         _fail("cohort plan run count does not satisfy its publication minimum")
     seed_values: list[str] = []
     seen_run_ids: set[str] = set()
-    suffix = DRIVERS[driver_id]["editable_suffix"]
-    output_names = {
-        "baseline_step": "baseline.step",
-        "baseline_editable_source": f"baseline_source{suffix}",
-        "changed_step": "changed.step",
-        "changed_editable_source": f"changed_source{suffix}",
-        "run_log": "run_log.yaml",
-    }
-    if task_id == "L4-ECO":
-        output_names.update(
-            {
-                "public_invariant_report": "public_invariant.json",
-                "public_requested_change_attestation": "requested_change_attestation.json",
-            }
-        )
+    if task_id == "L1-ASSEMBLE":
+        executor_output_names = dict(L1_OUTPUT_NAMES)
+    else:
+        executor_output_names = {
+            "baseline_step": "baseline.step",
+            "baseline_editable_source": "baseline_source.zip",
+            "changed_step": "changed.step",
+            "changed_editable_source": "changed_source.zip",
+            "run_log": "run_log.json",
+        }
+    downstream_output_names = (
+        {
+            "public_invariant_report": "public_invariant.json",
+            "public_requested_change_attestation": "requested_change_attestation.json",
+        }
+        if task_id == "L4-ECO"
+        else {}
+    )
     for run in runs:
         run = _exact_keys(
             run,
@@ -1298,14 +1555,22 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
             _fail("cohort plan run identity is inconsistent or duplicated")
         seen_run_ids.add(expected_run_id.casefold())
         outputs = _exact_keys(
-            run.get("planned_outputs"), set(output_names), "cohort plan planned outputs"
+            run.get("planned_outputs"), {"executor", "downstream"}, "cohort plan planned outputs"
         )
-        expected_outputs = {
-            key: f"runs/{expected_run_id}/{name}" for key, name in output_names.items()
-        }
+        executor_outputs = _exact_keys(
+            outputs.get("executor"),
+            set(executor_output_names),
+            "cohort plan executor outputs",
+        )
+        downstream_outputs = _exact_keys(
+            outputs.get("downstream"),
+            set(downstream_output_names),
+            "cohort plan downstream outputs",
+        )
+        expected_outputs = _planned_outputs(expected_run_id, task_id, driver)
         if outputs != expected_outputs:
             _fail("cohort plan planned output paths are inconsistent")
-        for value in outputs.values():
+        for value in [*executor_outputs.values(), *downstream_outputs.values()]:
             _repo_relative_parts(value, "cohort plan planned output", public_only=False)
         if (
             run.get("status") != "planned"
@@ -1317,6 +1582,10 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
         ):
             _fail("cohort plan contains fabricated execution evidence")
     _safe_seed_list(seed_values, minimum)
+    if cohort.get("seed_basis") == "provider-seed" and any(
+        not seed.isdecimal() or int(seed) > 2**31 - 1 for seed in seed_values
+    ):
+        _fail("provider-seed values must be decimal integers in the executor range")
 
 
 def verify_plan_envelope(raw: bytes, *, expected_sha256: str | None = None) -> dict[str, Any]:

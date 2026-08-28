@@ -4,19 +4,83 @@ Scoring-method versions describe the method and publication contract. Every
 published cell keeps the version that was used when it was graded; a method
 release never relabels an older result.
 
-## Unreleased — H2a planner
+## Unreleased — H2a planner and H2b executor
 
-- Add the standalone, deterministic H2a `L2-RESOLVE` / `L4-ECO` cohort planner that
+- Add the standalone, deterministic H2a `L1-ASSEMBLE` / `L2-RESOLVE` /
+  `L4-ECO` cohort planner that
   validates frozen public inputs and allocates at least three independent run
   slots without provider, network, subprocess, credential, file-write, or model
   access.
 - Keep every generated plan blocked before execution and free of fabricated
   outcomes, scores, gate results, or artifact identities. Current L4 plans also
   disclose the missing immutable gated grading revision.
+- Add the separate H2b one-slot executor with explicit plan, authorization,
+  slot, implementation-blob, frozen-input, provider/model/settings, and
+  digest-pinned runtime bindings before provider access. The current execution
+  policy is text-only and local-no-charge; metered execution is fail-closed
+  pending a frozen provider-specific pre-call pricing policy.
+- Advance execution authorization to schema v2, binding an absolute normalized
+  Git executable path and the SHA-256 of its raw bytes. Schema validation checks
+  those declared bindings; execution preflight, not `validate-authorization`,
+  verifies the actual host path chain and file digest. For every process
+  creation, lock the host path chain with Windows handles and reverify the file
+  digest while those handles remain held across the hash-to-spawn interval,
+  closing executable replacement. Use only the authenticated path as
+  `argv[0]`, never a bare executable resolved through the working directory or
+  `PATH`; reject symlink/reparse path chains; invoke Git with
+  `--no-replace-objects` and `GIT_NO_REPLACE_OBJECTS=1`; authorize only the
+  exact resolved repository with per-command `safe.directory` (never `*`); and fail closed on
+  timeout or bounded-stdout overflow.
+- Preserve one provider session across L2/L4 baseline and change phases, freeze
+  baseline/changed STEP and deterministic editable-source ZIP evidence, retain
+  failed and partial UUID-backed attempts, and record bounded provenance without
+  mutating the registry, board, task definitions, site, or deployment workflow.
+- Freeze cohort execution to `prompt_variant: frozen-core` and deliver only the
+  payload between the exact backticked BEGIN/END marker lines; exclude driver
+  preamble and grader suffix text and journal the delivered payload identity.
+- Treat `cell_label` and `model.name` as operator display labels only; bind any
+  publishable model identity to the exact authorized ID returned by the
+  provider, with no H2b alias policy.
+- Scope every authorization and limit to one logical slot/attempt, not an
+  aggregate cohort budget; N=3/N=9 execution remains blocked on a separately
+  approved campaign ledger with concurrency control. Record the limited
+  negative modality attestation: text provider input, no native image-view
+  tool, Python-only access to staged image bytes, and `vision_attested: false`.
+- Clarify that the permanent `.slot-claims` record prevents duplicate claims
+  only within one checkout because `runs/` is ignored and checkout-local.
+  Cross-clone and cross-host uniqueness remains an operator/campaign-ledger and
+  later registry/publication validation responsibility; it is not a global
+  lock.
+- Add no-call authorization template, seal, and validation CLI steps before
+  `execute`, with basename-only preparation output, repository-relative run
+  paths, and structured retained-failure reporting.
+- Define `output_contract.executor_owned_outputs` as executor-reserved and bound
+  paths, not proof of production; only captured artifact records prove a file
+  exists, including for failed and partial attempts.
+- Add fake-only executor and isolation regressions to board-policy CI. They
+  exercise authorization, limits, provenance, cleanup, and non-mutation without
+  making Docker, provider, or model calls.
+- Add an offline OCI build contract whose base image, wheelhouse manifest,
+  CADCLAW wheel, Dockerfile, effective temporary-context `.dockerignore`,
+  complete context manifest, and final runtime are operator-supplied and
+  digest-attested. No real image RepoDigest or runtime smoke is claimed by this
+  source release.
+- Mediate provider `write_file` requests through the trusted host executor into
+  the checkout-local retained workspace. For `run_python`, confine untrusted
+  child-process writes to size-capped tmpfs mounts and expose only one
+  precreated file-size-bounded writable host export-file bind to the child. Layer
+  entry/path/file/byte checks in the image-owned limiter, mount prior state plus
+  the full input root and its kit compatibility subtree read-only, and validate
+  the export only after verified container cleanup.
+- Make editable-source evidence a content-bound full-file snapshot: initial and
+  final inventories plus captured bytes must agree on path, device, inode, size,
+  nanosecond mtime, and SHA-256, or capture fails before creating the ZIP.
 
-This closes H2a only; H2 remains open pending the separate H2b authorized,
-isolated executor. This plan-only tooling adds no run, score, board row, task
-revision, scoring-method version, model call, site rebuild, or deployment.
+This source release adds H2a planning and H2b execution plumbing but creates no
+benchmark attempt, score, board row, task revision, scoring-method version,
+model call, site rebuild, or deployment. H2 remains open for independently
+authorized, genuinely graded cohorts. L4 planned grade reports remain
+grader-owned deferred outputs, not executor-produced evidence.
 
 ## v0.12 — 2026-08-28
 

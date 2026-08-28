@@ -18,6 +18,14 @@ Thumbs.db
 /runs/
 *.stats.json
 
+# Private/transient inputs for the H2b offline OCI build. Only the Dockerfile,
+# tracked default-deny .dockerignore, exact package lock, limiter source, and
+# public build instructions are tracked.
+/harness/container/wheelhouse/
+/harness/container/wheelhouse.sha256
+/harness/container/build-context.sha256
+/harness/container/private-build-record.json
+
 # Internal/session notes live in ../MARB-private (separate private repo)
 
 # Answer key — distributed via the gated HF dataset, never version-controlled.

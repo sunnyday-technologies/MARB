@@ -24,6 +24,7 @@ from unittest import mock
 
 REPO = Path(__file__).resolve().parents[1]
 RUNNER_PATH = REPO / "harness" / "cohort_runner.py"
+L1_CONTRACT_PATH = REPO / "harness" / "l1_execution_contract.json"
 BOARD_PATH = REPO / "hf" / "space" / "board.json"
 REGISTRY_PATH = REPO / "results" / "marb_runs.json"
 
@@ -62,6 +63,8 @@ class SyntheticRepo:
     revision = "a" * 40
     kit_path = "kits/m3_cadquery_blind_kit.zip"
     brief_path = "prompts/CADQUERY_DRIVER_BRIEF.md"
+    fusion_kit_path = "kits/m3_fusion_blind_kit_v1.3.zip"
+    fusion_brief_path = "prompts/FUSION_DRIVER_BRIEF.md"
     member_path = "kit/V-Slot 20x40x1000 Linear Rail.step"
     member_payload = b"synthetic public authored rail\n"
 
@@ -79,12 +82,18 @@ class SyntheticRepo:
         )
         self._write_bytes("prompts/standard_prompt.md", b"Synthetic public prompt\n")
         self._write_bytes(self.brief_path, b"Synthetic public CadQuery brief\n")
+        self._write_bytes(self.fusion_brief_path, b"Synthetic public Fusion brief\n")
         self._write_bytes(
             "tasks/m3_crete/m3_connector_metadata.yaml", b"connectors: []\n"
         )
         self._write_bytes("grader/eco_invariant.py", b"GATE_VERSION = 'synthetic'\n")
         self._write_bytes("requirements-l4-eco.txt", b"synthetic-package==1.0\n")
         self.write_kit([(self.member_path, self.member_payload, None)])
+        self.write_kit(
+            [(self.member_path, self.member_payload, None)],
+            relative=self.fusion_kit_path,
+        )
+        self.write_l1_contract()
         self.registry = self._new_registry()
         self.write_registry()
 
@@ -106,8 +115,10 @@ class SyntheticRepo:
     def write_kit(
         self,
         entries: list[tuple[str, bytes, int | None]],
+        *,
+        relative: str | None = None,
     ) -> None:
-        target = self.path(self.kit_path)
+        target = self.path(relative or self.kit_path)
         target.parent.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_STORED) as archive:
             for name, payload, unix_mode in entries:
@@ -116,6 +127,52 @@ class SyntheticRepo:
                     info.create_system = 3
                     info.external_attr = unix_mode << 16
                 archive.writestr(info, payload)
+
+    def write_l1_contract(self, **changes: object) -> None:
+        def identity(relative: str, *, text: bool) -> dict[str, object]:
+            path = self.path(relative)
+            payload = _canonical_text(path.read_bytes()) if text else path.read_bytes()
+            return {
+                "path": relative,
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "bytes": len(payload),
+                "hash_mode": "utf8-lf" if text else "raw-bytes",
+            }
+
+        contract: dict[str, object] = {
+            "schema": RUNNER.L1_CONTRACT_SCHEMA,
+            "task": {
+                "id": "L1-ASSEMBLE",
+                "rung": "L1",
+                "scoring_version": "v0.10",
+                "task_revision": "synthetic-l1-r1",
+                "provenance_contract": "l1_assemble.v1",
+                "status": "measured",
+            },
+            "change_request": None,
+            "prompt": identity("prompts/standard_prompt.md", text=True),
+            "drivers": {
+                "cadquery": {
+                    "tool": "CadQuery",
+                    "kit_version": "v1.1",
+                    "kit": identity(self.kit_path, text=False),
+                    "driver_brief": identity(self.brief_path, text=True),
+                },
+                "fusion": {
+                    "tool": "Autodesk Fusion",
+                    "kit_version": "v1.3",
+                    "kit": identity(self.fusion_kit_path, text=False),
+                    "driver_brief": identity(self.fusion_brief_path, text=True),
+                },
+            },
+            "outputs": {
+                "editable_source_capture": RUNNER.L1_EDITABLE_SOURCE_CAPTURE,
+                **RUNNER.L1_OUTPUT_NAMES,
+            },
+        }
+        contract.update(changes)
+        payload = json.dumps(contract, indent=2, sort_keys=True) + "\n"
+        self._write_bytes(RUNNER.L1_CONTRACT_PATH, payload.encode("utf-8"))
 
     def _common_task(self, *, rung: str, version: str, revision: str) -> dict[str, object]:
         return {
@@ -192,7 +249,13 @@ class SyntheticRepo:
         )
         return {
             "schema": "marb_runs.v2",
-            "tasks": {"L2-RESOLVE": l2, "L4-ECO": l4},
+            "default_task": "L1-ASSEMBLE",
+            "legacy_defaults": {"task": "L1-ASSEMBLE", "scoring_version": "v0.9"},
+            "tasks": {
+                "L1-ASSEMBLE": {"rung": "L1", "scoring_version": "v0.10"},
+                "L2-RESOLVE": l2,
+                "L4-ECO": l4,
+            },
             "publication_policy": {
                 "effective_date": "2026-08-28",
                 "frontier_min_distinct_runs": 3,
@@ -212,13 +275,19 @@ class SyntheticRepo:
         assert isinstance(tasks, dict)
         for task in tasks.values():
             assert isinstance(task, dict)
-            allowed = task["allowed_kits"]
+            allowed = task.get("allowed_kits")
+            if allowed is None:
+                continue
             assert isinstance(allowed, dict)
             allowed[self.kit_path] = digest
         self.write_registry()
 
     def kwargs(self, task_id: str = "L4-ECO") -> dict[str, object]:
-        slug = "l4" if task_id == "L4-ECO" else "l2"
+        slug = {
+            "L1-ASSEMBLE": "l1",
+            "L2-RESOLVE": "l2",
+            "L4-ECO": "l4",
+        }[task_id]
         return {
             "task_id": task_id,
             "source_revision": self.revision,
@@ -248,7 +317,11 @@ class CohortRunnerTests(unittest.TestCase):
 
     @staticmethod
     def _actual_kwargs(task_id: str) -> dict[str, object]:
-        task_slug = "l4-eco" if task_id == "L4-ECO" else "l2-resolve"
+        task_slug = {
+            "L1-ASSEMBLE": "l1-assemble",
+            "L2-RESOLVE": "l2-resolve",
+            "L4-ECO": "l4-eco",
+        }[task_id]
         return {
             "task_id": task_id,
             "source_revision": RUNNER._read_git_head(REPO),
@@ -264,11 +337,11 @@ class CohortRunnerTests(unittest.TestCase):
             "seeds": ["01", "02", "03"],
         }
 
-    def test_actual_repo_l2_and_l4_plans_are_deterministic_and_read_only(self) -> None:
+    def test_actual_repo_l1_l2_and_l4_plans_are_deterministic_and_read_only(self) -> None:
         registry_before = REGISTRY_PATH.read_bytes()
         board_before = BOARD_PATH.read_bytes()
 
-        for task_id in ("L2-RESOLVE", "L4-ECO"):
+        for task_id in ("L1-ASSEMBLE", "L2-RESOLVE", "L4-ECO"):
             with self.subTest(task=task_id):
                 kwargs = self._actual_kwargs(task_id)
                 first = RUNNER.build_plan(REPO, **kwargs)
@@ -286,6 +359,139 @@ class CohortRunnerTests(unittest.TestCase):
 
         self.assertEqual(REGISTRY_PATH.read_bytes(), registry_before)
         self.assertEqual(BOARD_PATH.read_bytes(), board_before)
+
+    def test_l1_plan_uses_only_the_public_execution_contract(self) -> None:
+        registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+        registry_task = registry["tasks"]["L1-ASSEMBLE"]
+        envelope = RUNNER.build_plan(REPO, **self._actual_kwargs("L1-ASSEMBLE"))
+        plan = envelope["plan"]
+
+        self.assertEqual(plan["task"]["id"], "L1-ASSEMBLE")
+        self.assertEqual(plan["task"]["provenance_contract"], "l1_assemble.v1")
+        self.assertIsNone(plan["task"]["change_request_id"])
+        self.assertIsNone(plan["task"]["change_request"])
+        self.assertEqual(plan["task"]["runtime_contract"], {})
+        self.assertEqual(
+            set(plan["frozen_public_inputs"]),
+            {"task_definition", "kit", "prompt", "driver_brief"},
+        )
+        self.assertEqual(
+            plan["frozen_public_inputs"]["task_definition"]["path"],
+            RUNNER.L1_CONTRACT_PATH,
+        )
+        self.assertEqual(
+            plan["readiness"]["blockers"],
+            [
+                "this plan does not authorize execution, provider access, or spend",
+                "planned slots are not benchmark attempts or run evidence",
+            ],
+        )
+        for run in plan["runs"]:
+            base = f"runs/{run['run_id']}--{RUNNER.ATTEMPT_UUID_TOKEN}"
+            self.assertEqual(
+                run["planned_outputs"],
+                {
+                    "executor": {
+                        key: (
+                            f"{base}/{name}"
+                            if key == "run_log"
+                            else f"{base}/evidence/{name}"
+                        )
+                        for key, name in RUNNER.L1_OUTPUT_NAMES.items()
+                    },
+                    "downstream": {},
+                },
+            )
+            self.assertTrue(
+                run["planned_outputs"]["executor"]["baseline_editable_source_zip"].endswith(
+                    ".zip"
+                )
+            )
+            self.assertTrue(
+                run["planned_outputs"]["executor"]["final_editable_source_zip"].endswith(
+                    ".zip"
+                )
+            )
+
+        rendered = _independent_canonical_json(envelope).decode("ascii")
+        contract_rendered = L1_CONTRACT_PATH.read_text(encoding="utf-8")
+        for forbidden in (
+            "answer_key",
+            "reference_step",
+            "placement_spec",
+            "gated_dataset",
+            '"spec"',
+        ):
+            self.assertNotIn(forbidden, rendered.casefold())
+            self.assertNotIn(forbidden, contract_rendered.casefold())
+        for field in ("reference_step", "spec"):
+            value = registry_task.get(field)
+            if isinstance(value, str):
+                self.assertNotIn(value, rendered)
+
+        fusion_kwargs = self._actual_kwargs("L1-ASSEMBLE")
+        fusion_kwargs.update(
+            {
+                "cell_id": "test-l1-assemble-fusion-cell",
+                "cohort_id": "test-l1-assemble-fusion-cohort",
+                "driver_id": "fusion",
+                "driver_version": "2703.1.11",
+            }
+        )
+        fusion = RUNNER.build_plan(REPO, **fusion_kwargs)["plan"]
+        self.assertEqual(
+            fusion["frozen_public_inputs"]["kit"]["path"],
+            RUNNER.DRIVERS["fusion"]["kit"],
+        )
+        self.assertEqual(
+            fusion["frozen_public_inputs"]["driver_brief"]["path"],
+            RUNNER.DRIVERS["fusion"]["brief"],
+        )
+
+    def test_l1_contract_and_envelope_fail_closed_on_drift_or_fabrication(self) -> None:
+        envelope = self.fixture.build("L1-ASSEMBLE")
+        raw = _independent_canonical_json(envelope, newline=True)
+        self.assertEqual(RUNNER.verify_plan_envelope(raw), envelope)
+
+        self.fixture.path("prompts/standard_prompt.md").write_bytes(b"drifted\n")
+        with self.assertRaisesRegex(RUNNER.PlanError, "frozen SHA-256"):
+            self.fixture.build("L1-ASSEMBLE")
+
+        self.fixture._write_bytes("prompts/standard_prompt.md", b"Synthetic public prompt\n")
+        self.fixture.write_l1_contract(unexpected=True)
+        with self.assertRaisesRegex(RUNNER.PlanError, "unknown or missing fields"):
+            self.fixture.build("L1-ASSEMBLE")
+
+        self.fixture.write_l1_contract(change_request={"path": "request.md"})
+        with self.assertRaisesRegex(RUNNER.PlanError, "must not define a change request"):
+            self.fixture.build("L1-ASSEMBLE")
+
+        self.fixture.write_l1_contract()
+        forged_request = copy.deepcopy(envelope)
+        forged_request["plan"]["task"]["change_request_id"] = "invented"
+        forged_request["plan"]["task"]["change_request"] = {
+            "path": "requests/invented.md",
+            "sha256": "0" * 64,
+        }
+        forged_request["plan_sha256"] = hashlib.sha256(
+            _independent_canonical_json(forged_request["plan"])
+        ).hexdigest()
+        with self.assertRaisesRegex(RUNNER.PlanError, "must not invent"):
+            RUNNER.verify_plan_envelope(
+                _independent_canonical_json(forged_request, newline=True)
+            )
+
+        forged_output = copy.deepcopy(envelope)
+        forged_output["plan"]["runs"][0]["planned_outputs"]["executor"][
+            "baseline_editable_source_zip"
+        ] = "runs/other/source.py"
+        forged_output["plan_sha256"] = hashlib.sha256(
+            _independent_canonical_json(forged_output["plan"])
+        ).hexdigest()
+        with self.assertRaisesRegex(RUNNER.PlanError, "output paths are inconsistent"):
+            RUNNER.verify_plan_envelope(
+                _independent_canonical_json(forged_output, newline=True)
+            )
 
     def test_current_l4_plan_is_blocked_and_excludes_private_metadata(self) -> None:
         registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
@@ -401,12 +607,20 @@ class CohortRunnerTests(unittest.TestCase):
             seed_basis="independent-run-ordinal", seeds=["01", "02", "03"]
         )
         provider = self.fixture.build(
-            seed_basis="provider-seed", seeds=["seed-a", "seed-b", "seed-c"]
+            seed_basis="provider-seed", seeds=["101", "102", "103"]
         )
         self.assertEqual(
             ordinal["plan"]["cohort"]["seed_basis"], "independent-run-ordinal"
         )
         self.assertEqual(provider["plan"]["cohort"]["seed_basis"], "provider-seed")
+
+        for invalid in (
+            ["seed-a", "102", "103"],
+            [str(2**31), "102", "103"],
+        ):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(RUNNER.PlanError, "executor range"):
+                    self.fixture.build(seed_basis="provider-seed", seeds=invalid)
 
     def test_frozen_hash_drift_fails_closed(self) -> None:
         self.fixture.path("prompts/standard_prompt.md").write_bytes(b"drifted prompt\n")
@@ -533,15 +747,20 @@ class CohortRunnerTests(unittest.TestCase):
                 with self.assertRaisesRegex(RUNNER.PlanError, message):
                     self.fixture.build(**changes)
 
+        with self.assertRaisesRegex(RUNNER.PlanError, "canonical byte-bound"):
+            self.fixture.build(prompt_variant="alternate-safe-label")
+
     def test_source_revision_mismatch_fails_closed(self) -> None:
         with self.assertRaisesRegex(RUNNER.PlanError, "does not match"):
             self.fixture.build(source_revision="b" * 40)
         with self.assertRaisesRegex(RUNNER.PlanError, "full lowercase"):
             self.fixture.build(source_revision="A" * 40)
 
-    def test_l4_cadquery_driver_version_must_match_frozen_runtime(self) -> None:
-        with self.assertRaisesRegex(RUNNER.PlanError, "frozen runtime contract"):
-            self.fixture.build(driver_version="9.9")
+    def test_cadquery_driver_version_must_match_executor_and_l4_task_runtime(self) -> None:
+        for task_id in ("L1-ASSEMBLE", "L2-RESOLVE", "L4-ECO"):
+            with self.subTest(task_id=task_id):
+                with self.assertRaisesRegex(RUNNER.PlanError, "executor runtime contract"):
+                    self.fixture.build(task_id, driver_version="9.9")
 
     def test_existing_cell_requires_the_exact_frozen_cohort_identity(self) -> None:
         kwargs = self.fixture.kwargs("L4-ECO")
@@ -620,8 +839,8 @@ class CohortRunnerTests(unittest.TestCase):
 
     def test_planned_outputs_cannot_alias_registered_evidence_paths(self) -> None:
         for registered in (
-            "runs/synthetic-l4-cohort-01/run_log.yaml",
-            "RUNS/SYNTHETIC-L4-COHORT-01./RUN_LOG.YAML",
+            "runs/synthetic-l4-cohort-01/run_log.json",
+            "RUNS/SYNTHETIC-L4-COHORT-01./RUN_LOG.JSON",
         ):
             with self.subTest(registered=registered):
                 self.fixture.registry["runs"] = [
@@ -643,7 +862,7 @@ class CohortRunnerTests(unittest.TestCase):
                 "run_id": "unrelated-traversal",
                 "cell_id": "unrelated-cell",
                 "seed": "99",
-                "run_log": "runs/other/../synthetic-l4-cohort-01/run_log.yaml",
+                "run_log": "runs/other/../synthetic-l4-cohort-01/run_log.json",
             }
         ]
         self.fixture.write_registry()

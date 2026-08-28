@@ -1,0 +1,18 @@
+# This source directory is deliberately not a Docker build context. Assemble a
+# reviewed, temporary allowlisted context exactly as documented in README.md.
+**
+
+# Explicit sensitive/transient classes remain named for review tooling even
+# though the default-deny rule above already excludes them.
+private-build-record.json
+wheelhouse/
+wheelhouse.sha256
+.env
+.env.*
+*secret*
+*credential*
+*token*
+*.key
+*.pem
+*.pfx
+*.p12

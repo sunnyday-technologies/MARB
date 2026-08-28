@@ -90,6 +90,77 @@ cohort exists. L4 therefore remains
 currently scored L0/L1 ladder. The evidence boundary is
 [`results/evidence/l4_eco/v0.12/blocker.json`](results/evidence/l4_eco/v0.12/blocker.json).
 
+### H2 cohort execution status
+
+MARB includes a deterministic H2a planner and a separate H2b executor for one
+explicitly authorized `L1-ASSEMBLE`, `L2-RESOLVE`, or `L4-ECO` slot. H2b is
+currently restricted to text-only, local-no-charge provider sessions and a
+digest-pinned, networkless CadQuery container. Authorization binds the exact
+plan, slot, committed implementation and frozen inputs, provider/model/settings,
+and container runtime before provider access. Authorization schema v2 also binds
+an absolute normalized Git executable path and the SHA-256 digest of its raw
+bytes; schema validation confirms those declared bindings. Execution preflight,
+not `validate-authorization`, verifies the actual host path chain and file
+digest. For every Git process creation, H2b locks the host path chain with
+Windows handles and reverifies the file digest while those handles remain held
+across the hash-to-spawn interval, closing executable replacement. It uses only
+the authenticated path as `argv[0]`, never a bare
+executable resolved through the working directory or `PATH`. It rejects
+symlink/reparse path chains, invokes Git with `--no-replace-objects` and
+`GIT_NO_REPLACE_OBJECTS=1`, supplies only the exact resolved repository as the
+per-command `safe.directory` value (never `*`), and fails closed on timeout or
+bounded-stdout overflow. L2/L4 preserve one continuous
+baseline-to-change session and freeze baseline STEP plus editable source before
+the change request is revealed. The only accepted prompt variant is
+`frozen-core`; from each frozen driver brief, only the payload between its exact
+`` `=== BEGIN ===` `` / `` `=== END ===` `` marker lines is sent as the provider
+user message, excluding the preamble and grader suffix.
+
+The plan's `cell_label` and `model.name` are operator-supplied display labels,
+not model-identity evidence. Any later publishable identity must use the exact
+authorized `model.id` confirmed by the provider response; H2b defines no alias
+policy.
+
+Authorization and all execution limits apply to one logical slot and its one
+retained attempt, not to a cohort-wide campaign budget. That includes
+`max_cost_usd`, which current local-no-charge policy requires to be null. An
+N=3 or N=9 campaign requires a separately approved aggregate ledger with
+concurrency control before provider calls; H2b does not implement that ledger.
+The permanent `.slot-claims` record prevents duplicate claims only among
+executors sharing one checkout. Because `runs/` is ignored and checkout-local,
+cross-clone and cross-host uniqueness remains an operator/campaign-ledger and
+later registry/publication validation responsibility; this is not a global
+lock. The retained `execution_modality` attestation is deliberately limited and
+negative: provider input is text, there is no native image-view tool, staged
+image bytes can be inspected through model-authored Python, and
+`vision_attested` is `false`.
+
+Inside the sandbox, the complete staged input tree is read-only at
+`/marb-input` (with geometry also at `/workspace/kit`); editable-source evidence
+captures all safe authored workspace files except the canonical STEP and
+rejects reserved manifest/status identities. Content-bound inventories before
+and after capture make additions, removals, replacements, or mutations fail
+closed before the ZIP target is created.
+
+The H2b CLI provides no-call `authorization-template`, `seal-authorization`,
+and `validate-authorization` steps before the separately confirmed `execute`
+command. Their status output avoids absolute local paths; retained execution
+failures are structured and preserve a repository-relative run path. In the
+retained `output_contract`, `executor_owned_outputs` identifies paths reserved
+and bound to the executor, not files proven to exist. Only captured artifact
+records prove production, so failed or partial runs never describe a missing
+path as produced output.
+
+The executor creates retained, UUID-backed evidence but does not grade, register
+a run, edit the board, rebuild the site, publish, or deploy. L4's planned public
+invariant and requested-change reports are grader-owned deferred outputs; an
+executor result is `completed_ungraded`. No new benchmark run or score is
+claimed by this release. The current container implementation is restricted to
+Windows Docker Desktop host semantics, and no image/host pair is qualified until
+a real no-provider/no-network manual smoke succeeds after an operator approves
+an immutable RepoDigest. See
+[`harness/H2B_EXECUTOR.md`](harness/H2B_EXECUTOR.md).
+
 ## Results — the board so far
 
 Every board row targets the same machine of about 100 parts, but the runs span
@@ -245,6 +316,10 @@ python grader/marb_orient_metric.py --ref tasks/m3_crete/m3_reference_round1.ste
 
 ## Run a model against it
 
+The generic workflow below describes legacy/manual benchmark use. It does not
+satisfy the H2b authorization and evidence contract; use
+[`harness/H2B_EXECUTOR.md`](harness/H2B_EXECUTOR.md) for a post-policy H2 slot.
+
 1. Give the model a **blind kit** from [`kits/`](kits/). A kit holds the
    authored parts, the goal renders (overview + front/top/side), and the task
    brief, with no answer key.
@@ -264,6 +339,7 @@ tasks/m3_crete/          where the gated answer key (STEP + spec) goes; fetch fr
 tasks/m3_crete_l2_resolve/ frozen L2 change request, task contract, and pending key metadata
 kits/                    versioned blind kits handed to the driver, plus KIT_VERSIONS.md
 prompts/                 the frozen task brief, per-backend driver stubs, and generator
+harness/                 local harness plus H2a planner and H2b isolated executor
 results/                 grades, run registry, findings, and figures
 benchmark.yaml           gate weights for the secondary buildability score
 scripts/validate_frontier_publication.py  fail-closed board provenance check
