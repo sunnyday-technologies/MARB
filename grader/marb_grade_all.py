@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""MARB v0.9 unified grader -- runs gap + position + orientation on every named
-run plus the reference-vs-itself ceiling baseline, prints a comparison table,
-and writes a single JSON the leaderboard / scoreboard graphic consumes.
+"""MARB unified grader -- runs gap + position + orientation on every named run
+plus the reference-vs-itself ceiling baseline, prints a comparison table, and
+writes a single JSON the leaderboard / scoreboard graphic consumes.
 
 Two modes:
 
@@ -21,6 +21,9 @@ USAGE
   # aggregate from an explicit config {cell_name: [step_paths, ...]}:
   python marb_grade_all.py --config runs.json --json results/marb_v0_9_stats.json
 
+  # task-aware registry (v2); L1 is the compatibility default:
+  python marb_grade_all.py --manifest results/marb_runs.json --task L1-ASSEMBLE
+
   # aggregate by auto-discovering run subdirs (runs/<model>_<driver>_<seed>/export.step)
   python marb_grade_all.py --runs-dir runs/ --json results/marb_v0_9_stats.json
 """
@@ -35,6 +38,7 @@ from marb_gap_metric import grade as grade_gap                                  
 from marb_orient_metric import grade as grade_orient                                 # noqa: E402
 
 from _answer_key import require_answer_key  # noqa: E402
+from run_registry import load_manifest as _load_manifest  # noqa: E402
 
 DEFAULT_REF = REPO / "tasks" / "m3_crete" / "m3_reference_round1.step"
 DEFAULT_SPEC = REPO / "tasks" / "m3_crete" / "m3_reference_assembly.yaml"
@@ -118,18 +122,6 @@ def aggregate(grades: list[dict], provenance: list[dict] | None = None) -> dict:
     return out
 
 
-def _load_manifest(path: Path):
-    """Read the run registry (results/marb_runs.json). Returns (cells, toolchain,
-    ref, spec) where cells maps cell_name -> [(step_path, provenance_dict), ...]."""
-    m = json.loads(path.read_text(encoding="utf-8"))
-    cells: dict[str, list] = {}
-    for r in m.get("runs", []):
-        prov = {k: r[k] for k in ("seed", "model", "driver", "timing", "tokens", "effort") if k in r}
-        cells.setdefault(r["cell"], []).append((Path(r["step"]), prov))
-    return (cells, m.get("grader_toolchain", {}),
-            m.get("reference_step"), m.get("spec"))
-
-
 def _discover(runs_dir: Path) -> dict:
     """Group run subdirs (runs/<model>_<driver>_<seed>/) by <model>_<driver>."""
     cells: dict[str, list[Path]] = {}
@@ -175,13 +167,22 @@ def _print_agg(rows):
               f"{cell('pos_rel_mm','mm'):>14} {cell('orient_aligned_pct','%'):>14}")
 
 
+def _schema_name(scoring_version: str, mode: str) -> str:
+    version = scoring_version.lower().lstrip("v").replace(".", "_")
+    return f"marb_v{version}_{mode}"
+
+
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="MARB v0.9 unified grader.")
+    ap = argparse.ArgumentParser(description="MARB task-aware unified grader.")
     ap.add_argument("--ref", default=str(DEFAULT_REF))
     ap.add_argument("--spec", default=str(DEFAULT_SPEC))
     ap.add_argument("--json", default=None)
     ap.add_argument("--manifest", default=None,
                     help="run registry JSON (results/marb_runs.json): cells + provenance + toolchain")
+    ap.add_argument("--task", default=None,
+                    help="task id from a v2 run registry (default: registry default_task)")
+    ap.add_argument("--scoring-version", default=None,
+                    help="scoring version when one task contains legacy and current cells")
     ap.add_argument("--config", default=None,
                     help="JSON file mapping cell_name -> [step_path, ...] (aggregate mode)")
     ap.add_argument("--runs-dir", default=None,
@@ -190,6 +191,8 @@ def main(argv=None) -> int:
     ref = Path(a.ref); spec = Path(a.spec)
 
     toolchain = {}
+    selected_task = a.task or "L1-ASSEMBLE"
+    scoring_version = "v0.9"
     prov_by_cell: dict[str, list] = {}
     aggregate_mode = bool(a.manifest or a.config or a.runs_dir)
 
@@ -201,11 +204,13 @@ def main(argv=None) -> int:
                 print(f"  SKIP {name}: missing {p}"); continue
             rows[name] = grade_one(ref, p, spec)
         _print_single(rows)
-        out = {"schema": "marb_v0_9_single", "reference_step": str(ref),
-               "spec": str(spec), "runs": rows}
+        out = {"schema": _schema_name(scoring_version, "single"),
+               "task": selected_task, "scoring_version": scoring_version,
+               "reference_step": str(ref), "spec": str(spec), "runs": rows}
     else:
         if a.manifest:
-            mcells, toolchain, mref, mspec = _load_manifest(Path(a.manifest))
+            mcells, toolchain, mref, mspec, selected_task, scoring_version = \
+                _load_manifest(Path(a.manifest), a.task, a.scoring_version)
             if mref and a.ref == str(DEFAULT_REF): ref = Path(mref)
             if mspec and a.spec == str(DEFAULT_SPEC): spec = Path(mspec)
             cells = {}
@@ -235,8 +240,10 @@ def main(argv=None) -> int:
             if grades:
                 rows[name] = aggregate(grades, used_prov or None)
         _print_agg(rows)
-        out = {"schema": "marb_v0_9_stats", "reference_step": str(ref),
-               "spec": str(spec), "toolchain": toolchain, "runs": rows}
+        out = {"schema": _schema_name(scoring_version, "stats"),
+               "task": selected_task, "scoring_version": scoring_version,
+               "reference_step": str(ref), "spec": str(spec),
+               "toolchain": toolchain, "runs": rows}
 
     if a.json:
         Path(a.json).write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")

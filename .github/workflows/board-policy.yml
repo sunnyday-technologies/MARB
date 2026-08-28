@@ -1,0 +1,22 @@
+name: Board publication policy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-board:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate board and registry provenance
+        run: python scripts/validate_frontier_publication.py
+      - name: Exercise publication-policy regressions
+        run: python -m unittest tests.test_frontier_publication tests.test_task_registry -v

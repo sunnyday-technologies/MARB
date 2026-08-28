@@ -5,17 +5,28 @@ AI-assisted CAD assembly improves over time. It grades at the levels mechanical
 design actually requires, and it keeps results reproducible as models and tools
 change.
 
-## Now (v0.9)
+## Now (v0.10)
 
 - Three positional metrics: GAP, ORIENT, and POS. See [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md).
 - One reference task: the M3-CRETE gantry frame (task 1), about 100 parts, with versioned blind kits.
 - Tool-independent grading on the exported STEP, through the CADCLAW engine.
+- Task-aware run-registry routing and a fail-closed publication policy: every
+  new frontier cell needs at least three attempted and three graded independent
+  runs and reports median plus population standard deviation. Existing frontier
+  observations remain dated v0.9 single runs.
+- Published acceptable-solution limits: repeated same-label parts and
+  rotations unobservable to the current bounding-box proxy have narrow
+  equivalences; alternative interface topologies still need a complete declared
+  resolver answer class.
 
 ## Next
 
-- **Statistics.** Run multiple seeds per model and tool cell. Report median, mean,
-  standard deviation, and error bars through [`grader/marb_grade_all.py`](grader/marb_grade_all.py) `--manifest`.
-  This work awaits repeat runs.
+- **Repeat frontier cohorts.** Apply the v0.10 minimum to every new cell. A
+  retrospective rerun of legacy cells is a separate, budgeted study.
+- **Change-loop tasks.** Publish L2-RESOLVE only after a frozen parameter change,
+  a privately authored resolver key, and at least three gradeable independent
+  runs exist. Publish L4-ECO only after its requested-change check and scripted
+  invariant regression gate are validated. Neither method is measured today.
 - **More drivers.** CadQuery and Autodesk Fusion are covered today. Add more tools
   such as build123d, all graded the same way. Contributions are welcome.
 - **A second task.** Add a different machine type to show the benchmark generalizes.

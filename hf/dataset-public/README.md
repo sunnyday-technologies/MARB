@@ -49,7 +49,7 @@ the answer key. The answer key is a separate, access-gated dataset (gated to
 prevent training-data contamination, not for secrecy):
 [SunnydayTech/marb-m3-crete-answer-key](https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key).
 
-## What it grades (v0.9)
+## What it grades (v0.10)
 
 MARB grades three positional metrics against the answer key, under a fixed, tight
 standard:
@@ -58,14 +58,32 @@ standard:
   intended gap is about 0 mm where parts bolt together and about 1 to 2 mm where
   parts move. GAP is reported as a median in millimeters. It is the primary
   functional score.
-- **ORIENT** is the share of orientation-gradeable (asymmetric) parts placed in
-  the correct rotation, reported as a percent aligned. Rotationally symmetric
-  parts are skipped.
+- **ORIENT** is the share of parts whose rotation can be graded by the current
+  axis-aligned bounding-box extent proxy and that are placed in the correct
+  rotation, reported as a percent aligned. Parts with two near-equal extents
+  are skipped because this proxy cannot distinguish their rotation.
 - **POS** is the position error of each part versus the answer key after a
   best-fit rigid alignment. It is reported as a median in millimeters, both
   absolute and neighbor-relative.
 
 Buildability stays on as a secondary gate.
+
+The current M3-CRETE task has one resolver-built geometric answer. Same-label
+repeated parts are assignment-matched, and ORIENT skips parts when near-equal
+axis-aligned bounding-box extents make rotation unobservable to its proxy. The
+v0.10 current-kit audit found no independently validated second complete answer
+class, so alternate handed layouts or interface topologies are not declared
+equivalent and may be penalized. MARB has not established whether such an
+alternative is functionally acceptable. See the scoring spec for the full
+limitation.
+
+Existing frontier cells are dated v0.9 single-run observations. From
+2026-08-28 onward, a new frontier cell requires at least three independent
+attempts and three gradeable outputs and is reported as median plus population
+standard deviation. Failed attempts remain part of the registered provenance.
+Post-policy cells also record stable run IDs, distinct run-log paths and
+SHA-256 digests, graded STEP digests, and the exact graded run IDs carried into
+the aggregate grade source.
 
 ## What is in this dataset
 
@@ -105,6 +123,7 @@ Grader source: [github.com/sunnyday-technologies/MARB/tree/main/grader](https://
 Results are comparable only within a single kit cohort and a fixed scoring
 version. Each run records its kit version, its model and tool versions, and the
 client environment. Do not pool runs across kit versions without noting it.
+Published cells retain the scoring-version tag used to produce them.
 
 ## License
 

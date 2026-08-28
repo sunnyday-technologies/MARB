@@ -16,7 +16,7 @@ Project home: [marb.cadclaw.io](https://marb.cadclaw.io).
 
 ---
 
-## What it grades (v0.9)
+## What it grades (v0.10)
 
 MARB grades three positional metrics against the answer key, under a fixed,
 tight standard (see [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md)):
@@ -25,45 +25,71 @@ tight standard (see [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md)):
   intended gap is about 0 mm where parts bolt together and about 1 to 2 mm
   where parts move. GAP is reported as a median in millimeters. It is the
   primary functional score.
-- **ORIENT** is the share of orientation-gradeable (asymmetric) parts placed in
-  the correct rotation, reported as a percent aligned. Rotationally symmetric
-  parts are skipped.
+- **ORIENT** is the share of parts whose rotation can be graded by the current
+  axis-aligned bounding-box extent proxy and that are placed in the correct
+  rotation, reported as a percent aligned. Parts with two near-equal extents
+  are skipped because this proxy cannot distinguish their rotation.
 - **POS** is the position error of each part versus the answer key after a
   best-fit rigid alignment. It is reported as a median in millimeters, both
   absolute (raw exported frame) and relative (neighbor-relative).
 
 Buildability stays on as a secondary gate.
 
+The current M3-CRETE grade uses one resolver-built geometric answer. It already
+treats same-label repeated parts as interchangeable during matching, and its
+ORIENT proxy skips parts when near-equal bounding-box extents make rotation
+unobservable to that proxy. The v0.10 current-kit audit found no independently
+validated second complete answer class, so no alternate handed layout or
+interface topology is currently declared equivalent. Such submissions remain
+outside the declared classes and may be penalized; MARB has not established
+whether they are functionally acceptable. The exact limitation and the
+whole-class rule for future alternatives are published in
+[`spec/MARB_SCORING.md`](spec/MARB_SCORING.md#51-acceptable-solution-classes-and-current-limitation).
+
 ## Results — the board so far
 
-Every run builds the same machine of about 100 parts from the same blind kit
-and is graded identically. The board now spans frontier hosted models down to
-the local open-weight anchor, ranked by GAP median.
+Every board row targets the same machine of about 100 parts, but the runs span
+versioned blind-kit and harness cohorts. Results are graded with the scoring
+version shown per row and are comparable only within a matching kit, prompt,
+tool, and harness cohort. The board spans frontier hosted models down to the
+local open-weight anchor, ranked by GAP median.
+
+Rows 1–8 are the legacy frontier observations: one run per cell, dated below
+and retained under their original v0.9 scoring tag. Rows 9–11 are repeat-run
+cells reported as median ± population standard deviation, with attempted and
+graded counts kept separate. Effective 2026-08-28, every new frontier cell must
+register at least three independent attempts and three gradeable outputs before
+publication; attempts or retries inside one session do not count as new runs.
+Post-policy cells also register a unique run ID, distinct run-log path and
+SHA-256 digest per attempt, and a STEP digest for every graded output; the grade
+source must identify the exact graded run IDs.
 
 | # | Model · tool | Effort / cohort | GAP median | ORIENT aligned | POS relative median |
 |---|---|---|---|---|---|
-| 1 | Claude Opus 4.7 · CadQuery | max | **0.0 mm** | 51% | 49.9 mm |
-| 2 | Claude Opus 4.7 · Fusion | max | 2.0 mm | 47% | 47.7 mm |
-| 3 | Claude Fable 5 · CadQuery | ultra (multi-agent) | 3.0 mm | 47% | **30.4 mm** |
-| 4 | Claude Opus 4.8 · Fusion | v1.3 (hint), n=1 | 5.7 mm | 39% | 52.5 mm |
-| 5 | Claude Fable 5 · CadQuery | medium | 6.5 mm | 59% | 48.5 mm |
-| 6 | Claude Fable 5 · CadQuery | low | 7.0 mm | 53% | 68.0 mm |
-| 7 | Claude Fable 5 · CadQuery | high | 7.0 mm | 49% | 38.1 mm |
-| 8 | GPT-5 Codex · CadQuery | max | 7.8 mm | **69%** | 47.2 mm |
-| 9 | Local · qwen3-coder-next 80B (n=9) | mechanics v2 | 272 ± 149 mm | 12% | 118 ± 47 mm |
-| 10 | Local · qwen3-coder-next 80B (n=8) | lean v5 | 341 ± 133 mm | 20% | 233 ± 139 mm |
-| 11 | Sighted · qwen3-vl 32B (n=5) | lean v5 + goal image | 873 ± 174 mm | 0% | 1005 ± 613 mm |
+| 1 | Claude Opus 4.7 · CadQuery | max · single run · 2026-05-26 · v0.9 | **0.0 mm** | 51% | 49.9 mm |
+| 2 | Claude Opus 4.7 · Fusion | max · single run · 2026-05-26 · v0.9 | 2.0 mm | 47% | 47.7 mm |
+| 3 | Claude Fable 5 · CadQuery | ultra (multi-agent) · single run · 2026-06-11 · v0.9 | 3.0 mm | 47% | **30.4 mm** |
+| 4 | Claude Opus 4.8 · Fusion | v1.3 (hint) · single run · 2026-05-30 · v0.9 | 5.7 mm | 39% | 52.5 mm |
+| 5 | Claude Fable 5 · CadQuery | medium · single run · 2026-06-10 · v0.9 | 6.5 mm | 59% | 48.5 mm |
+| 6 | Claude Fable 5 · CadQuery | low · single run · 2026-06-10 · v0.9 | 7.0 mm | 53% | 68.0 mm |
+| 7 | Claude Fable 5 · CadQuery | high · single run · 2026-06-10 · v0.9 | 7.0 mm | 49% | 38.1 mm |
+| 8 | GPT-5 Codex · CadQuery | max · single run · 2026-05-26 · v0.9 | 7.8 mm | **69%** | 47.2 mm |
+| 9 | Local · qwen3-coder-next 80B | mechanics v2 · median · 9/10 graded · v0.9 | 272 ± 149 mm | 12 ± 9% | 118 ± 47 mm |
+| 10 | Local · qwen3-coder-next 80B | lean v5 · median · 8/10 graded · v0.9 | 341 ± 133 mm | 20 ± 9% | 233 ± 139 mm |
+| 11 | Sighted · qwen3-vl 32B | lean v5 + goal image · median · 5/5 graded · v0.9 | 873 ± 174 mm | 0 ± 16% | 1005 ± 613 mm |
 | · | *Reference (answer key)* | | *0.0 mm* | *100%* | *0.0 mm* |
 
-![MARB v0.9 scoreboard](results/figures/marb_scoreboard.png)
+![MARB scoreboard with single-run and repeat-run provenance](results/figures/marb_scoreboard.png)
 
-None of these results is buildable yet. The target is a machine that could be
-bolted together as is, and that is what the metrics measure. Notable in the
-Claude Fable 5 effort sweep: effort does not scale monotonically — medium beat
-both low and high on GAP and ORIENT — but the ultra run (multi-agent
-adversarial audit + fix loop) cut GAP to 3.0 mm and set the board-best
-relative position (30.4 mm), at roughly double the wall-clock of the other
-Fable runs. The Claude Opus 4.8 Fusion run (rank 4) lands the frame less
+None of these results meets the target values across all configured digital
+inventory, interference, and floating-part gates and GAP, ORIENT, and POS
+metrics. Those artifact checks do not establish that a physical machine can be
+fabricated or bolted together. In the dated single-run Claude Fable 5 cells,
+the recorded metrics are non-monotonic
+across effort labels: medium recorded lower GAP and higher ORIENT than low and
+high, while the ultra multi-agent harness recorded 3.0 mm GAP and 30.4 mm
+relative POS at roughly double the wall-clock. These confounded single runs do
+not isolate an effort or harness effect. The Claude Opus 4.8 Fusion run (rank 4) lands the frame less
 precisely than Opus 4.7 did, but it ran on the hint-equipped v1.3 kit while the
 Opus 4.7 Fusion run used the no-hint v1.1 kit, so the two are different cohorts,
 not a clean head-to-head. Frontier write-ups:
@@ -72,16 +98,17 @@ not a clean head-to-head. Frontier write-ups:
 
 ## The local-anchor floor
 
-The frontier track shows the current top end. The local-anchor floor (rows 9
-to 11 above) shows the current low end: the models a shop with no internet and
-no hosted API could run on its own hardware. The text anchor is an 80B
+The included frontier track records the hosted-model cells; the local-anchor
+rows 9 to 11 provide a separate, dated open-weight comparison for hardware that
+can run without a hosted API. The text anchor is an 80B
 open-weight coder, `qwen3-coder-next`, building the same machine blind; its
 cells now aggregate ten seeds each (9/10 and 8/10 produced a loadable STEP —
-the n=5 "5/5 buildable" rate did not survive more seeds, which is the point of
-seeds). The **sighted cell** gives a 32B vision model (`qwen3-vl`) the goal
+the initial n=5 "5/5 loadable-export" rate changed when more seeds were added,
+which illustrates why repeat runs matter). The **sighted cell** gives a 32B vision model (`qwen3-vl`) the goal
 image in-loop — and it does *worse* than the blind text model on every metric
-(873 mm GAP, 0% orientation, ~15 parts placed of ~101): at this scale, vision
-tokens crowd out geometry. A 12-turn variant (n=2, preliminary) improves
+(873 mm GAP, 0% orientation, ~15 parts placed of ~101). That pattern is
+consistent with the added vision context competing with geometry work, but
+this confounded cohort does not isolate the cause. A 12-turn variant (n=2, preliminary) improves
 placement accuracy but not part count; a second vision model (Nemotron 3 Nano
 Omni) produced 0/5 loadable exports. Full sighted grades:
 [`results/marb_sighted_grades.json`](results/marb_sighted_grades.json).
@@ -89,9 +116,9 @@ Omni) produced 0/5 loadable exports. Full sighted grades:
 The text-anchor model reliably imports the right parts, but it places them loosely rather
 than as a jointed frame. Parts land 100 to 400 mm off on a 2000 mm machine. The
 native gates agree: the part mix is wrong, and 20 to 28 part-pairs clip, while
-nothing floats free. One CadQuery export-mechanic fix raised the buildable rate
-from 1 of 5 to 5 of 5. Adding more prompt scaffolding made the results worse,
-not better. A larger token budget did not improve quality. Write-up:
+nothing floats free. In the named cohorts, one CadQuery export-mechanic change
+raised the loadable-export rate from 1 of 5 to 5 of 5; added prompt scaffolding
+and a larger token budget did not record better artifact metrics. Write-up:
 [`results/local_anchor_study.md`](results/local_anchor_study.md). Figure:
 [`results/figures/marb_local_3panel.png`](results/figures/marb_local_3panel.png).
 
@@ -153,7 +180,11 @@ python grader/marb_grade_all.py --json results/marb_grades_local.json
 
 # Grade a set of runs via the run registry (median, mean, and std per cell).
 python grader/marb_grade_all.py --manifest results/marb_runs.json \
+    --task L1-ASSEMBLE --scoring-version v0.9 \
     --json results/marb_v0_9_stats.json
+
+# Check that the curated board is publication-eligible.
+python scripts/validate_frontier_publication.py
 ```
 
 A single run can be graded directly:
@@ -186,6 +217,7 @@ kits/                    versioned blind kits handed to the driver, plus KIT_VER
 prompts/                 the frozen task brief, per-backend driver stubs, and generator
 results/                 grades, run registry, findings, and figures
 benchmark.yaml           gate weights for the secondary buildability score
+scripts/validate_frontier_publication.py  fail-closed board provenance check
 ```
 
 ## Versioning and comparability
@@ -193,7 +225,13 @@ benchmark.yaml           gate weights for the secondary buildability score
 Results are comparable only within a single **kit cohort** and a fixed scoring
 version. Each run records its kit version, its model and tool versions, and the
 client environment (see [`results/marb_runs.json`](results/marb_runs.json)). Do
-not pool runs across kit versions without noting it.
+not pool runs across kit versions without noting it. The current method is
+v0.10; the existing board cells keep their original v0.9 tags rather than being
+relabeled. See [`CHANGELOG.md`](CHANGELOG.md).
+
+MARB metrics are digital assembly evidence. They do not establish
+manufacturability, structural safety, certification, or readiness, and they do
+not narrow a TRL/MRL/IRL assessment.
 
 ## Citation
 

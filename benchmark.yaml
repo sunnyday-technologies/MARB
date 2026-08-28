@@ -1,4 +1,5 @@
 schema_version: m3_ai_assembly_benchmark.v0.1
+marb_spec_version: "v0.10"
 benchmark_id: m3_ai_assembly
 status: prerelease_scaffold
 

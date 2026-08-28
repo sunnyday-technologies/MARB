@@ -1,10 +1,12 @@
-# MARB — Mechanical Assembly Readiness Benchmark: scoring spec (v0.9)
+# MARB — Mechanical Assembly Readiness Benchmark: scoring spec (v0.10)
 
 This is the canonical scoring reference for MARB. All grader and figure builders
 live in `grader/` and are listed in Section 5. Update this document whenever a
 builder changes, so the method stays versioned and reproducible.
 
-Status: v0.9. This version supersedes the v0.3 buildability headline.
+Status: v0.10. This version retains the v0.9 metrics and fixed bands, adds
+repeat-run publication controls, and makes the current answer-key equivalence
+limits explicit. Existing board cells keep their original v0.9 tag.
 
 ---
 
@@ -18,7 +20,8 @@ that separates models, is this:
 > How many parts did the AI place in the correct position and the correct
 > orientation, and are the gaps between parts functionally correct?
 
-MARB v0.9 grades positional accuracy with three metrics:
+MARB v0.10 grades positional accuracy with the same three metrics introduced in
+v0.9:
 
 - GAP: the error between the actual and intended interface gap. This is the
   primary functional score. (In earlier v0.3 wording, GAP did not yet exist as a
@@ -28,8 +31,9 @@ MARB v0.9 grades positional accuracy with three metrics:
 - ORIENT (formerly ORIENTED): the share of orientation-gradeable parts placed in
   the correct rotation.
 
-Buildability remains as a secondary gate. It is no longer the headline. The
-secondary gate asks whether the parts could be bolted together as placed.
+The configured native inventory, interference, and floating-part checks remain
+as secondary artifact gates; they are no longer the headline. Passing these
+digital checks does not establish physical assemblability or manufacturability.
 
 ## 2. Tolerance philosophy
 
@@ -100,8 +104,8 @@ All builders live in `grader/` and depend on the CADCLAW grading engine.
 |---|---|
 | `marb_pose_metric.py` | POS grader. Loads the answer key and run STEP files, labels solids by bounding-box signature, rigid-aligns (Kabsch or ICP), matches parts (SciPy assignment), and computes the position bands and median, both absolute and relative. |
 | `marb_gap_metric.py` | GAP grader (Section 3). Classifies each answer-key interface as attachment (0 mm), motion (1 to 2 mm), or standoff, then grades actual gap versus intended gap. This is the primary functional score. |
-| `marb_orient_metric.py` | ORIENT grader (Section 4). Grades each part's rotation versus the answer key, binned as aligned, rotated, or wrong. Rotationally symmetric parts are skipped. This catches parts placed in the wrong rotation. |
-| `marb_grade_all.py` | The single-run grader driver. In single-run mode (the default) it grades the canonical runs and writes a flat `marb_v0_9_grades.json`. In aggregate mode (with a `--config` map, or `--runs-dir` to auto-discover `<model>_<driver>_<seed>/export.step`) it grades several seeds per cell and reports median, mean, and standard deviation per metric. |
+| `marb_orient_metric.py` | ORIENT grader (Section 4). Uses world-axis-aligned bounding-box extents as an orientation proxy and bins each gradeable part as aligned, rotated, or wrong. Parts with two near-equal extents are skipped because the proxy cannot distinguish their rotation. |
+| `marb_grade_all.py` | The task-aware grader driver. Legacy single-run mode remains available. Registry mode selects one task and one scoring version, groups by stable cell ID, and reports median, mean, population standard deviation, and raw per-run values. It refuses to blend scoring versions. |
 | `grade_native_step.py` | The native gates: inventory, interference, and floating. This is the secondary buildability gate. |
 | `brand_figs.py` | The Sunnyday brand kit shared by all figures: display and body fonts, brand colors, and large legible sizes. Figures use as few words as possible. |
 | `build_marb_scoreboard.py` | Leaderboard graphic. Reads the grade schema and renders the standard-deviation bars and per-seed clusters from the aggregate block. |
@@ -109,6 +113,36 @@ All builders live in `grader/` and depend on the CADCLAW grading engine.
 | `build_marb_gap_closeup.py` | Close-up figure of the GAP metric at an interface. |
 | `build_marb_local_3panel.py` | Three-panel figure for the local-anchor floor results. |
 | `build_marb_linkedin_hero_v09.py` | Hero figure for the v0.9 results summary. |
+| `scripts/validate_frontier_publication.py` | Publication gate. Reconciles board cells with registered run ordinals, allows only the exact legacy single-run list, and requires at least three attempted and three graded independent runs plus median and spread for every later frontier cell. |
+
+### 5.1 Acceptable solution classes and current limitation
+
+The current M3-CRETE key is one resolver-built geometric answer. The graders
+already accept two limited equivalences without a second key:
+
+- POS, GAP, and ORIENT use optimal assignment within the same part label, so
+  exchanging indistinguishable repeated instances is not penalized merely for
+  instance order.
+- ORIENT skips parts when two near-equal axis-aligned bounding-box extents make
+  rotation unobservable to the current proxy. This is a scoring-observability
+  rule, not a declaration that every skipped part is functionally
+  rotation-equivalent.
+
+Those rules do not make every potentially acceptable topology equivalent. GAP
+derives its interface graph from the selected reference, and POS relative uses
+that reference's neighbor graph. A submission with a different part count,
+handed layout, or interface topology can therefore be penalized by the
+single-reference comparison. MARB has not established whether any such
+alternative is functionally acceptable. Axis-aligned bounding-box orientation
+can also miss rotations that preserve the same extents.
+
+The v0.10 current-kit audit found no independently validated second complete
+geometric answer class, so none is declared. Potential alternate layouts remain
+unvalidated scoring cases, not accepted equivalents and not evidence that one
+feature tree or topology is uniquely valid. A future task may declare multiple
+resolver-built classes, but one complete class must be selected for the whole
+grade; MARB must not cherry-pick GAP from one reference and POS or ORIENT from
+another.
 
 ## 6. First-run findings (three frontier runs, 2026-05-26)
 
@@ -130,13 +164,40 @@ The answer-key frame is about 2175 mm wide, and the runs' frames are about 2048
 mm wide. The AIs built a slightly smaller machine. This inflates the absolute
 figures. The relative metric factors that difference out.
 
+### 6.1 Frontier publication provenance
+
+The eight frontier cells already published between 2026-05-26 and 2026-06-11
+remain dated, v0.9 single-run observations. They are descriptive and are not
+retrospectively promoted into repeat-run estimates.
+
+Effective 2026-08-28, a new frontier cell is publishable only when:
+
+1. at least three independent runs were attempted and at least three produced
+   gradeable outputs;
+2. every attempt remains registered under a distinct provider seed or, when a
+   provider exposes no seed control, a distinct independent-run ordinal;
+3. every attempt has a unique run ID plus a distinct run-log path and SHA-256
+   digest; every graded output records its STEP SHA-256 digest, and the grade
+   source identifies the exact graded run IDs;
+4. attempts and retries inside one session are not counted as separate runs;
+5. the published center is the median and the spread is population standard
+   deviation for GAP, ORIENT, and POS; and
+6. task, scoring version, kit, prompt, model/tool, and harness cohort are not
+   mixed inside a cell.
+
+The validator applies the same minimum and provenance checks to every
+post-policy non-reference row, so changing a board track label cannot bypass
+the frontier rule. Reference and legacy exceptions are exact cell-ID
+allowlists.
+
+The local and sighted cells already use repeat-run summaries. Their attempted
+and graded counts are reported separately so failed exports do not disappear.
+
 ## 7. Planned work
 
-1. Statistics with more than one run per cell. The aggregate mode of
-   `marb_grade_all.py` is built. It reports median, mean, and standard deviation
-   per cell, with standard-deviation bars on the leaderboard and per-driver
-   scatter clusters. It awaits the repeat STEP runs to populate the aggregate
-   output.
+1. Populate new frontier cells under the v0.10 repeat-run rule. Re-running the
+   historical v0.9 cells is a separate, budgeted study rather than a condition
+   of this method release.
 2. Random-floor baseline. Grade shuffled positions to establish a true floor
    beneath the current POS relative median of about 47 mm.
 3. Principal-axes orientation refinement. The current ORIENT metric uses
@@ -166,7 +227,7 @@ Prompt-framework interventions are tested as a separate experimental arm. Each
 intervention is an additive coaching overlay, appended after the frozen core or
 held in a sibling prompt file, and clearly labeled. Runs under an overlay are not
 directly comparable to the frozen-core baseline. They are a different cell. Each
-variant is graded with MARB v0.9 and reported as the change per metric per dollar
+variant is graded with the current MARB spec and reported as the change per metric per dollar
 versus the frozen-core control, for the same model and driver.
 
 ### 8.2 Evidence base (first three runs, n = 1: hypotheses, not conclusions)
@@ -211,4 +272,3 @@ re-read context, and are the dominant cost driver. One confident pass (GPT-5
 Codex, 13 minutes) was the fastest but the least accurate: it had the worst GAP
 and the most interference. As repeat runs land, quantify per model where
 iteration pays and where it wastes tokens.
-

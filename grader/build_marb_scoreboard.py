@@ -62,7 +62,7 @@ STRIP  = 8        # green strip under the band
 COLHDR = 64       # gap + column-header line + rule
 ROW    = 66       # per AI row: main line + sub line + clearance
 REFROW = 58       # divider + reference row
-NOTE   = 42       # methodology line
+NOTE   = 56       # two-line provenance / methodology note
 FOOT   = 62       # footer band
 H = HEAD + STRIP + COLHDR + N*ROW + REFROW + NOTE + 16 + FOOT
 
@@ -76,7 +76,7 @@ fig.add_artist(Rectangle((0, yf(HEAD+STRIP)), 1, STRIP/H, transform=fig.transFig
 fig.text(0.035, yf(HEAD*0.42), "MARB", fontproperties=NUL, fontsize=36, color=COLORS["white"], va="center")
 fig.text(0.19, yf(HEAD*0.42), "MECHANICAL ASSEMBLY READINESS BENCHMARK",
          fontproperties=NUL, fontsize=14, color=COLORS["green"], va="center")
-fig.text(0.037, yf(HEAD*0.82), f"v0.9 results:  {N} AI builds, frontier to local, one 100-part machine, three metrics",
+fig.text(0.037, yf(HEAD*0.82), f"v0.10 method:  {N} published cells, one 100-part machine, three metrics",
          fontsize=14, color="#cfe0ee", va="center")
 
 # ---- leaderboard table ----
@@ -102,6 +102,21 @@ best_ori = best_of("orient_aligned_pct", ["orientation","aligned_pct"], lower_is
 best_pos = best_of("pos_rel_mm", ["position","relative","median_mm"], lower_is_better=True)
 
 SUB = 26 / H      # sub-line offset under a row's main line (px -> fraction)
+LEGACY_FRONTIER = {
+    "Claude · CadQuery": ("2026-05-26", "max"),
+    "Claude · Fusion": ("2026-05-26", "max"),
+    "Codex · CadQuery": ("2026-05-26", "max"),
+    "Opus 4.8 · Fusion": ("2026-05-30", "v1.3 hint"),
+    "Fable 5 (low) · CadQuery": ("2026-06-10", "low"),
+    "Fable 5 (medium) · CadQuery": ("2026-06-10", "medium"),
+    "Fable 5 (high) · CadQuery": ("2026-06-10", "high"),
+    "Fable 5 (ultra) · CadQuery": ("2026-06-11", "ultra"),
+}
+REPEAT_COUNTS = {
+    "Local · qwen3-coder-next (mechanics v2)": (9, 10),
+    "Local · qwen3-coder-next (lean v5)": (8, 10),
+    "Sighted · qwen3-vl (lean v5, 8 turns)": (5, 5),
+}
 
 # draw a metric number in its column; stack a small grey "±sd" on the sub-line
 # when the cell has a spread (n>=2). Fixed pitch guarantees it cannot collide.
@@ -131,19 +146,18 @@ for rank, name in enumerate(order_ai, 1):
             "Local · qwen3-coder-next (lean v5)":      "qwen3-coder-next 80B",
             "Sighted · qwen3-vl (lean v5, 8 turns)":   "qwen3-vl 32B (sighted)"}.get(name, name.replace(" · ", "  ·  "))
     fig.text(x_name, y, disp, fontsize=15, color=COLORS["ink"])
-    if name.startswith("Sighted · "):
-        sub = f"local vision · goal image in-loop · lean v5 · n={n}"
+    if name in LEGACY_FRONTIER:
+        run_date, cohort = LEGACY_FRONTIER[name]
+        sub = f"single run · {run_date} · v0.9 · {cohort}"
+    elif name.startswith("Sighted · "):
+        graded, attempted = REPEAT_COUNTS.get(name, (n, n))
+        sub = f"local vision · median · {graded}/{attempted} graded · v0.9"
     elif name.startswith("Local · "):
         cohort = name.split("(")[1].split(")")[0]
-        sub = f"local open-weight · CadQuery · {cohort} · median, n={n}"
+        graded, attempted = REPEAT_COUNTS.get(name, (n, n))
+        sub = f"local · {cohort} · median · {graded}/{attempted} graded · v0.9"
     elif n and n > 1:
         sub = f"median of {n} runs"
-    elif name.startswith("Fable 5 ("):
-        sub = "effort: " + name.split("(")[1].split(")")[0]
-    elif name in ("Claude · CadQuery", "Claude · Fusion", "Codex · CadQuery"):
-        sub = "effort: max"
-    elif name == "Opus 4.8 · Fusion":
-        sub = "kit v1.3 (hint) · n=1"
     else:
         sub = None
     if sub:
@@ -162,15 +176,18 @@ fig.text(x_gap, y2, "0.0 mm", fontsize=15, ha="right", color=COLORS["grey"])
 fig.text(x_ori, y2, "100%", fontsize=15, ha="right", color=COLORS["grey"])
 fig.text(x_pos, y2, "0.0 mm", fontsize=15, ha="right", color=COLORS["grey"])
 
-# one-line methodology
-fig.text(0.045, yf(row_top + N*ROW + REFROW + 26),
-         "GAP = error vs intended interface gap (~0 mm bolted, ~1 mm motion clearance).  None buildable yet.",
-         fontsize=12.5, color=COLORS["ink_dim"], style="italic")
+# methodology + mixed-provenance legend
+fig.text(0.045, yf(row_top + N*ROW + REFROW + 20),
+         "GAP = error vs intended interface gap (~0 mm bolted, ~1 mm motion clearance). None buildable yet.",
+         fontsize=11.8, color=COLORS["ink_dim"], style="italic")
+fig.text(0.045, yf(row_top + N*ROW + REFROW + 42),
+         "Legacy frontier = dated single runs. Local/sighted = median ± population SD. New frontier cells require ≥3 attempted and graded runs.",
+         fontsize=11.3, color=COLORS["ink_dim"], style="italic")
 
 # ---- footer ----
 fig.add_artist(Rectangle((0, 0), 1, FOOT/H, transform=fig.transFigure, facecolor="#f4f6f8"))
 fig.text(0.045, (FOOT/2)/H, "SUNNYDAY  TECHNOLOGIES", fontproperties=NUL, fontsize=18, color=COLORS["navy"], va="center")
-fig.text(0.955, (FOOT/2)/H, "cadclaw.io/benchmark", fontsize=15, weight="bold", color=COLORS["navy"], ha="right", va="center")
+fig.text(0.955, (FOOT/2)/H, "marb.cadclaw.io", fontsize=15, weight="bold", color=COLORS["navy"], ha="right", va="center")
 
 fig.savefig(OUT, dpi=100, facecolor=COLORS["white"]); print("saved:", OUT)
 if len(sys.argv) <= 2:   # only refresh the deployed og:image alias on a canonical build
