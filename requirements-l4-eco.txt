@@ -1,0 +1,5 @@
+# Audited CADCLAW 0.10.0 public geometry-snapshot interface for the MARB L4-ECO invariant gate.
+# Run L4 evidence in an isolated environment installed from this exact commit.
+cadclaw @ git+https://github.com/sunnyday-technologies/CADCLAW.git@60fc271f68c8a794a4741f856b2dd4c9878416a6
+cadquery==2.7.0
+cadquery-ocp==7.8.1.1.post1

@@ -5,6 +5,12 @@ import json
 import re
 from pathlib import Path
 
+from grader.l4_evidence import (
+    L4EvidenceError,
+    validate_l4_attempt_files,
+    validate_l4_evidence,
+)
+
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _L2_CHANGE_LOOP_FIELDS = (
@@ -29,6 +35,53 @@ _L2_CHANGE_LOOP_FIELDS = (
     "artifact_sha256",
     "run_log",
     "run_log_sha256",
+)
+_L4_ECO_ATTEMPT_FIELDS = (
+    "task_definition",
+    "task_definition_sha256",
+    "kit",
+    "kit_sha256",
+    "prompt",
+    "prompt_sha256",
+    "driver_brief",
+    "driver_brief_sha256",
+    "baseline_step",
+    "baseline_artifact_sha256",
+    "baseline_editable_source",
+    "baseline_editable_source_sha256",
+    "eco_request",
+    "eco_request_sha256",
+    "eco_request_id",
+    "driver_continuity_id",
+    "invariant_gate_version",
+    "invariant_gate_implementation_sha256",
+    "invariant_gate_requirements_sha256",
+    "requested_change_grade_method",
+    "cadclaw_commit",
+    "cadclaw_version",
+    "cadquery_version",
+    "cadquery_ocp_version",
+    "gated_distribution_revision",
+    "answer_key_step_sha256",
+    "answer_key_spec_sha256",
+    "run_log",
+    "run_log_sha256",
+    "outcome",
+)
+_L4_ECO_GRADED_FIELDS = (
+    "changed_editable_source",
+    "changed_editable_source_sha256",
+    "step",
+    "artifact_sha256",
+    "invariant_report",
+    "invariant_report_sha256",
+    "invariant_gate_status",
+    "invariant_gate_version",
+    "requested_change_report",
+    "requested_change_report_sha256",
+    "requested_change_status",
+    "gated_requested_grade_report_path",
+    "gated_requested_grade_report_sha256",
 )
 
 
@@ -104,6 +157,190 @@ def _validate_l2_change_loop(run: dict, task_cfg: dict) -> None:
         )
 
 
+def _validate_l4_eco(run: dict, task_cfg: dict, repo_root: Path) -> None:
+    """Fail closed on incomplete ECO, invariant, or requested-change evidence."""
+    run_id = run.get("run_id", "<unnamed>")
+    missing = [field for field in _L4_ECO_ATTEMPT_FIELDS if not run.get(field)]
+    if missing:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} is missing provenance fields: "
+            + ", ".join(missing)
+        )
+    hash_fields = (
+        "task_definition_sha256",
+        "kit_sha256",
+        "prompt_sha256",
+        "driver_brief_sha256",
+        "baseline_artifact_sha256",
+        "baseline_editable_source_sha256",
+        "eco_request_sha256",
+        "invariant_gate_implementation_sha256",
+        "invariant_gate_requirements_sha256",
+        "answer_key_step_sha256",
+        "answer_key_spec_sha256",
+        "run_log_sha256",
+    )
+    malformed = [
+        field for field in hash_fields
+        if not _SHA256_RE.fullmatch(str(run.get(field, "")))
+    ]
+    if malformed:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} has malformed SHA-256 fields: "
+            + ", ".join(malformed)
+        )
+    frozen_fields = (
+        ("task_definition", "task_definition"),
+        ("task_definition_sha256", "task_definition_sha256"),
+        ("eco_request", "eco_request"),
+        ("eco_request_sha256", "eco_request_sha256"),
+        ("eco_request_id", "eco_request_id"),
+        ("prompt", "prompt"),
+        ("prompt_sha256", "prompt_sha256"),
+        ("cadclaw_commit", "cadclaw_commit"),
+        ("cadclaw_version", "cadclaw_version"),
+        ("cadquery_version", "cadquery_version"),
+        ("cadquery_ocp_version", "cadquery_ocp_version"),
+        ("invariant_gate_version", "invariant_gate_version"),
+        (
+            "invariant_gate_implementation_sha256",
+            "invariant_gate_implementation_sha256",
+        ),
+        (
+            "invariant_gate_requirements_sha256",
+            "invariant_gate_requirements_sha256",
+        ),
+        ("requested_change_grade_method", "requested_change_grade_method"),
+        ("gated_distribution_revision", "gated_distribution_revision"),
+        ("answer_key_step_sha256", "answer_key_step_sha256"),
+        ("answer_key_spec_sha256", "answer_key_spec_sha256"),
+    )
+    mismatched = [
+        run_field for run_field, task_field in frozen_fields
+        if run.get(run_field) != task_cfg.get(task_field)
+    ]
+    if mismatched:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} does not match the frozen task: "
+            + ", ".join(mismatched)
+        )
+    allowed_kits = task_cfg.get("allowed_kits") or {}
+    if allowed_kits.get(run.get("kit")) != run.get("kit_sha256"):
+        raise ValueError(f"L4 ECO run {run_id!r} does not match a frozen kit")
+    allowed_briefs = task_cfg.get("allowed_driver_briefs") or {}
+    if allowed_briefs.get(run.get("driver_brief")) != run.get("driver_brief_sha256"):
+        raise ValueError(
+            f"L4 ECO run {run_id!r} does not match a frozen driver brief"
+        )
+    if run.get("outcome") not in {"graded", "failed-export"}:
+        raise ValueError(f"L4 ECO run {run_id!r} has an unsupported outcome")
+    try:
+        validate_l4_attempt_files(run, repo_root)
+    except L4EvidenceError as exc:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} has invalid attempt evidence: {exc}"
+        ) from exc
+    if run.get("outcome") != "graded":
+        if run.get("invariant_gate_status") == "pass" or run.get(
+            "requested_change_status"
+        ) == "pass":
+            raise ValueError(
+                f"L4 ECO run {run_id!r} cannot claim passing gates without a graded output"
+            )
+        return
+
+    missing = [field for field in _L4_ECO_GRADED_FIELDS if not run.get(field)]
+    if missing:
+        raise ValueError(
+            f"L4 ECO graded run {run_id!r} is missing provenance fields: "
+            + ", ".join(missing)
+        )
+    graded_hash_fields = (
+        "changed_editable_source_sha256",
+        "artifact_sha256",
+        "invariant_report_sha256",
+        "requested_change_report_sha256",
+        "invariant_gate_implementation_sha256",
+        "invariant_gate_requirements_sha256",
+        "answer_key_step_sha256",
+        "answer_key_spec_sha256",
+        "gated_requested_grade_report_sha256",
+    )
+    malformed = [
+        field for field in graded_hash_fields
+        if not _SHA256_RE.fullmatch(str(run.get(field, "")))
+    ]
+    if malformed:
+        raise ValueError(
+            f"L4 ECO graded run {run_id!r} has malformed SHA-256 fields: "
+            + ", ".join(malformed)
+        )
+    graded_frozen_fields = (
+        "cadclaw_commit", "cadclaw_version", "cadquery_version",
+        "cadquery_ocp_version", "invariant_gate_version",
+        "invariant_gate_implementation_sha256",
+        "invariant_gate_requirements_sha256",
+        "requested_change_grade_method", "gated_distribution_revision",
+        "answer_key_step_sha256", "answer_key_spec_sha256",
+    )
+    mismatched = [
+        field for field in graded_frozen_fields
+        if run.get(field) != task_cfg.get(field)
+    ]
+    if mismatched:
+        raise ValueError(
+            f"L4 ECO graded run {run_id!r} does not match the frozen task: "
+            + ", ".join(mismatched)
+        )
+    if run["baseline_step"] == run["step"]:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} must preserve distinct before/after STEP paths"
+        )
+    if run["baseline_editable_source"] == run["changed_editable_source"]:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} must preserve distinct before/after source paths"
+        )
+    if run["baseline_artifact_sha256"] == run["artifact_sha256"]:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} must preserve distinct before/after STEP identities"
+        )
+    if (
+        run["baseline_editable_source_sha256"]
+        == run["changed_editable_source_sha256"]
+    ):
+        raise ValueError(
+            f"L4 ECO run {run_id!r} must preserve distinct before/after source identities"
+        )
+    evidence_paths = (
+        run["invariant_report"],
+        run["requested_change_report"],
+        run["run_log"],
+    )
+    if len(evidence_paths) != len(set(evidence_paths)):
+        raise ValueError(
+            f"L4 ECO run {run_id!r} must use distinct gate-report and run-log paths"
+        )
+    evidence_hashes = (
+        run["invariant_report_sha256"],
+        run["requested_change_report_sha256"],
+        run["run_log_sha256"],
+    )
+    if len(evidence_hashes) != len(set(evidence_hashes)):
+        raise ValueError(
+            f"L4 ECO run {run_id!r} must use distinct gate-report and run-log identities"
+        )
+    if run["invariant_gate_status"] != "pass":
+        raise ValueError(f"L4 ECO run {run_id!r} did not pass the public invariant gate")
+    if run["requested_change_status"] != "pass":
+        raise ValueError(f"L4 ECO run {run_id!r} did not pass the requested-change grade")
+    try:
+        validate_l4_evidence(run, task_cfg, repo_root)
+    except L4EvidenceError as exc:
+        raise ValueError(
+            f"L4 ECO run {run_id!r} has invalid gate evidence: {exc}"
+        ) from exc
+
+
 def load_manifest(path: Path, task_id: str | None = None,
                   scoring_version: str | None = None):
     """Read a v1/v2 run registry without blending tasks or stable cell ids.
@@ -114,6 +351,12 @@ def load_manifest(path: Path, task_id: str | None = None,
     one display label inside a task.
     """
     manifest = json.loads(path.read_text(encoding="utf-8"))
+    resolved_manifest = path.resolve()
+    repo_root = (
+        resolved_manifest.parent.parent
+        if resolved_manifest.parent.name == "results"
+        else resolved_manifest.parent
+    )
     legacy_defaults = manifest.get("legacy_defaults") or {}
     legacy_task = legacy_defaults.get("task", "L1-ASSEMBLE")
     default_task = manifest.get("default_task", legacy_task)
@@ -149,6 +392,8 @@ def load_manifest(path: Path, task_id: str | None = None,
             )
         if task_cfg.get("provenance_contract") == "l2_change_loop.v1":
             _validate_l2_change_loop(run, task_cfg)
+        if task_cfg.get("provenance_contract") == "l4_eco.v1":
+            _validate_l4_eco(run, task_cfg, repo_root)
         run_version = run.get("scoring_version")
         if run_version is None:
             run_version = legacy_version if "task" not in run else task_cfg.get(
@@ -157,6 +402,11 @@ def load_manifest(path: Path, task_id: str | None = None,
         if scoring_version and run_version != scoring_version:
             continue
         included_versions.add(run_version)
+        if (
+            task_cfg.get("provenance_contract") == "l4_eco.v1"
+            and run.get("outcome") != "graded"
+        ):
+            continue
         display = run["cell"]
         cell_id = run.get("cell_id", display)
         previous = display_by_id.setdefault(cell_id, display)
@@ -173,7 +423,19 @@ def load_manifest(path: Path, task_id: str | None = None,
             "baseline_editable_source", "baseline_editable_source_sha256",
             "changed_editable_source", "changed_editable_source_sha256",
             "change_request", "change_request_sha256", "change_request_id",
-            "driver_continuity_id", "timing", "tokens", "effort",
+            "eco_request", "eco_request_sha256", "eco_request_id",
+            "driver_continuity_id", "invariant_report",
+            "invariant_report_sha256", "invariant_gate_status",
+            "invariant_gate_version",
+            "requested_change_report", "requested_change_report_sha256",
+            "requested_change_status", "requested_change_grade_method",
+            "cadclaw_commit", "cadclaw_version", "cadquery_version",
+            "cadquery_ocp_version", "invariant_gate_implementation_sha256",
+            "invariant_gate_requirements_sha256", "gated_distribution_revision",
+            "answer_key_step_sha256", "answer_key_spec_sha256",
+            "gated_requested_grade_report_path",
+            "gated_requested_grade_report_sha256",
+            "timing", "tokens", "effort",
         )
         provenance = {key: run[key] for key in provenance_fields if key in run}
         provenance["step"] = run["step"]

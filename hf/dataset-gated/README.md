@@ -62,6 +62,14 @@ private resolver key is locally authored and validated, but no gated upload or
 revision readback has been performed. No L2 result can be graded from the task-1
 files listed above, and no L2 result is published.
 
+This dataset revision also does not contain an L4-ECO key. MARB v0.12 freezes
+public task revision `second-top-cross-spreader-midright-r1` as
+`defined_unmeasured`. A private reference STEP and placement spec are locally
+authored and validated, but they have not been uploaded/read back as a gated
+revision. The public AABB invariant gate cannot establish the requested
+midpoint/top-flush placement. No L4 result can be graded from the task-1 files
+listed above, and no L4 result is published.
+
 ## Why this is gated
 
 The gate is about **contamination, not secrecy or security**. The answer key is
@@ -88,11 +96,17 @@ tasks whose keys are released only through this gated channel. See the
 3. Install the engine and grade your exported run:
 
 ```bash
+# These commands grade the existing L1 task.
 pip install "cadclaw>=0.9.0"
 python grader/marb_pose_metric.py   --ref m3_reference_round1.step --run your_export.step
 python grader/marb_gap_metric.py    --ref m3_reference_round1.step --run your_export.step
 python grader/marb_orient_metric.py --ref m3_reference_round1.step --run your_export.step
 ```
+
+The L4 public invariant gate is separate and must use the exact audited CADCLAW
+commit in the public dataset's `requirements-l4-eco.txt`; the floating L1 PyPI
+constraint is not valid for that gate. L4 remains unmeasured and its private key
+has not been uploaded to this gated dataset.
 
 The grader and metrics live in the
 [MARB repository](https://github.com/sunnyday-technologies/MARB). The public

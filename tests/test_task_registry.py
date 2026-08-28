@@ -5,7 +5,9 @@ import hashlib
 import json
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
+from unittest import mock
 
 from grader.run_registry import load_manifest
 
@@ -156,6 +158,148 @@ class TestTaskRegistry(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing provenance fields"):
             load_manifest(path)
 
+    def test_l4_contract_retains_both_gate_reports(self):
+        digest = "a" * 64
+        path = self._write({
+            "default_task": "L4-ECO",
+            "tasks": {"L4-ECO": {
+                "reference_step": "l4.step", "spec": "l4.yaml",
+                "provenance_contract": "l4_eco.v1",
+                "task_definition": "tasks/l4/task.yaml",
+                "task_definition_sha256": digest,
+                "allowed_kits": {"kits/l4.zip": digest},
+                "prompt": "prompts/l4.md", "prompt_sha256": digest,
+                "allowed_driver_briefs": {"prompts/l4-driver.md": digest},
+                "eco_request": "tasks/l4/ECO_REQUEST.md",
+                "eco_request_sha256": digest,
+                "eco_request_id": "second-top-cross-spreader-midright-r1",
+                "cadclaw_commit": "b" * 40,
+                "cadclaw_version": "0.10.0",
+                "cadquery_version": "2.7.0",
+                "cadquery_ocp_version": "7.8.1.1.post1",
+                "invariant_gate_version": "marb_l4_eco_invariant.v0.12.0",
+                "invariant_gate_implementation_sha256": "8" * 64,
+                "invariant_gate_requirements_sha256": "9" * 64,
+                "requested_change_grade_method": "marb_task_local_reference.v0.12",
+                "gated_distribution_revision": "c" * 40,
+                "answer_key_step_sha256": "d" * 64,
+                "answer_key_spec_sha256": "e" * 64,
+            }},
+            "runs": [{
+                "run_id": "run-1", "cell_id": "cell-1", "cell": "A",
+                "task": "L4-ECO", "seed": "01",
+                "task_definition": "tasks/l4/task.yaml",
+                "task_definition_sha256": digest,
+                "kit": "kits/l4.zip", "kit_sha256": digest,
+                "prompt": "prompts/l4.md", "prompt_sha256": digest,
+                "driver_brief": "prompts/l4-driver.md", "driver_brief_sha256": digest,
+                "baseline_step": "before.step", "baseline_artifact_sha256": "1" * 64,
+                "baseline_editable_source": "before.FCStd",
+                "baseline_editable_source_sha256": "2" * 64,
+                "changed_editable_source": "after.FCStd",
+                "changed_editable_source_sha256": "3" * 64,
+                "eco_request": "tasks/l4/ECO_REQUEST.md",
+                "eco_request_sha256": digest,
+                "eco_request_id": "second-top-cross-spreader-midright-r1",
+                "driver_continuity_id": "opaque-01",
+                "step": "after.step", "artifact_sha256": "4" * 64,
+                "invariant_report": "invariant.json",
+                "invariant_report_sha256": "5" * 64,
+                "invariant_gate_status": "pass",
+                "invariant_gate_version": "marb_l4_eco_invariant.v0.12.0",
+                "requested_change_report": "requested.json",
+                "requested_change_report_sha256": "6" * 64,
+                "requested_change_status": "pass",
+                "requested_change_grade_method": "marb_task_local_reference.v0.12",
+                "cadclaw_commit": "b" * 40,
+                "cadclaw_version": "0.10.0",
+                "cadquery_version": "2.7.0",
+                "cadquery_ocp_version": "7.8.1.1.post1",
+                "invariant_gate_implementation_sha256": "8" * 64,
+                "invariant_gate_requirements_sha256": "9" * 64,
+                "gated_distribution_revision": "c" * 40,
+                "answer_key_step_sha256": "d" * 64,
+                "answer_key_spec_sha256": "e" * 64,
+                "gated_requested_grade_report_path": "grades/run-1/requested.json",
+                "gated_requested_grade_report_sha256": "f" * 64,
+                "outcome": "graded",
+                "run_log": "run.json", "run_log_sha256": "7" * 64,
+            }],
+        })
+        with mock.patch(
+            "grader.run_registry.validate_l4_attempt_files"
+        ), mock.patch("grader.run_registry.validate_l4_evidence"):
+            cells, *_ = load_manifest(path)
+        provenance = cells["A"][0][1]
+        self.assertEqual(provenance["invariant_report"], "invariant.json")
+        self.assertEqual(provenance["requested_change_status"], "pass")
+        self.assertEqual(provenance["cadclaw_commit"], "b" * 40)
+
+    def test_l4_contract_rejects_nonpassing_gate(self):
+        digest = "a" * 64
+        manifest = {
+            "default_task": "L4-ECO",
+            "tasks": {"L4-ECO": {
+                "reference_step": "l4.step", "spec": "l4.yaml",
+                "provenance_contract": "l4_eco.v1",
+                "task_definition": "task.yaml", "task_definition_sha256": digest,
+                "allowed_kits": {"kit.zip": digest},
+                "prompt": "prompt.md", "prompt_sha256": digest,
+                "allowed_driver_briefs": {"brief.md": digest},
+                "eco_request": "eco.md", "eco_request_sha256": digest,
+                "eco_request_id": "eco-r1", "cadclaw_commit": "b" * 40,
+                "cadclaw_version": "0.10.0",
+                "cadquery_version": "2.7.0",
+                "cadquery_ocp_version": "7.8.1.1.post1",
+                "invariant_gate_version": "marb_l4_eco_invariant.v0.12.0",
+                "invariant_gate_implementation_sha256": "8" * 64,
+                "invariant_gate_requirements_sha256": "9" * 64,
+                "requested_change_grade_method": "marb_task_local_reference.v0.12",
+                "gated_distribution_revision": "c" * 40,
+                "answer_key_step_sha256": "d" * 64,
+                "answer_key_spec_sha256": "e" * 64,
+            }},
+            "runs": [{
+                "run_id": "run-1", "cell_id": "cell-1", "cell": "A",
+                "task": "L4-ECO", "seed": "01",
+                "task_definition": "task.yaml", "task_definition_sha256": digest,
+                "kit": "kit.zip", "kit_sha256": digest,
+                "prompt": "prompt.md", "prompt_sha256": digest,
+                "driver_brief": "brief.md", "driver_brief_sha256": digest,
+                "baseline_step": "before.step", "baseline_artifact_sha256": "1" * 64,
+                "baseline_editable_source": "before.FCStd",
+                "baseline_editable_source_sha256": "2" * 64,
+                "changed_editable_source": "after.FCStd",
+                "changed_editable_source_sha256": "3" * 64,
+                "eco_request": "eco.md", "eco_request_sha256": digest,
+                "eco_request_id": "eco-r1", "driver_continuity_id": "opaque-1",
+                "step": "after.step", "artifact_sha256": "4" * 64,
+                "invariant_report": "invariant.json", "invariant_report_sha256": "5" * 64,
+                "invariant_gate_status": "fail",
+                "invariant_gate_version": "marb_l4_eco_invariant.v0.12.0",
+                "requested_change_report": "requested.json",
+                "requested_change_report_sha256": "6" * 64,
+                "requested_change_status": "pass",
+                "requested_change_grade_method": "marb_task_local_reference.v0.12",
+                "cadclaw_commit": "b" * 40,
+                "cadclaw_version": "0.10.0",
+                "cadquery_version": "2.7.0",
+                "cadquery_ocp_version": "7.8.1.1.post1",
+                "invariant_gate_implementation_sha256": "8" * 64,
+                "invariant_gate_requirements_sha256": "9" * 64,
+                "gated_distribution_revision": "c" * 40,
+                "answer_key_step_sha256": "d" * 64,
+                "answer_key_spec_sha256": "e" * 64,
+                "gated_requested_grade_report_path": "grades/run-1/requested.json",
+                "gated_requested_grade_report_sha256": "f" * 64,
+                "outcome": "graded",
+                "run_log": "run.json", "run_log_sha256": "7" * 64,
+            }],
+        }
+        with mock.patch("grader.run_registry.validate_l4_attempt_files"):
+            with self.assertRaisesRegex(ValueError, "did not pass the public invariant"):
+                load_manifest(self._write(manifest))
+
     def test_checked_in_l2_task_is_routed_with_zero_runs(self):
         repo = Path(__file__).resolve().parents[1]
         manifest = json.loads(
@@ -177,6 +321,69 @@ class TestTaskRegistry(unittest.TestCase):
             self.assertEqual(
                 canonical_tracked_text_sha256(repo / task[path_field]),
                 task[hash_field],
+            )
+
+    def test_checked_in_l4_task_is_routed_with_zero_runs(self):
+        repo = Path(__file__).resolve().parents[1]
+        manifest = json.loads((repo / "results/marb_runs.json").read_text(encoding="utf-8"))
+        task = manifest["tasks"]["L4-ECO"]
+        self.assertEqual(task["status"], "defined_unmeasured")
+        self.assertEqual(task["provenance_contract"], "l4_eco.v1")
+        self.assertEqual(task["answer_key_status"], "private_validated_distribution_pending")
+        self.assertTrue(task["reference_step"].endswith("m3_l4_eco_reference_r1.step"))
+        self.assertTrue(task["spec"].endswith("m3_l4_eco_reference_assembly_r1.yaml"))
+        self.assertEqual(
+            [run for run in manifest["runs"] if run.get("task") == "L4-ECO"],
+            [],
+        )
+        for path_field, hash_field in (
+            ("task_definition", "task_definition_sha256"),
+            ("eco_request", "eco_request_sha256"),
+            ("blocker", "blocker_sha256"),
+        ):
+            self.assertEqual(
+                canonical_tracked_text_sha256(repo / task[path_field]),
+                task[hash_field],
+            )
+
+        for path, expected in task["allowed_kits"].items():
+            self.assertEqual(
+                hashlib.sha256((repo / path).read_bytes()).hexdigest(),
+                expected,
+            )
+        for path, expected in (
+            (task["prompt"], task["prompt_sha256"]),
+            (task["connector_metadata"], task["connector_metadata_sha256"]),
+            *task["allowed_driver_briefs"].items(),
+            ("grader/eco_invariant.py", task["invariant_gate_implementation_sha256"]),
+            ("requirements-l4-eco.txt", task["invariant_gate_requirements_sha256"]),
+        ):
+            self.assertEqual(canonical_tracked_text_sha256(repo / path), expected)
+
+        task_text = (repo / task["task_definition"]).read_text(encoding="utf-8")
+        for required_value in (
+            task["eco_request_sha256"],
+            task["connector_metadata_sha256"],
+            task["added_source_sha256"],
+            task["invariant_gate_implementation_sha256"],
+            task["invariant_gate_requirements_sha256"],
+            task["invariant_validation_mode"],
+            task["cadclaw_commit"],
+            task["cadquery_version"],
+            task["cadquery_ocp_version"],
+            task["gated_requested_change_grade_schema"],
+            task["gated_read_credential_env"],
+        ):
+            self.assertIn(required_value, task_text)
+
+        for kit_path in task["allowed_kits"]:
+            with zipfile.ZipFile(repo / kit_path) as archive:
+                self.assertEqual(archive.namelist().count(task["added_source_path"]), 1)
+                added_source = archive.read(task["added_source_path"])
+            self.assertEqual(len(added_source), task["added_source_bytes"])
+            self.assertEqual(
+                hashlib.sha256(added_source).hexdigest(),
+                task["added_source_sha256"],
             )
 
     def test_duplicate_display_labels_within_task_fail(self):

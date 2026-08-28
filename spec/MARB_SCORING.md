@@ -1,12 +1,13 @@
-# MARB — Mechanical Assembly Readiness Benchmark: scoring spec (v0.11)
+# MARB — Mechanical Assembly Readiness Benchmark: scoring spec (v0.12)
 
 This is the canonical scoring reference for MARB. All grader and figure builders
 live in `grader/` and are listed in Section 5. Update this document whenever a
 builder changes, so the method stays versioned and reproducible.
 
-Status: v0.11. This version retains the v0.9 metrics and fixed bands, retains
+Status: v0.12. This version retains the v0.9 metrics and fixed bands, retains
 the v0.10 repeat-run publication controls and answer-key equivalence limits,
-and freezes the unmeasured L2-RESOLVE change-loop contract. Existing board cells
+retains the unmeasured v0.11 L2-RESOLVE contract, and freezes the unmeasured
+L4-ECO engineering-change contract. Existing board cells
 keep their original v0.9 tag.
 
 ---
@@ -21,7 +22,7 @@ that separates models, is this:
 > How many parts did the AI place in the correct position and the correct
 > orientation, and are the gaps between parts functionally correct?
 
-MARB v0.11 grades positional accuracy with the same three metrics introduced in
+MARB v0.12 grades positional accuracy with the same three metrics introduced in
 v0.9:
 
 - GAP: the error between the actual and intended interface gap. This is the
@@ -180,6 +181,62 @@ published, no historical L1 run is rescored, and `currently_scored` remains
 `[L0, L1]`. The versioned evidence boundary is
 `results/evidence/l2_resolve/v0.11/blocker.json`.
 
+### 5.3 L4-ECO engineering-change contract (defined, unmeasured)
+
+Task revision `second-top-cross-spreader-midright-r1` freezes one ECO on the
+existing M3-CRETE assembly. Starting from the editable source produced by its
+baseline build, the same driver session must add exactly one existing authored
+`V-Slot 20x40x1000 Linear Rail.step` instance as a second top-frame cross-
+spreader. Its global-X station is halfway between the existing center spreader
+and top-right side rail; it is parallel to the center spreader, with 40 mm
+vertical and its top face flush with the top frame. All 100 existing authored
+instances are untouched invariants, and the requested final authored-instance
+count is 101. The normative inputs are
+`tasks/m3_crete_l4_eco/ECO_REQUEST.md` and `task.yaml`.
+
+Every run requires two distinct gates. First,
+`marb_l4_eco_invariant.v0.12.0` uses only
+`cadclaw.roundtrip.snapshot_geometry` from audited CADCLAW 0.10.0 commit
+`60fc271f68c8a794a4741f856b2dd4c9878416a6`, with CadQuery 2.7.0 and
+cadquery-ocp 7.8.1.1.post1. It applies deterministic maximum-
+cardinality matching across anonymous renderable-shape snapshots, requires all
+six baseline AABB coordinates, center, rounded signature, axis dimensions, and
+bbox volume to stay within frozen tolerances, and requires exactly one added
+shape with the rail's rounded 20x40x1000 AABB-dimension signature in the
+requested axis orientation. This does not establish source-asset identity or
+topology. Its versioned JSON report exposes only aggregate counts, input
+digests, statuses, and limitations. Renderable-shape counts are not treated as
+authored-instance counts.
+
+Second, `marb_task_local_reference.v0.12` must grade the requested midpoint and
+top-flush placement against the task-specific private key. A public invariant
+pass is not a substitute for this private requested-change grade. The per-run
+aggregate private grade report must be uploaded and read back at an immutable
+gated dataset revision. Publication validation authenticates and downloads the
+exact report path at that revision, verifies its digest and aggregate-only
+schema, and independently reruns the frozen public gate on the registered STEP
+pair. Public evidence carries the strict readback attestation rather than
+private geometry. Anonymous
+AABB matching cannot observe geometrically identical instance swaps, and a
+symmetric rotation can preserve the same extents. It does not prove topology,
+feature history, PMI, material, suppression state, manufacturability, safety,
+or physical validity.
+
+Each attempt byte-authenticates its actual before/after STEP and editable
+sources, the ECO request, both public evidence reports, the exact gate source
+and dependency-lock hashes, the CAD runtime versions/commit, and its run log
+through repository-relative paths and lowercase SHA-256 digests. At least
+three genuine independent attempts and
+three gradeable outputs are required, reported as median plus population
+standard deviation under one frozen cohort.
+
+At v0.12 the task is `defined_unmeasured`: its private task key is locally
+authored and validated, but no gated revision has been uploaded/read back; the
+registry contains zero L4 runs, the key-authoring/team session is non-blind,
+and the public invariant has synthetic regression evidence only. No L4 score or board row is published, no historical
+run is rescored, and `currently_scored` remains `[L0, L1]`. The versioned
+boundary is `results/evidence/l4_eco/v0.12/blocker.json`.
+
 ## 6. First-run findings (three frontier runs, 2026-05-26)
 
 Median placement error under the tight standard:
@@ -238,16 +295,19 @@ and graded counts are reported separately so failed exports do not disappear.
    through a gated revision, capture the same driver's editable before/after
    artifacts, and register at least three genuine independent gradeable change
    loops before publishing a score.
-3. Random-floor baseline. Grade shuffled positions to establish a true floor
+3. Complete L4-ECO evidence: upload and read back its validated private key
+   through a gated revision, and register at least three
+   independent gradeable loops that pass both frozen gates.
+4. Random-floor baseline. Grade shuffled positions to establish a true floor
    beneath the current POS relative median of about 47 mm.
-4. Principal-axes orientation refinement. The current ORIENT metric uses
+5. Principal-axes orientation refinement. The current ORIENT metric uses
    axis-aligned bounding-box extents. Principal axes (OBB or PCA) would catch
    off-axis rotations that the current metric misses.
-5. A second task on a different machine type, to support a claim of generality.
-6. The manufacturing-tolerance axis, to grade the real-world plus-or-minus of
+6. A second task on a different machine type, to support a claim of generality.
+7. The manufacturing-tolerance axis, to grade the real-world plus-or-minus of
    made parts. This is a separate axis that the AI is not tested on yet (see
    Section 2).
-7. Keep the buildability gate as the secondary gate.
+8. Keep the buildability gate as the secondary gate.
 
 ## 8. Prompt framework: eliciting the right CAD actions
 

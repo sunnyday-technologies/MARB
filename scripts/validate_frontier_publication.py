@@ -14,9 +14,20 @@ import argparse
 import json
 import re
 import statistics
+import sys
 from datetime import date
 from pathlib import Path
 from typing import Any
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from grader.l4_evidence import (
+    L4EvidenceError,
+    validate_l4_attempt_files,
+    validate_l4_evidence,
+)
 
 
 class PublicationPolicyError(ValueError):
@@ -393,8 +404,248 @@ def _validate_l2_change_loop(
         )
 
 
+def _validate_l4_eco(
+    matched: list[dict[str, Any]],
+    task_cfg: dict[str, Any],
+    label: str,
+    errors: list[str],
+    repo_root: Path | None,
+) -> None:
+    """Require attempt provenance and authenticate both graded-output gates."""
+    _require(
+        task_cfg.get("provenance_contract") == "l4_eco.v1",
+        f"{label}: L4 task does not declare l4_eco.v1 provenance",
+        errors,
+    )
+    _require(
+        task_cfg.get("status") == "measured",
+        f"{label}: defined-unmeasured L4 task cannot publish a board row",
+        errors,
+    )
+    _require(
+        task_cfg.get("answer_key_status") == "ready",
+        f"{label}: L4 answer key is not ready",
+        errors,
+    )
+    _require(
+        task_cfg.get("evidence_status") == "complete",
+        f"{label}: L4 run evidence is not complete",
+        errors,
+    )
+    _require(
+        isinstance(task_cfg.get("gated_distribution_revision"), str)
+        and bool(task_cfg.get("gated_distribution_revision")),
+        f"{label}: L4 answer key has no immutable gated revision",
+        errors,
+    )
+    _require(
+        task_cfg.get("gated_dataset_id")
+        == "SunnydayTech/marb-m3-crete-answer-key",
+        f"{label}: L4 gated dataset identity is not frozen",
+        errors,
+    )
+
+    attempt_required = (
+        "task_definition", "task_definition_sha256",
+        "kit", "kit_sha256", "prompt", "prompt_sha256",
+        "driver_brief", "driver_brief_sha256",
+        "baseline_step", "baseline_artifact_sha256",
+        "baseline_editable_source", "baseline_editable_source_sha256",
+        "eco_request", "eco_request_sha256", "eco_request_id",
+        "driver_continuity_id", "invariant_gate_version",
+        "invariant_gate_implementation_sha256",
+        "invariant_gate_requirements_sha256",
+        "requested_change_grade_method", "cadclaw_commit", "cadclaw_version",
+        "cadquery_version", "cadquery_ocp_version",
+        "gated_distribution_revision", "answer_key_step_sha256",
+        "answer_key_spec_sha256", "run_log", "run_log_sha256", "outcome",
+    )
+    graded_required = (
+        "changed_editable_source", "changed_editable_source_sha256",
+        "step", "artifact_sha256", "invariant_report",
+        "invariant_report_sha256", "invariant_gate_status",
+        "requested_change_report", "requested_change_report_sha256",
+        "requested_change_status", "gated_requested_grade_report_path",
+        "gated_requested_grade_report_sha256",
+    )
+    attempt_hash_fields = (
+        "task_definition_sha256", "kit_sha256", "prompt_sha256",
+        "driver_brief_sha256", "baseline_artifact_sha256",
+        "baseline_editable_source_sha256", "eco_request_sha256",
+        "invariant_gate_implementation_sha256",
+        "invariant_gate_requirements_sha256", "answer_key_step_sha256",
+        "answer_key_spec_sha256", "run_log_sha256",
+    )
+    frozen_fields = (
+        "task_definition", "task_definition_sha256",
+        "eco_request", "eco_request_sha256", "eco_request_id",
+        "prompt", "prompt_sha256", "cadclaw_commit", "cadclaw_version",
+        "cadquery_version", "cadquery_ocp_version", "invariant_gate_version",
+        "invariant_gate_implementation_sha256",
+        "invariant_gate_requirements_sha256", "requested_change_grade_method",
+        "gated_distribution_revision", "answer_key_step_sha256",
+        "answer_key_spec_sha256",
+    )
+    for run in matched:
+        run_id = run.get("run_id", "<unnamed>")
+        for field in attempt_required:
+            _require(bool(run.get(field)), f"{label}: L4 run {run_id!r} is missing {field}", errors)
+        for field in attempt_hash_fields:
+            _require(
+                isinstance(run.get(field), str)
+                and _SHA256_RE.fullmatch(run[field]) is not None,
+                f"{label}: L4 run {run_id!r} has malformed {field}",
+                errors,
+            )
+        for field in frozen_fields:
+            _require(
+                run.get(field) == task_cfg.get(field),
+                f"{label}: L4 run {run_id!r} does not match frozen {field}",
+                errors,
+            )
+        allowed_kits = task_cfg.get("allowed_kits") or {}
+        _require(
+            allowed_kits.get(run.get("kit")) == run.get("kit_sha256"),
+            f"{label}: L4 run {run_id!r} does not match a frozen kit",
+            errors,
+        )
+        allowed_briefs = task_cfg.get("allowed_driver_briefs") or {}
+        _require(
+            allowed_briefs.get(run.get("driver_brief"))
+            == run.get("driver_brief_sha256"),
+            f"{label}: L4 run {run_id!r} does not match a frozen driver brief",
+            errors,
+        )
+        outcome = run.get("outcome")
+        _require(
+            outcome in {"graded", "failed-export"},
+            f"{label}: L4 run {run_id!r} has an unsupported outcome",
+            errors,
+        )
+        if repo_root is None:
+            errors.append(f"{label}: L4 attempt evidence requires a repository root")
+        else:
+            try:
+                validate_l4_attempt_files(run, repo_root)
+            except L4EvidenceError as exc:
+                errors.append(
+                    f"{label}: L4 run {run_id!r} has invalid attempt evidence: {exc}"
+                )
+        if outcome != "graded":
+            _require(
+                run.get("invariant_gate_status") != "pass"
+                and run.get("requested_change_status") != "pass",
+                f"{label}: L4 run {run_id!r} cannot claim passing gates without a graded output",
+                errors,
+            )
+            continue
+
+        for field in graded_required:
+            _require(
+                bool(run.get(field)),
+                f"{label}: L4 graded run {run_id!r} is missing {field}",
+                errors,
+            )
+        for field in (
+            "changed_editable_source_sha256", "artifact_sha256",
+            "invariant_report_sha256", "requested_change_report_sha256",
+            "gated_requested_grade_report_sha256",
+        ):
+            _require(
+                isinstance(run.get(field), str)
+                and _SHA256_RE.fullmatch(run[field]) is not None,
+                f"{label}: L4 graded run {run_id!r} has malformed {field}",
+                errors,
+            )
+        _require(
+            run.get("baseline_step") != run.get("step"),
+            f"{label}: L4 run {run_id!r} must preserve distinct before/after STEP paths",
+            errors,
+        )
+        _require(
+            run.get("baseline_editable_source") != run.get("changed_editable_source"),
+            f"{label}: L4 run {run_id!r} must preserve distinct before/after source paths",
+            errors,
+        )
+        _require(
+            run.get("baseline_artifact_sha256") != run.get("artifact_sha256"),
+            f"{label}: L4 run {run_id!r} must preserve distinct before/after STEP identities",
+            errors,
+        )
+        _require(
+            run.get("baseline_editable_source_sha256")
+            != run.get("changed_editable_source_sha256"),
+            f"{label}: L4 run {run_id!r} must preserve distinct before/after source identities",
+            errors,
+        )
+        evidence_paths = (
+            run.get("invariant_report"),
+            run.get("requested_change_report"),
+            run.get("run_log"),
+        )
+        _require(
+            len(evidence_paths) == len(set(evidence_paths)),
+            f"{label}: L4 run {run_id!r} must use distinct gate-report and run-log paths",
+            errors,
+        )
+        evidence_hashes = (
+            run.get("invariant_report_sha256"),
+            run.get("requested_change_report_sha256"),
+            run.get("run_log_sha256"),
+        )
+        _require(
+            len(evidence_hashes) == len(set(evidence_hashes)),
+            f"{label}: L4 run {run_id!r} must use distinct gate-report and run-log identities",
+            errors,
+        )
+        _require(
+            run.get("invariant_gate_status") == "pass",
+            f"{label}: L4 run {run_id!r} did not pass the public invariant gate",
+            errors,
+        )
+        _require(
+            run.get("requested_change_status") == "pass",
+            f"{label}: L4 run {run_id!r} did not pass the requested-change grade",
+            errors,
+        )
+        if repo_root is None:
+            errors.append(f"{label}: L4 gate evidence requires a repository root")
+        else:
+            try:
+                validate_l4_evidence(run, task_cfg, repo_root)
+            except L4EvidenceError as exc:
+                errors.append(
+                    f"{label}: L4 run {run_id!r} has invalid gate evidence: {exc}"
+                )
+
+    for field in ("baseline_step", "baseline_editable_source"):
+        paths = [run.get(field) for run in matched]
+        _require(
+            len(paths) == len(set(paths)),
+            f"{label}: independent L4 attempts must use distinct {field} paths",
+            errors,
+        )
+    graded_runs = [run for run in matched if run.get("outcome") == "graded"]
+    for field in (
+        "changed_editable_source", "invariant_report", "requested_change_report"
+    ):
+        paths = [run.get(field) for run in graded_runs]
+        _require(
+            len(paths) == len(set(paths)),
+            f"{label}: independent graded L4 outputs must use distinct {field} paths",
+            errors,
+        )
+    continuity_ids = [run.get("driver_continuity_id") for run in matched]
+    _require(
+        len(continuity_ids) == len(set(continuity_ids)),
+        f"{label}: independent L4 attempts must use distinct driver-continuity IDs",
+        errors,
+    )
+
+
 def validate(board: dict[str, Any], registry: dict[str, Any],
-             grade_sources: dict[str, dict[str, Any]] | None = None) -> list[str]:
+             grade_sources: dict[str, dict[str, Any]] | None = None,
+             repo_root: Path | None = None) -> list[str]:
     errors: list[str] = []
     policy = board.get("publication_policy") or {}
     effective = _parse_date(policy.get("effective_date"), "publication_policy.effective_date")
@@ -540,6 +791,9 @@ def validate(board: dict[str, Any], registry: dict[str, Any],
             if task == "L2-RESOLVE":
                 task_cfg = (registry.get("tasks", {}).get(task, {}) or {})
                 _validate_l2_change_loop(matched, task_cfg, label, errors)
+            if task == "L4-ECO":
+                task_cfg = (registry.get("tasks", {}).get(task, {}) or {})
+                _validate_l4_eco(matched, task_cfg, label, errors, repo_root)
 
         mode = reporting.get("mode")
         post_policy_cell = track != "reference" and published >= effective
@@ -632,6 +886,7 @@ def main(argv: list[str] | None = None) -> int:
         board,
         _read_json(Path(args.registry)),
         load_grade_sources(board, Path(args.repo_root)),
+        Path(args.repo_root),
     )
     if errors:
         for error in errors:

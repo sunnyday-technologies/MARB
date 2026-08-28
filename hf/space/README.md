@@ -56,4 +56,11 @@ key is locally validated while gated distribution and qualifying runs remain
 pending, so there is no L2 score or board row. The visible board and historical
 rows are unchanged by that method-only release.
 
+MARB v0.12 also defines `L4-ECO` revision
+`second-top-cross-spreader-midright-r1` as `defined_unmeasured`. Its public
+CADCLAW snapshot invariant gate is synthetically tested and the task-specific
+private requested-placement key is locally validated, but gated upload/readback
+has not been performed and no qualifying runs exist. There is no L4 score or
+board row, and the visible historical rows remain unchanged.
+
 Developed by Sunnyday Technologies. Contact: info@sunn3d.com

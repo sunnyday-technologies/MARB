@@ -4,7 +4,7 @@ Three HF repos, mirrored from this GitHub repo (which stays the source of truth)
 
 | HF repo | Type | Visibility | Contents |
 |---|---|---|---|
-| `SunnydayTech/marb-m3-crete` | dataset | public | blind kits, prompts, scoring spec, benchmark.yaml |
+| `SunnydayTech/marb-m3-crete` | dataset | public | blind kits, prompts, public task contracts, scoring spec, benchmark.yaml, L4 dependency pin |
 | `SunnydayTech/marb-m3-crete-answer-key` | dataset | public but **gated** | reference STEP + placement spec |
 | `SunnydayTech/marb-leaderboard` | space (gradio) | public | the board (`hf/space/`) |
 
@@ -59,7 +59,30 @@ hf upload SunnydayTech/marb-m3-crete kits         kits         --repo-type datas
 hf upload SunnydayTech/marb-m3-crete prompts      prompts      --repo-type dataset
 hf upload SunnydayTech/marb-m3-crete spec         spec         --repo-type dataset
 hf upload SunnydayTech/marb-m3-crete benchmark.yaml benchmark.yaml --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l2_resolve/README.md         tasks/m3_crete_l2_resolve/README.md         --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l2_resolve/CHANGE_REQUEST.md tasks/m3_crete_l2_resolve/CHANGE_REQUEST.md --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l2_resolve/ANSWER_KEY.md     tasks/m3_crete_l2_resolve/ANSWER_KEY.md     --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l2_resolve/task.yaml         tasks/m3_crete_l2_resolve/task.yaml         --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l4_eco/README.md             tasks/m3_crete_l4_eco/README.md             --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l4_eco/ECO_REQUEST.md        tasks/m3_crete_l4_eco/ECO_REQUEST.md        --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l4_eco/ANSWER_KEY.md         tasks/m3_crete_l4_eco/ANSWER_KEY.md         --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete tasks/m3_crete_l4_eco/task.yaml             tasks/m3_crete_l4_eco/task.yaml             --repo-type dataset
+hf upload SunnydayTech/marb-m3-crete requirements-l4-eco.txt requirements-l4-eco.txt --repo-type dataset
 ```
+
+Keep the public task uploads file-by-file. Do not replace them with an upload of
+the whole task directory: gitignored private-key files may exist in a local
+grading workspace and must never enter the public dataset. The uploaded
+`requirements-l4-eco.txt` pins the exact audited CADCLAW commit required by the
+L4 public invariant gate; a floating `cadclaw>=0.9.0` install is only suitable
+for the existing L1 positional-grading commands.
+
+Any future L4 publication check must run with the protected
+`MARB_GATED_READ_TOKEN` CI credential. The validator uses it only to download
+the per-run aggregate `marb_l4_requested_change_grade.v1` report from the exact
+immutable gated revision, verifies the declared SHA-256, and reruns the public
+invariant against the registered STEP pair. A path-and-digest claim without
+that authenticated readback is rejected.
 
 ## 3. Gated answer-key dataset
 
@@ -94,7 +117,8 @@ to show the scoreboard figure above the table.
 
 ## 5. Verify
 
-- Public dataset card renders, kits download without login.
+- Public dataset card renders, kits and public task contracts download without
+  login, and `requirements-l4-eco.txt` retains the exact audited commit pin.
 - Answer-key dataset shows the request-access gate to a logged-out user, and the
   files are not reachable without approval.
 - Space builds green and the board sorts by GAP.
@@ -121,6 +145,20 @@ for folder in ("kits", "prompts", "spec"):
                       repo_id=f"{ORG}/marb-m3-crete", repo_type="dataset")
 api.upload_file(path_or_fileobj="benchmark.yaml", path_in_repo="benchmark.yaml",
                 repo_id=f"{ORG}/marb-m3-crete", repo_type="dataset")
+public_task_files = (
+    "tasks/m3_crete_l2_resolve/README.md",
+    "tasks/m3_crete_l2_resolve/CHANGE_REQUEST.md",
+    "tasks/m3_crete_l2_resolve/ANSWER_KEY.md",
+    "tasks/m3_crete_l2_resolve/task.yaml",
+    "tasks/m3_crete_l4_eco/README.md",
+    "tasks/m3_crete_l4_eco/ECO_REQUEST.md",
+    "tasks/m3_crete_l4_eco/ANSWER_KEY.md",
+    "tasks/m3_crete_l4_eco/task.yaml",
+    "requirements-l4-eco.txt",
+)
+for public_path in public_task_files:
+    api.upload_file(path_or_fileobj=public_path, path_in_repo=public_path,
+                    repo_id=f"{ORG}/marb-m3-crete", repo_type="dataset")
 
 # Gated answer key
 api.upload_file(path_or_fileobj="hf/dataset-gated/README.md", path_in_repo="README.md",

@@ -16,7 +16,7 @@ Project home: [marb.cadclaw.io](https://marb.cadclaw.io).
 
 ---
 
-## What it grades (v0.11)
+## What it grades (v0.12)
 
 MARB grades three positional metrics against the answer key, under a fixed,
 tight standard (see [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md)):
@@ -62,6 +62,33 @@ source pair plus at least three genuine gradeable attempts are not yet available
 There is therefore no L2 board row or score, no historical L1 rescore, and no
 change to the currently scored L0/L1 ladder. The exact evidence boundary is recorded in
 [`results/evidence/l2_resolve/v0.11/blocker.json`](results/evidence/l2_resolve/v0.11/blocker.json).
+
+### L4-ECO definition (unmeasured)
+
+MARB v0.12 freezes one engineering-change task without publishing an L4
+result. Revision `second-top-cross-spreader-midright-r1` adds one existing
+authored 20x40x1000 rail as a second top-frame cross-spreader at the global-X
+midpoint between the center spreader and top-right side rail, while preserving
+all 100 baseline authored instances. The normative request and machine-readable
+contract are under [`tasks/m3_crete_l4_eco/`](tasks/m3_crete_l4_eco/).
+
+The fail-closed public invariant gate uses audited CADCLAW 0.10.0 geometry
+snapshots and deterministic maximum matching to check the one-shape delta,
+the added rail's rounded AABB-dimension signature, requested axis orientation,
+and unchanged AABB poses. Its report is aggregate-only. CADCLAW renderable-
+shape counts are kept distinct from the task's authored 100-to-101 instance
+contract. A separate private task-local reference grade is required for the
+requested midpoint/top-flush placement. A graded result must bind that private
+aggregate report to an immutable gated-dataset readback; copied public `pass`
+metadata is not accepted.
+
+The private key is locally authored and validated, but it has not been uploaded
+and read back through a gated dataset revision. There are zero registered L4
+runs, the key-authoring/team session is non-blind, and no qualifying three-run
+cohort exists. L4 therefore remains
+`defined_unmeasured`: no score, board row, historical rescore, or change to the
+currently scored L0/L1 ladder. The evidence boundary is
+[`results/evidence/l4_eco/v0.12/blocker.json`](results/evidence/l4_eco/v0.12/blocker.json).
 
 ## Results — the board so far
 
@@ -188,7 +215,7 @@ The benchmark input (kits, brief, scoring spec) is open and needs no gate:
 https://huggingface.co/datasets/SunnydayTech/marb-m3-crete
 
 ```bash
-# Install the cadclaw grading engine and STEP I/O (0.9.0+ is on PyPI). See requirements.txt.
+# Install the L1 positional grading engine and STEP I/O (0.9.0+ is on PyPI).
 pip install "cadclaw>=0.9.0"
 pip install -r requirements.txt
 
@@ -203,6 +230,10 @@ python grader/marb_grade_all.py --manifest results/marb_runs.json \
 # Check that the curated board is publication-eligible.
 python scripts/validate_frontier_publication.py
 ```
+
+The commands above grade L1. The L4-ECO public invariant gate must run with the
+exact audited CADCLAW commit in `requirements-l4-eco.txt`; do not substitute the
+floating PyPI lower bound for that gate.
 
 A single run can be graded directly:
 
@@ -244,7 +275,7 @@ Results are comparable only within a single **kit cohort** and a fixed scoring
 version. Each run records its kit version, its model and tool versions, and the
 client environment (see [`results/marb_runs.json`](results/marb_runs.json)). Do
 not pool runs across kit versions without noting it. The current method is
-v0.11; the existing board cells keep their original v0.9 tags rather than being
+v0.12; the existing board cells keep their original v0.9 tags rather than being
 relabeled. See [`CHANGELOG.md`](CHANGELOG.md).
 
 MARB metrics are digital assembly evidence. They do not establish
