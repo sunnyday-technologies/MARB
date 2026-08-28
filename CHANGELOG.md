@@ -4,6 +4,20 @@ Scoring-method versions describe the method and publication contract. Every
 published cell keeps the version that was used when it was graded; a method
 release never relabels an older result.
 
+## Unreleased — H2a planner
+
+- Add the standalone, deterministic H2a `L2-RESOLVE` / `L4-ECO` cohort planner that
+  validates frozen public inputs and allocates at least three independent run
+  slots without provider, network, subprocess, credential, file-write, or model
+  access.
+- Keep every generated plan blocked before execution and free of fabricated
+  outcomes, scores, gate results, or artifact identities. Current L4 plans also
+  disclose the missing immutable gated grading revision.
+
+This closes H2a only; H2 remains open pending the separate H2b authorized,
+isolated executor. This plan-only tooling adds no run, score, board row, task
+revision, scoring-method version, model call, site rebuild, or deployment.
+
 ## v0.12 — 2026-08-28
 
 - Freeze the public `L4-ECO` task revision

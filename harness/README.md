@@ -10,6 +10,62 @@ grader on the exported STEP file: `grader/marb_grade_all.py` for the GAP, ORIENT
 positional metrics, and `grader/grade_native_step.py` for the native gates (inventory,
 interference, floating).
 
+## Change-task cohort planner (no execution)
+
+`cohort_runner.py` is the H2a, standard-library-only planner for `L2-RESOLVE`
+and `L4-ECO`. Its only command is `plan`. It validates the selected task's
+frozen public inputs against the digests in the current registry and emits
+deterministic canonical JSON to stdout for at least three distinct seeds.
+
+H2a does not complete H2. H2 remains open until a separate H2b PR provides the
+explicitly authorized, isolated executor and its execution-specific tests. No
+executor is included or called here.
+
+It does **not** import either execution harness, read environment variables or
+credentials, contact a provider, extract a kit, create a run directory, write a
+file, mutate the registry or board, grade an artifact, or authorize spend. Model
+and driver names are inert cohort labels. Every run slot remains `planned`, with
+null outcome and evidence digests.
+
+```powershell
+$sourceRevision = git rev-parse HEAD
+python harness/cohort_runner.py plan `
+  --task L4-ECO `
+  --source-revision $sourceRevision `
+  --cell-id l4-eco-example-cadquery `
+  --cell-label "L4 ECO example - CadQuery" `
+  --cohort-id l4-eco-example-v1 `
+  --model-id example/model `
+  --model-name "Example Model" `
+  --driver cadquery `
+  --driver-version 2.7.0 `
+  --prompt-variant frozen-v012 `
+  --seed-basis independent-run-ordinal `
+  --seed 01 --seed 02 --seed 03
+```
+
+The full lowercase source commit must match the checked-out `HEAD`. The planner
+also binds the registry's exact UTF-8/LF-normalized representation, its own
+source, and every selected public input to the plan. It deliberately does not claim that the
+whole working tree is clean or that those bytes belong to `HEAD`; each selected
+input is instead checked against its frozen registry digest. It rejects
+frozen-input drift, unsafe or linked paths,
+duplicate or normalized-alias seeds such as `1` and `01`, and run-ID collisions
+with the registry. Planned output paths are also checked against every
+registered artifact, source, report, and run-log path, using Windows-normalized
+path identities. Because the planner does not create or enumerate `runs/`, a
+future executor must separately reject collisions with unregistered local run
+directories. The planner reads the L4 added part directly from the selected ZIP
+for hash validation but never extracts archive content.
+
+Current task plans truthfully report `blocked-before-execution`. In particular,
+L4 cannot be treated as runnable or gradeable while its immutable gated grading
+revision is absent. A printed or saved plan is not a benchmark attempt, run
+evidence, a score, a publication record, or approval to call a model. A future
+executor must be separately reviewed and authorized, revalidate every input,
+and require the exact independently approved plan digest; a self-digest alone
+is not an authenticity or authorization boundary.
+
 ## One-command run
 
 ```powershell
@@ -141,6 +197,7 @@ supercomputer is remote, so runs still log as the `local_anchor` cell.
 
 ## Related files in this folder
 
+- `cohort_runner.py` — deterministic L2/L4 plan generator; never executes a run.
 - `marb_local_harness.py` — the builder described above.
 - `run_batch.py` — runs a cohort of builds for a prompt-variant study.
 - `BATCH_FINDINGS.md` — the batch and prompt-variant results.
