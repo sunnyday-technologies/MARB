@@ -1,12 +1,19 @@
 """Task-aware registry compatibility tests (no answer-key geometry required)."""
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from grader.run_registry import load_manifest
+
+
+def canonical_tracked_text_sha256(path: Path) -> str:
+    """Hash tracked text as UTF-8/LF, independent of checkout conversion."""
+    canonical = path.read_text(encoding="utf-8").encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 class TestTaskRegistry(unittest.TestCase):
@@ -75,6 +82,102 @@ class TestTaskRegistry(unittest.TestCase):
         provenance = cells["A"][0][1]
         self.assertEqual(provenance["baseline_step"], "before.step")
         self.assertEqual(provenance["run_id"], "run-1")
+
+    def test_l2_contract_retains_complete_change_loop_provenance(self):
+        digest = "a" * 64
+        task_path = "tasks/l2/task.yaml"
+        kit_path = "kits/l2.zip"
+        prompt_path = "prompts/l2.md"
+        brief_path = "prompts/l2-driver.md"
+        path = self._write({
+            "default_task": "L2-RESOLVE",
+            "tasks": {"L2-RESOLVE": {
+                "reference_step": "r.step", "spec": "r.yaml",
+                "provenance_contract": "l2_change_loop.v1",
+                "task_definition": task_path,
+                "task_definition_sha256": digest,
+                "allowed_kits": {kit_path: digest},
+                "prompt": prompt_path,
+                "prompt_sha256": digest,
+                "allowed_driver_briefs": {brief_path: digest},
+                "change_request": "change.md",
+                "change_request_sha256": digest,
+                "change_request_id": "change-r1",
+            }},
+            "runs": [{
+                "run_id": "run-1", "cell_id": "cell-1", "cell": "A",
+                "task": "L2-RESOLVE", "seed": "01",
+                "task_definition": task_path,
+                "task_definition_sha256": digest,
+                "kit": kit_path,
+                "kit_sha256": digest,
+                "prompt": prompt_path,
+                "prompt_sha256": digest,
+                "driver_brief": brief_path,
+                "driver_brief_sha256": digest,
+                "baseline_step": "before.step",
+                "baseline_artifact_sha256": digest,
+                "baseline_editable_source": "before.FCStd",
+                "baseline_editable_source_sha256": digest,
+                "changed_editable_source": "after.FCStd",
+                "changed_editable_source_sha256": digest,
+                "change_request": "change.md",
+                "change_request_sha256": digest,
+                "change_request_id": "change-r1",
+                "driver_continuity_id": "opaque-session-01",
+                "step": "after.step", "artifact_sha256": digest,
+                "run_log": "run.json", "run_log_sha256": digest,
+            }],
+        })
+        cells, *_ = load_manifest(path)
+        provenance = cells["A"][0][1]
+        self.assertEqual(provenance["baseline_artifact_sha256"], digest)
+        self.assertEqual(provenance["changed_editable_source"], "after.FCStd")
+        self.assertEqual(provenance["driver_continuity_id"], "opaque-session-01")
+        self.assertEqual(provenance["task_definition_sha256"], digest)
+        self.assertEqual(provenance["kit_sha256"], digest)
+
+    def test_l2_contract_rejects_incomplete_provenance(self):
+        path = self._write({
+            "default_task": "L2-RESOLVE",
+            "tasks": {"L2-RESOLVE": {
+                "reference_step": "r.step", "spec": "r.yaml",
+                "provenance_contract": "l2_change_loop.v1",
+                "change_request": "change.md",
+                "change_request_sha256": "a" * 64,
+                "change_request_id": "change-r1",
+            }},
+            "runs": [{
+                "run_id": "run-1", "cell_id": "cell-1", "cell": "A",
+                "task": "L2-RESOLVE", "seed": "01",
+                "baseline_step": "before.step", "step": "after.step",
+            }],
+        })
+        with self.assertRaisesRegex(ValueError, "missing provenance fields"):
+            load_manifest(path)
+
+    def test_checked_in_l2_task_is_routed_with_zero_runs(self):
+        repo = Path(__file__).resolve().parents[1]
+        manifest = json.loads(
+            (repo / "results/marb_runs.json")
+            .read_text(encoding="utf-8")
+        )
+        task = manifest["tasks"]["L2-RESOLVE"]
+        self.assertEqual(task["status"], "defined_unmeasured")
+        self.assertEqual(task["provenance_contract"], "l2_change_loop.v1")
+        self.assertEqual(
+            [run for run in manifest["runs"] if run.get("task") == "L2-RESOLVE"],
+            [],
+        )
+        for path_field, hash_field in (
+            ("task_definition", "task_definition_sha256"),
+            ("change_request", "change_request_sha256"),
+            ("blocker", "blocker_sha256"),
+        ):
+            self.assertEqual(
+                canonical_tracked_text_sha256(repo / task[path_field]),
+                task[hash_field],
+            )
 
     def test_duplicate_display_labels_within_task_fail(self):
         path = self._write({

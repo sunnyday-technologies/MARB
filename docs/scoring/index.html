@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MARB v0.10 scoring spec | Mechanical Assembly Readiness Benchmark</title>
-  <meta name="description" content="The canonical, versioned scoring method for MARB (Mechanical Assembly Readiness Benchmark): the GAP, POS, and ORIENT metrics, the fixed tolerance bands, and the first-run results. Graded by the open-source CADCLAW engine." />
+  <title>MARB v0.11 scoring spec | Mechanical Assembly Readiness Benchmark</title>
+  <meta name="description" content="The canonical, versioned scoring method for MARB: GAP, POS, ORIENT, repeat-run provenance, and the defined-unmeasured L2-RESOLVE change loop. Graded by the open-source CADCLAW engine." />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://marb.cadclaw.io/scoring/" />
   <style>
@@ -32,18 +32,18 @@
 </head>
 <body>
 <main>
-  <p class="nav"><a href="https://marb.cadclaw.io/">MARB benchmark</a> &middot; <a href="https://cadclaw.io/">CADCLAW</a> &middot; scoring spec v0.10</p>
+  <p class="nav"><a href="https://marb.cadclaw.io/">MARB benchmark</a> &middot; <a href="https://cadclaw.io/">CADCLAW</a> &middot; scoring spec v0.11</p>
 
-  <h1>MARB scoring spec (v0.10)</h1>
+  <h1>MARB scoring spec (v0.11)</h1>
   <p class="sub">The canonical, versioned scoring method for the Mechanical Assembly Readiness Benchmark. MARB grades how correctly AI-assisted CAD places the parts of a real machine. It is developed by Sunnyday Technologies and runs on the open-source <a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW</a> verification engine.</p>
 
   <div class="disclosure">
-    <strong>Read this first.</strong> Sunnyday Technologies authored MARB, runs the CADCLAW engine that grades every score, and supplies the reference machine (our own M3-CRETE assembly), which scores the rubric ceiling (0.0 mm gap, 100% oriented) by construction. CADCLAW is the floor and the referee, not a contender. The eight existing frontier cells are dated <strong>single runs under v0.9</strong>; local and sighted cells are repeat-run medians with spread. New frontier cells require at least three attempted and three graded independent runs. Read all results as bounded observations, not statements about a product's overall quality or readiness.
+    <strong>Read this first.</strong> Sunnyday Technologies authored MARB, runs the CADCLAW engine that grades every score, and supplies the reference machine (our own M3-CRETE assembly), which scores the rubric ceiling (0.0 mm gap, 100% oriented) by construction. CADCLAW is the floor and the referee, not a contender. The eight existing frontier cells are dated <strong>single runs under v0.9</strong>; local and sighted cells are repeat-run medians with spread. New frontier cells require at least three attempted and three graded independent runs. L2-RESOLVE is defined but unmeasured and has no score row. Read all results as bounded observations, not statements about a product's overall quality or readiness.
   </div>
 
   <h2>1. What MARB measures, and why the metric changed</h2>
   <p>The earlier v0.3 headline was a single buildability score, dominated by interference. It collapsed every run to roughly 12 to 15 out of 100 and barely separated models. For an early-stage test that is the wrong signal. The useful question, and the one that separates models, is: how many parts did the AI place in the correct position and orientation, and are the gaps between parts functionally correct?</p>
-  <p>MARB v0.10 retains the three v0.9 positional metrics and fixed bands:</p>
+  <p>MARB v0.11 retains the three v0.9 positional metrics and fixed bands:</p>
   <ul>
     <li><strong>GAP</strong> is the error between the actual and intended interface gap. It is the primary functional score.</li>
     <li><strong>POS</strong> is the position error of each part versus the answer key, after a best-fit rigid alignment.</li>
@@ -86,6 +86,11 @@
   <p>The current M3-CRETE key is one resolver-built geometric answer. Per-label optimal assignment already treats repeated same-label parts as interchangeable. ORIENT skips parts when two near-equal axis-aligned bounding-box extents make rotation unobservable to its current proxy; this is a scoring-observability rule, not a declaration of functional rotation equivalence. Those limited rules do not cover every potentially acceptable topology: GAP uses the selected reference's interface graph, and relative POS uses its neighbour graph. A different handed layout, part count, or interface topology can therefore be penalized by the single-reference comparison, and MARB has not established whether such an alternative is functionally acceptable.</p>
   <p>The v0.10 current-kit audit found no independently validated second complete geometric answer class, so none is declared. Potential alternate layouts remain unvalidated scoring cases, not accepted equivalents and not evidence that one feature tree is uniquely valid. If a future task declares multiple resolver-built classes, MARB will select one complete class for the whole grade rather than cherry-pick a different reference for each metric.</p>
 
+  <h3>L2-RESOLVE change loop (defined, unmeasured)</h3>
+  <p>Task revision <code>top-spreader-x+200-r1</code> freezes one change: the same driver session that produced the initial editable M3-CRETE build must move the existing top-center-spreader and its four mounting plates +200.0 mm along global X, without rotation, while preserving their internal relative transforms and the other 95 instances.</p>
+  <p>Each attempt must preserve versioned editable source and STEP artifacts before and after the change, a run log, the frozen request identity, and lowercase SHA-256 digests. An opaque driver-continuity ID records the same-session boundary. Three genuine independent attempts and three gradeable changed outputs are required before publication.</p>
+  <p>At v0.11 the task-specific private resolver key is locally authored and self-validated, but it has not been uploaded to a gated dataset revision. The registry has zero L2 runs and no qualifying same-driver editable before/after pair. No L2 score or board row is published, historical L1 runs are not rescored, and the scored ladder remains L0/L1.</p>
+
   <h2>6. First-run findings (three frontier runs, 2026-05-26)</h2>
   <p>Median placement error under the tight standard. These are one run per cell: hypotheses and a starting line, not a statistically significant ranking.</p>
   <table>
@@ -106,6 +111,7 @@
   <h2>8. Planned work</h2>
   <ol>
     <li>Populate new frontier cells under the v0.10 repeat-run rule. Retrospective reruns of legacy cells are a separate, budgeted study.</li>
+    <li>Complete L2-RESOLVE evidence: upload and read back the validated key through a gated revision, capture same-driver editable before/after artifacts, and register at least three genuine independent gradeable change loops.</li>
     <li>A random-floor baseline: grade shuffled positions to establish a true floor beneath the current relative median of about 47 mm.</li>
     <li>Principal-axes orientation refinement (OBB or PCA) to catch off-axis rotations the current axis-aligned metric misses.</li>
     <li>A second task on a different machine type, to support a claim of generality.</li>

@@ -12,6 +12,38 @@
    "scoring_version": "v0.10",
    "reference_step": "tasks/m3_crete/m3_reference_round1.step",
    "spec": "tasks/m3_crete/m3_reference_assembly.yaml"
+  },
+  "L2-RESOLVE": {
+   "rung": "L2",
+   "scoring_version": "v0.11",
+   "status": "defined_unmeasured",
+   "provenance_contract": "l2_change_loop.v1",
+   "task_revision": "top-spreader-x+200-r1",
+   "task_definition": "tasks/m3_crete_l2_resolve/task.yaml",
+   "task_definition_sha256": "94ecae43febbcc040d3df4f2b7b1d6cadab5abef8b220c3da1060ab5fa6398a0",
+   "change_request": "tasks/m3_crete_l2_resolve/CHANGE_REQUEST.md",
+   "change_request_sha256": "a7b3452bbe0a579cc4efd2095613ff0877df18d9d2875ea4dbf05a09f94091c6",
+   "change_request_id": "top-spreader-x+200-r1",
+   "allowed_kits": {
+    "kits/m3_cadquery_blind_kit.zip": "dcf887c2f9adf4626924db8585596b2eb1a4af3b763dceaed9c3a75d30ee6a30",
+    "kits/m3_fusion_blind_kit_v1.3.zip": "7c1bd77d0118c8221c8863ce20c1bb6e3776012bc68b86f64d1b19aec553e9d5"
+   },
+   "prompt": "prompts/standard_prompt.md",
+   "prompt_sha256": "103a03a1f02bc2a8d881c461805ef843cdabd9ee4e078201a409549edf9f6561",
+   "allowed_driver_briefs": {
+    "prompts/CADQUERY_DRIVER_BRIEF.md": "f80b1f58417a3c531705e23af54d614a4f16eefa84255c3c4bc8ab43ad7403fc",
+    "prompts/FUSION_DRIVER_BRIEF.md": "6bd7386f1eac968dfdde3e1894cc1aa6c1cbfa0d0618a62e8eb5d06f2155d79c"
+   },
+   "reference_step": "tasks/m3_crete_l2_resolve/m3_l2_resolve_reference_r1.step",
+   "spec": "tasks/m3_crete_l2_resolve/m3_l2_resolve_reference_assembly_r1.yaml",
+   "answer_key_status": "private_validated_distribution_pending",
+   "answer_key_private_commit": "d87a58c07c7bf83bb5831e16ce44568527a45057",
+   "answer_key_step_sha256": "f76880eec9fa877accb143f4c7fd2ff0fa13ae42609968d468c6f1043542d7e6",
+   "answer_key_spec_sha256": "9ff2f99056944197a11d1f2ef6a34fc86b1403ba7ca325370a997520d407119f",
+   "private_build_evidence_sha256": "f8d6fdba92655e69ad280614e4c1d2ed98800a9c78d87bd53950ad70c2494b20",
+   "evidence_status": "pending",
+   "blocker": "results/evidence/l2_resolve/v0.11/blocker.json",
+   "blocker_sha256": "058e309d8287b7cd142485295f2631016bf0752f04ba8c20a0d48273c9f85d70"
   }
  },
  "publication_policy": {
@@ -47,13 +79,13 @@
   "m3-l1-local-qwen3-coder-next-lean-v5": "Local · qwen3-coder-next (lean v5)",
   "m3-l1-sighted-qwen3-vl-lean-v5": "Sighted · qwen3-vl (lean v5, 8 turns)"
  },
- "marb_scoring_version": "v0.10",
+ "marb_scoring_version": "v0.11",
  "reference_step": "tasks/m3_crete/m3_reference_round1.step",
  "spec": "tasks/m3_crete/m3_reference_assembly.yaml",
  "grader_toolchain": {
   "_comment": "Versions of the GRADER stack (the product). Same for every run unless overridden per-run. cadclaw bumped 0.8.0 -> 0.9.0 on 2026-05-31: inventory.sig (the basis for every v0.9 positional metric) is BYTE-IDENTICAL between the two, so all v0.9 grades stay mutually comparable; 0.9.0 only ADDS assembly_compiler (native-track inventory/interference/floating gates).",
   "cadclaw": "0.9.0",
-  "marb_scoring": "v0.10 (metric bands unchanged; published legacy cells retain v0.9 tags)",
+  "marb_scoring": "v0.11 (L2 method defined but unmeasured; metric bands unchanged; published legacy cells retain v0.9 tags)",
   "step_io": "CadQuery (Python) 2.7.0 / OCP-OpenCASCADE",
   "fea_beam_frame": "PyNiteFEA 2.4.1",
   "fea_solid_mesh": "CalculiX 2.23.0 (not exercised by v0.9 positional metrics)"

@@ -5,10 +5,10 @@ AI-assisted CAD assembly improves over time. It grades at the levels mechanical
 design actually requires, and it keeps results reproducible as models and tools
 change.
 
-## Now (v0.10)
+## Now (v0.11)
 
 - Three positional metrics: GAP, ORIENT, and POS. See [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md).
-- One reference task: the M3-CRETE gantry frame (task 1), about 100 parts, with versioned blind kits.
+- One measured reference task: the M3-CRETE gantry frame (task 1), about 100 parts, with versioned blind kits.
 - Tool-independent grading on the exported STEP, through the CADCLAW engine.
 - Task-aware run-registry routing and a fail-closed publication policy: every
   new frontier cell needs at least three attempted and three graded independent
@@ -18,15 +18,23 @@ change.
   rotations unobservable to the current bounding-box proxy have narrow
   equivalences; alternative interface topologies still need a complete declared
   resolver answer class.
+- A frozen L2-RESOLVE definition, `top-spreader-x+200-r1`, requires the same
+  driver to move the five-instance top-center-spreader subassembly +200.0 mm in
+  global X while preserving the other 95 instances. It is
+  `defined_unmeasured`: the private resolver key is locally validated, but no
+  gated revision or qualifying run is published.
 
 ## Next
 
 - **Repeat frontier cohorts.** Apply the v0.10 minimum to every new cell. A
   retrospective rerun of legacy cells is a separate, budgeted study.
-- **Change-loop tasks.** Publish L2-RESOLVE only after a frozen parameter change,
-  a privately authored resolver key, and at least three gradeable independent
-  runs exist. Publish L4-ECO only after its requested-change check and scripted
-  invariant regression gate are validated. Neither method is measured today.
+- **Finish L2 evidence.** Upload and read back the validated private key through
+  a gated dataset revision, capture the same driver's editable source before and
+  after the change, and register at least three genuine independent gradeable
+  runs. Until then, keep L2 off the board and out of `currently_scored`.
+- **Engineering-change task.** Publish L4-ECO only after its frozen requested-
+  change check and scripted invariant regression gate are validated. L4 is not
+  measured today.
 - **More drivers.** CadQuery and Autodesk Fusion are covered today. Add more tools
   such as build123d, all graded the same way. Contributions are welcome.
 - **A second task.** Add a different machine type to show the benchmark generalizes.

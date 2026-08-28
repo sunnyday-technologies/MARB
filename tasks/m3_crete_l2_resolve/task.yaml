@@ -1,0 +1,119 @@
+schema: marb_change_task.v1
+task_id: L2-RESOLVE
+rung: L2
+task_revision: top-spreader-x+200-r1
+marb_scoring_version: v0.11
+status: defined_unmeasured
+provenance_contract: l2_change_loop.v1
+
+baseline:
+  task_id: L1-ASSEMBLE
+  machine: M3-CRETE
+  expected_instance_count: 100
+  requirement: same driver's editable source from its initial build
+
+frozen_inputs:
+  kits:
+    - driver: CadQuery
+      path: kits/m3_cadquery_blind_kit.zip
+      sha256: dcf887c2f9adf4626924db8585596b2eb1a4af3b763dceaed9c3a75d30ee6a30
+      bytes: 1216570
+    - driver: Autodesk Fusion
+      path: kits/m3_fusion_blind_kit_v1.3.zip
+      sha256: 7c1bd77d0118c8221c8863ce20c1bb6e3776012bc68b86f64d1b19aec553e9d5
+      bytes: 1217545
+  prompt:
+    path: prompts/standard_prompt.md
+    sha256: 103a03a1f02bc2a8d881c461805ef843cdabd9ee4e078201a409549edf9f6561
+    bytes: 7206
+  driver_briefs:
+    - driver: CadQuery
+      path: prompts/CADQUERY_DRIVER_BRIEF.md
+      sha256: f80b1f58417a3c531705e23af54d614a4f16eefa84255c3c4bc8ab43ad7403fc
+      bytes: 9594
+    - driver: Autodesk Fusion
+      path: prompts/FUSION_DRIVER_BRIEF.md
+      sha256: 6bd7386f1eac968dfdde3e1894cc1aa6c1cbfa0d0618a62e8eb5d06f2155d79c
+      bytes: 11825
+  connector_metadata:
+    path: tasks/m3_crete/m3_connector_metadata.yaml
+    sha256: b4fc0867088e8ef430dbc39139abbb90faef73a4eda75627991cd12d89319939
+    bytes: 15013
+
+change:
+  request_path: tasks/m3_crete_l2_resolve/CHANGE_REQUEST.md
+  request_sha256: a7b3452bbe0a579cc4efd2095613ff0877df18d9d2875ea4dbf05a09f94091c6
+  parameter: top_center_spreader_global_x_mm
+  operation: translate_existing_subassembly
+  delta_mm: 200.0
+  frame: global
+  rotation_change_deg: 0.0
+  affected_instance_selectors:
+    - top_center_spreader
+    - top_center_spreader_plate_front
+    - top_center_spreader_plate_front_2
+    - top_center_spreader_plate_back
+    - top_center_spreader_plate_back_2
+  affected_instance_count: 5
+  preserved_instance_count: 95
+  preserve_internal_relative_transforms: true
+
+answer_key:
+  status: private_validated_distribution_pending
+  public_metadata: tasks/m3_crete_l2_resolve/ANSWER_KEY.md
+  canonical_private_commit: d87a58c07c7bf83bb5831e16ce44568527a45057
+  reference_step:
+    path: tasks/m3_crete_l2_resolve/m3_l2_resolve_reference_r1.step
+    sha256: f76880eec9fa877accb143f4c7fd2ff0fa13ae42609968d468c6f1043542d7e6
+    bytes: 38324041
+  placement_spec:
+    path: tasks/m3_crete_l2_resolve/m3_l2_resolve_reference_assembly_r1.yaml
+    sha256: 9ff2f99056944197a11d1f2ef6a34fc86b1403ba7ca325370a997520d407119f
+    bytes: 88663
+  private_build_evidence:
+    sha256: f8d6fdba92655e69ad280614e4c1d2ed98800a9c78d87bd53950ad70c2494b20
+    bytes: 1395
+  validation:
+    reference_self_grade:
+      gap_median_mm: 0.0
+      pos_absolute_median_mm: 0.0
+      orient_aligned_pct: 100.0
+    compiler_fail_findings: 0
+  gated_distribution_revision: null
+
+publication:
+  evidence_status: pending
+  minimum_independent_attempts: 3
+  minimum_gradeable_outputs: 3
+  center: median
+  spread: population_std
+  registered_runs: 0
+  board_row_allowed: false
+  blocker: results/evidence/l2_resolve/v0.11/blocker.json
+
+required_run_provenance:
+  - run_id
+  - cell_id
+  - seed
+  - task_definition
+  - task_definition_sha256
+  - kit
+  - kit_sha256
+  - prompt
+  - prompt_sha256
+  - driver_brief
+  - driver_brief_sha256
+  - baseline_step
+  - baseline_artifact_sha256
+  - baseline_editable_source
+  - baseline_editable_source_sha256
+  - changed_editable_source
+  - changed_editable_source_sha256
+  - change_request
+  - change_request_sha256
+  - change_request_id
+  - driver_continuity_id
+  - step
+  - artifact_sha256
+  - run_log
+  - run_log_sha256

@@ -122,12 +122,75 @@ def _grade_sources(board, registry):
     }
 
 
+def _l2_fixtures():
+    board, registry = _fixtures()
+    request_hash = "f" * 64
+    definition_hash = "e" * 64
+    kit_hash = "d" * 64
+    prompt_hash = "c" * 64
+    brief_hash = "b" * 64
+    task_path = "tasks/l2/task.yaml"
+    kit_path = "kits/l2.zip"
+    prompt_path = "prompts/l2.md"
+    brief_path = "prompts/l2-driver.md"
+    row = board["rows"][0]
+    row["task"] = "L2-RESOLVE"
+    row["spec_version"] = "v0.11"
+    registry["tasks"] = {
+        "L2-RESOLVE": {
+            "scoring_version": "v0.11",
+            "status": "measured",
+            "provenance_contract": "l2_change_loop.v1",
+            "task_definition": task_path,
+            "task_definition_sha256": definition_hash,
+            "allowed_kits": {kit_path: kit_hash},
+            "prompt": prompt_path,
+            "prompt_sha256": prompt_hash,
+            "allowed_driver_briefs": {brief_path: brief_hash},
+            "change_request": "tasks/l2/CHANGE_REQUEST.md",
+            "change_request_sha256": request_hash,
+            "change_request_id": "top-spreader-x+200-r1",
+            "answer_key_status": "ready",
+            "evidence_status": "complete",
+        }
+    }
+    for index, run in enumerate(registry["runs"], start=1):
+        run.update({
+            "task": "L2-RESOLVE",
+            "scoring_version": "v0.11",
+            "task_definition": task_path,
+            "task_definition_sha256": definition_hash,
+            "kit": kit_path,
+            "kit_sha256": kit_hash,
+            "prompt": prompt_path,
+            "prompt_sha256": prompt_hash,
+            "driver_brief": brief_path,
+            "driver_brief_sha256": brief_hash,
+            "baseline_step": f"runs/run-{index}/before.step",
+            "baseline_artifact_sha256": f"{index + 20:064x}",
+            "baseline_editable_source": f"runs/run-{index}/before.FCStd",
+            "baseline_editable_source_sha256": f"{index + 30:064x}",
+            "changed_editable_source": f"runs/run-{index}/after.FCStd",
+            "changed_editable_source_sha256": f"{index + 40:064x}",
+            "change_request": "tasks/l2/CHANGE_REQUEST.md",
+            "change_request_sha256": request_hash,
+            "change_request_id": "top-spreader-x+200-r1",
+            "driver_continuity_id": f"opaque-{index}",
+        })
+    return board, registry
+
+
 class TestFrontierPublication(unittest.TestCase):
     def test_checked_in_board_passes(self):
         board = json.loads((REPO / "hf/space/board.json").read_text(encoding="utf-8"))
         registry = json.loads((REPO / "results/marb_runs.json").read_text(encoding="utf-8"))
         sources = MODULE.load_grade_sources(board, REPO)
         self.assertEqual(MODULE.validate(board, registry, sources), [])
+
+    def test_checked_in_unmeasured_l2_has_no_board_row(self):
+        board = json.loads((REPO / "hf/space/board.json").read_text(encoding="utf-8"))
+        self.assertEqual(board["scoring_version"], "v0.11")
+        self.assertFalse(any(row.get("task") == "L2-RESOLVE" for row in board["rows"]))
 
     def test_three_independent_runs_pass(self):
         board, registry = _fixtures()
@@ -147,6 +210,42 @@ class TestFrontierPublication(unittest.TestCase):
         self.assertTrue(any(
             "grade-source run identities" in e
             for e in MODULE.validate(board, registry, sources)
+        ))
+
+    def test_l2_change_loop_provenance_passes(self):
+        board, registry = _l2_fixtures()
+        self.assertEqual(MODULE.validate(board, registry), [])
+
+    def test_l2_missing_editable_source_is_rejected(self):
+        board, registry = _l2_fixtures()
+        registry["runs"][0].pop("baseline_editable_source")
+        self.assertTrue(any(
+            "baseline_editable_source" in error
+            for error in MODULE.validate(board, registry)
+        ))
+
+    def test_l2_wrong_task_definition_is_rejected(self):
+        board, registry = _l2_fixtures()
+        registry["runs"][0]["task_definition_sha256"] = "0" * 64
+        self.assertTrue(any(
+            "task_definition_sha256" in error
+            for error in MODULE.validate(board, registry)
+        ))
+
+    def test_l2_wrong_kit_is_rejected(self):
+        board, registry = _l2_fixtures()
+        registry["runs"][0]["kit_sha256"] = "0" * 64
+        self.assertTrue(any(
+            "frozen kit" in error
+            for error in MODULE.validate(board, registry)
+        ))
+
+    def test_defined_unmeasured_l2_cannot_publish(self):
+        board, registry = _l2_fixtures()
+        registry["tasks"]["L2-RESOLVE"]["status"] = "defined_unmeasured"
+        self.assertTrue(any(
+            "defined-unmeasured" in error
+            for error in MODULE.validate(board, registry)
         ))
 
     def test_two_runs_fail(self):

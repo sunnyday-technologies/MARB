@@ -1,5 +1,5 @@
 ---
-pretty_name: "MARB — Mechanical Assembly Readiness Benchmark (M3-CRETE, task 1)"
+pretty_name: "MARB — Mechanical Assembly Readiness Benchmark (M3-CRETE)"
 license: other
 license_name: mixed-mit-and-cc-by-sa-4.0
 license_link: https://github.com/sunnyday-technologies/MARB/blob/main/kits/LICENSE.md
@@ -49,7 +49,7 @@ the answer key. The answer key is a separate, access-gated dataset (gated to
 prevent training-data contamination, not for secrecy):
 [SunnydayTech/marb-m3-crete-answer-key](https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key).
 
-## What it grades (v0.10)
+## What it grades (v0.11)
 
 MARB grades three positional metrics against the answer key, under a fixed, tight
 standard:
@@ -85,6 +85,17 @@ Post-policy cells also record stable run IDs, distinct run-log paths and
 SHA-256 digests, graded STEP digests, and the exact graded run IDs carried into
 the aggregate grade source.
 
+### L2-RESOLVE definition (unmeasured)
+
+MARB v0.11 freezes task revision `top-spreader-x+200-r1`: the same driver that
+produced the initial editable M3-CRETE build must move the existing top-center-
+spreader plus its four mounting plates +200.0 mm along global X and preserve the
+other 95 instances. The task is `defined_unmeasured`. Its private resolver key
+is locally authored and self-validated, but no gated dataset revision has been
+uploaded. There are zero registered L2 runs and no qualifying same-driver
+editable before/after pair, so no L2 score or board row is published. Historical
+L1 results are unchanged.
+
 ## What is in this dataset
 
 - `kits/` — versioned blind kits (one zip per version). A kit holds the authored
@@ -92,6 +103,8 @@ the aggregate grade source.
   views), and the task brief. No answer key. Versions are tracked in
   `kits/KIT_VERSIONS.md`.
 - `prompts/` — the frozen task brief and the per-backend driver stubs.
+- `tasks/m3_crete_l2_resolve/` — the frozen L2 change request, machine-readable
+  contract, and pending gated-key metadata. It contains no answer-key geometry.
 - `spec/MARB_SCORING.md` — the canonical, versioned scoring method.
 - `benchmark.yaml` — gate weights for the secondary buildability score.
 
@@ -123,7 +136,9 @@ Grader source: [github.com/sunnyday-technologies/MARB/tree/main/grader](https://
 Results are comparable only within a single kit cohort and a fixed scoring
 version. Each run records its kit version, its model and tool versions, and the
 client environment. Do not pool runs across kit versions without noting it.
-Published cells retain the scoring-version tag used to produce them.
+Published cells retain the scoring-version tag used to produce them. The
+current method is v0.11; the checked-in mechanical board rows retain their
+historical v0.9 tags.
 
 ## License
 

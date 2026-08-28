@@ -16,7 +16,7 @@ Project home: [marb.cadclaw.io](https://marb.cadclaw.io).
 
 ---
 
-## What it grades (v0.10)
+## What it grades (v0.11)
 
 MARB grades three positional metrics against the answer key, under a fixed,
 tight standard (see [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md)):
@@ -45,6 +45,23 @@ outside the declared classes and may be penalized; MARB has not established
 whether they are functionally acceptable. The exact limitation and the
 whole-class rule for future alternatives are published in
 [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md#51-acceptable-solution-classes-and-current-limitation).
+
+### L2-RESOLVE definition (unmeasured)
+
+MARB v0.11 freezes an L2 change-loop task without publishing an L2 result. In
+task revision `top-spreader-x+200-r1`, the same driver that produced the initial
+M3-CRETE editable build must move the existing five-instance top-center-
+spreader subassembly +200.0 mm along global X and preserve the other 95
+instances. The normative request and machine-readable contract are under
+[`tasks/m3_crete_l2_resolve/`](tasks/m3_crete_l2_resolve/).
+
+The task is `defined_unmeasured`. Its task-specific private resolver key is
+locally authored and validated, but no gated dataset revision has been uploaded.
+The registry has zero L2 runs, and a qualifying same-driver editable before/after
+source pair plus at least three genuine gradeable attempts are not yet available.
+There is therefore no L2 board row or score, no historical L1 rescore, and no
+change to the currently scored L0/L1 ladder. The exact evidence boundary is recorded in
+[`results/evidence/l2_resolve/v0.11/blocker.json`](results/evidence/l2_resolve/v0.11/blocker.json).
 
 ## Results — the board so far
 
@@ -213,6 +230,7 @@ python grader/marb_orient_metric.py --ref tasks/m3_crete/m3_reference_round1.ste
 spec/MARB_SCORING.md     the canonical, versioned scoring method
 grader/                  the metrics and figure builders (depend on the cadclaw package)
 tasks/m3_crete/          where the gated answer key (STEP + spec) goes; fetch from the HF dataset (see Quickstart)
+tasks/m3_crete_l2_resolve/ frozen L2 change request, task contract, and pending key metadata
 kits/                    versioned blind kits handed to the driver, plus KIT_VERSIONS.md
 prompts/                 the frozen task brief, per-backend driver stubs, and generator
 results/                 grades, run registry, findings, and figures
@@ -226,7 +244,7 @@ Results are comparable only within a single **kit cohort** and a fixed scoring
 version. Each run records its kit version, its model and tool versions, and the
 client environment (see [`results/marb_runs.json`](results/marb_runs.json)). Do
 not pool runs across kit versions without noting it. The current method is
-v0.10; the existing board cells keep their original v0.9 tags rather than being
+v0.11; the existing board cells keep their original v0.9 tags rather than being
 relabeled. See [`CHANGELOG.md`](CHANGELOG.md).
 
 MARB metrics are digital assembly evidence. They do not establish

@@ -269,6 +269,130 @@ def _validate_independent_runs(
             )
 
 
+def _validate_l2_change_loop(
+    matched: list[dict[str, Any]],
+    task_cfg: dict[str, Any],
+    label: str,
+    errors: list[str],
+) -> None:
+    """Validate the frozen before/after and same-driver provenance contract."""
+    _require(
+        task_cfg.get("provenance_contract") == "l2_change_loop.v1",
+        f"{label}: L2 task does not declare l2_change_loop.v1 provenance",
+        errors,
+    )
+    _require(
+        task_cfg.get("status") == "measured",
+        f"{label}: defined-unmeasured L2 task cannot publish a board row",
+        errors,
+    )
+    _require(
+        task_cfg.get("answer_key_status") == "ready",
+        f"{label}: L2 answer key is not ready",
+        errors,
+    )
+    _require(
+        task_cfg.get("evidence_status") == "complete",
+        f"{label}: L2 run evidence is not complete",
+        errors,
+    )
+
+    required = (
+        "task_definition",
+        "task_definition_sha256",
+        "kit",
+        "kit_sha256",
+        "prompt",
+        "prompt_sha256",
+        "driver_brief",
+        "driver_brief_sha256",
+        "baseline_step",
+        "baseline_artifact_sha256",
+        "baseline_editable_source",
+        "baseline_editable_source_sha256",
+        "changed_editable_source",
+        "changed_editable_source_sha256",
+        "change_request",
+        "change_request_sha256",
+        "change_request_id",
+        "driver_continuity_id",
+    )
+    hash_fields = (
+        "task_definition_sha256",
+        "kit_sha256",
+        "prompt_sha256",
+        "driver_brief_sha256",
+        "baseline_artifact_sha256",
+        "baseline_editable_source_sha256",
+        "changed_editable_source_sha256",
+        "change_request_sha256",
+    )
+    for run in matched:
+        run_id = run.get("run_id", "<unnamed>")
+        for field in required:
+            _require(
+                bool(run.get(field)),
+                f"{label}: L2 run {run_id!r} is missing {field}",
+                errors,
+            )
+        for field in hash_fields:
+            _require(
+                isinstance(run.get(field), str)
+                and _SHA256_RE.fullmatch(run[field]) is not None,
+                f"{label}: L2 run {run_id!r} has malformed {field}",
+                errors,
+            )
+        for field in (
+            "task_definition", "task_definition_sha256",
+            "change_request", "change_request_sha256", "change_request_id",
+            "prompt", "prompt_sha256",
+        ):
+            _require(
+                run.get(field) == task_cfg.get(field),
+                f"{label}: L2 run {run_id!r} does not match frozen {field}",
+                errors,
+            )
+        allowed_kits = task_cfg.get("allowed_kits") or {}
+        _require(
+            allowed_kits.get(run.get("kit")) == run.get("kit_sha256"),
+            f"{label}: L2 run {run_id!r} does not match a frozen kit",
+            errors,
+        )
+        allowed_briefs = task_cfg.get("allowed_driver_briefs") or {}
+        _require(
+            allowed_briefs.get(run.get("driver_brief"))
+            == run.get("driver_brief_sha256"),
+            f"{label}: L2 run {run_id!r} does not match a frozen driver brief",
+            errors,
+        )
+        _require(
+            run.get("baseline_step") != run.get("step"),
+            f"{label}: L2 run {run_id!r} must preserve distinct before/after STEP paths",
+            errors,
+        )
+        _require(
+            run.get("baseline_editable_source") != run.get("changed_editable_source"),
+            f"{label}: L2 run {run_id!r} must preserve distinct before/after source paths",
+            errors,
+        )
+
+    continuity_ids = [run.get("driver_continuity_id") for run in matched]
+    _require(
+        len(continuity_ids) == len(set(continuity_ids)),
+        f"{label}: independent L2 attempts must use distinct driver-continuity IDs",
+        errors,
+    )
+    for field in (
+        "baseline_step", "baseline_editable_source", "changed_editable_source"
+    ):
+        paths = [run.get(field) for run in matched]
+        _require(
+            len(paths) == len(set(paths)),
+            f"{label}: independent L2 attempts must use distinct {field} paths",
+            errors,
+        )
+
+
 def validate(board: dict[str, Any], registry: dict[str, Any],
              grade_sources: dict[str, dict[str, Any]] | None = None) -> list[str]:
     errors: list[str] = []
@@ -413,6 +537,9 @@ def validate(board: dict[str, Any], registry: dict[str, Any],
                 loadable = sum(bool(run["builder_metrics"].get("loadable")) for run in matched)
                 _require(loadable == graded,
                          f"{label}: n_graded does not match registry loadable count", errors)
+            if task == "L2-RESOLVE":
+                task_cfg = (registry.get("tasks", {}).get(task, {}) or {})
+                _validate_l2_change_loop(matched, task_cfg, label, errors)
 
         mode = reporting.get("mode")
         post_policy_cell = track != "reference" and published >= effective

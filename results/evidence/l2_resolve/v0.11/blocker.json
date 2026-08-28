@@ -1,0 +1,72 @@
+{
+  "schema": "marb_task_evidence_boundary.v1",
+  "task": "L2-RESOLVE",
+  "task_revision": "top-spreader-x+200-r1",
+  "scoring_version": "v0.11",
+  "as_of": "2026-08-28",
+  "status": "defined_unmeasured",
+  "frozen_inputs": {
+    "task_definition": {
+      "path": "tasks/m3_crete_l2_resolve/task.yaml",
+      "sha256": "94ecae43febbcc040d3df4f2b7b1d6cadab5abef8b220c3da1060ab5fa6398a0"
+    },
+    "change_request": {
+      "path": "tasks/m3_crete_l2_resolve/CHANGE_REQUEST.md",
+      "sha256": "a7b3452bbe0a579cc4efd2095613ff0877df18d9d2875ea4dbf05a09f94091c6"
+    }
+  },
+  "answer_key": {
+    "status": "private_validated_distribution_pending",
+    "private_commit": "d87a58c07c7bf83bb5831e16ce44568527a45057",
+    "reference_step_sha256": "f76880eec9fa877accb143f4c7fd2ff0fa13ae42609968d468c6f1043542d7e6",
+    "reference_spec_sha256": "9ff2f99056944197a11d1f2ef6a34fc86b1403ba7ca325370a997520d407119f",
+    "private_build_evidence_sha256": "f8d6fdba92655e69ad280614e4c1d2ed98800a9c78d87bd53950ad70c2494b20",
+    "reference_self_grade": {
+      "gap_median_mm": 0.0,
+      "pos_absolute_median_mm": 0.0,
+      "orient_aligned_pct": 100.0,
+      "compiler_fail_findings": 0
+    },
+    "gated_distribution_revision": null
+  },
+  "run_evidence": {
+    "registered_runs": 0,
+    "eligible_independent_attempts": 0,
+    "gradeable_outputs": 0,
+    "minimum_independent_attempts": 3,
+    "minimum_gradeable_outputs": 3,
+    "historical_l1_outputs_examined": 5,
+    "historical_l1_outputs_eligible_for_relabeling": 0,
+    "same_driver_editable_before_after_pairs_found": 0,
+    "local_inference_driver_available": false,
+    "external_provider_run_authorized_or_performed": false
+  },
+  "blockers": [
+    {
+      "id": "gated-key-revision-missing",
+      "detail": "The born-private key has not been uploaded and read back as an immutable gated dataset revision."
+    },
+    {
+      "id": "same-driver-editable-source-missing",
+      "detail": "No qualifying same-driver editable source pair exists for the baseline and changed assembly."
+    },
+    {
+      "id": "repeat-cohort-missing",
+      "detail": "No cell has three independent attempted and three gradeable L2 change loops under one frozen model, driver, kit, and prompt cohort."
+    },
+    {
+      "id": "current-session-contaminated",
+      "detail": "The key-authoring session accessed gated material and cannot be counted as a blind driver attempt."
+    }
+  ],
+  "publication": {
+    "board_row_allowed": false,
+    "score_published": false,
+    "historical_runs_rescored": false,
+    "currently_scored_ladder": [
+      "L0",
+      "L1"
+    ]
+  },
+  "reliance_limit": "This task definition and key self-check do not establish manufacturability, safety, certification, physical validation, or increased readiness."
+}
