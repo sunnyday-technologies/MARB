@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MARB v0.9 scoring spec | Mechanical Assembly Readiness Benchmark</title>
+  <title>MARB v0.10 scoring spec | Mechanical Assembly Readiness Benchmark</title>
   <meta name="description" content="The canonical, versioned scoring method for MARB (Mechanical Assembly Readiness Benchmark): the GAP, POS, and ORIENT metrics, the fixed tolerance bands, and the first-run results. Graded by the open-source CADCLAW engine." />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://marb.cadclaw.io/scoring/" />
@@ -32,29 +32,29 @@
 </head>
 <body>
 <main>
-  <p class="nav"><a href="https://marb.cadclaw.io/">MARB benchmark</a> &middot; <a href="https://cadclaw.io/">CADCLAW</a> &middot; scoring spec v0.9</p>
+  <p class="nav"><a href="https://marb.cadclaw.io/">MARB benchmark</a> &middot; <a href="https://cadclaw.io/">CADCLAW</a> &middot; scoring spec v0.10</p>
 
-  <h1>MARB scoring spec (v0.9)</h1>
+  <h1>MARB scoring spec (v0.10)</h1>
   <p class="sub">The canonical, versioned scoring method for the Mechanical Assembly Readiness Benchmark. MARB grades how correctly AI-assisted CAD places the parts of a real machine. It is developed by Sunnyday Technologies and runs on the open-source <a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW</a> verification engine.</p>
 
   <div class="disclosure">
-    <strong>Read this first.</strong> Sunnyday Technologies authored MARB, runs the CADCLAW engine that grades every score, and supplies the reference machine (our own M3-CRETE assembly), which scores the rubric ceiling (0.0 mm gap, 100% oriented) by construction. CADCLAW is the floor and the referee, not a contender. The first results below are <strong>one run per frontier cell</strong> (the local-anchor floor is five runs per cell); read them as a starting line and a method, not a leaderboard. The grader and benchmark scaffold are open so anyone can reproduce or dispute a score.
+    <strong>Read this first.</strong> Sunnyday Technologies authored MARB, runs the CADCLAW engine that grades every score, and supplies the reference machine (our own M3-CRETE assembly), which scores the rubric ceiling (0.0 mm gap, 100% oriented) by construction. CADCLAW is the floor and the referee, not a contender. The eight existing frontier cells are dated <strong>single runs under v0.9</strong>; local and sighted cells are repeat-run medians with spread. New frontier cells require at least three attempted and three graded independent runs. Read all results as bounded observations, not statements about a product's overall quality or readiness.
   </div>
 
   <h2>1. What MARB measures, and why the metric changed</h2>
   <p>The earlier v0.3 headline was a single buildability score, dominated by interference. It collapsed every run to roughly 12 to 15 out of 100 and barely separated models. For an early-stage test that is the wrong signal. The useful question, and the one that separates models, is: how many parts did the AI place in the correct position and orientation, and are the gaps between parts functionally correct?</p>
-  <p>MARB v0.9 grades positional accuracy with three metrics:</p>
+  <p>MARB v0.10 retains the three v0.9 positional metrics and fixed bands:</p>
   <ul>
     <li><strong>GAP</strong> is the error between the actual and intended interface gap. It is the primary functional score.</li>
     <li><strong>POS</strong> is the position error of each part versus the answer key, after a best-fit rigid alignment.</li>
     <li><strong>ORIENT</strong> is the share of orientation-gradeable parts placed in the correct rotation.</li>
   </ul>
-  <p>Buildability remains as a secondary gate: it asks whether the parts could be bolted together as placed. It is no longer the headline.</p>
+  <p>The configured native inventory, interference, and floating-part checks remain as secondary artifact gates; they are no longer the headline. Passing these digital checks does not establish physical assemblability or manufacturability.</p>
 
   <h2>2. Tolerance philosophy</h2>
   <p>Two points define the standard and do not change.</p>
   <p>First, digital placement is graded exactly. A perfect digital model has no placement error: a part is either in the correct spot or it is not. Real machines function at fractions of a millimeter, so the bar is tight. A part within 5 mm of its target counts as located; within 0.01 mm counts as exact. The only allowance is floating-point and export noise, which is far tighter than commercial CAD requires. The band is never loosened to favor a model.</p>
-  <p>Second, manufacturing tolerance is a separate axis: the plus-or-minus of material added or removed when a real part is made from the perfect digital model. That is the purpose of the CADCLAW tolerance gate, and it is not exercised here. Today MARB grades only whether the AI can place the parts correctly. Production tolerance is graded later (see Section 7).</p>
+  <p>Second, manufacturing tolerance is a separate axis: the plus-or-minus of material added or removed when a real part is made from the perfect digital model. That is the purpose of the CADCLAW tolerance gate, and it is not exercised here. Today MARB grades only whether the AI can place the parts correctly. Production tolerance is graded later (see Section 8).</p>
 
   <h2>3. The functional-gap metric (GAP)</h2>
   <p>Absolute coordinates are a proxy. What distinguishes a functional system from a single fused body is the gap at each interface, and GAP grades that directly.</p>
@@ -80,7 +80,11 @@
   </table>
 
   <h2>5. How a run is graded</h2>
-  <p>Grading is automated and tool-independent. The grader loads the answer-key STEP and the run's exported STEP with no roles or metadata, labels each solid by its bounding-box signature, rigid-aligns the two assemblies (Kabsch or ICP), matches parts by a linear-assignment solve, and computes the POS bands and median (absolute and relative). A separate pass classifies each answer-key interface as attachment, motion, or standoff and grades the actual gap against the intended gap (GAP). A third pass grades each part's rotation against the answer key, binned as aligned, rotated, or wrong, skipping rotationally symmetric parts (ORIENT). The secondary buildability gate runs the native CADCLAW checks: inventory, interference, and floating. The method is versioned with this document; it changes only when this spec changes.</p>
+  <p>Grading is automated and tool-independent. The grader loads the answer-key STEP and the run's exported STEP with no roles or metadata, labels each solid by its bounding-box signature, rigid-aligns the two assemblies (Kabsch or ICP), matches parts by a linear-assignment solve, and computes the POS bands and median (absolute and relative). A separate pass classifies each answer-key interface as attachment, motion, or standoff and grades the actual gap against the intended gap (GAP). A third pass uses world-axis-aligned bounding-box extents as an orientation proxy and bins each gradeable part as aligned, rotated, or wrong; parts with two near-equal extents are skipped because the proxy cannot distinguish their rotation (ORIENT). The secondary buildability gate runs the native CADCLAW checks: inventory, interference, and floating. The method is versioned with this document; it changes only when this spec changes.</p>
+
+  <h3>Acceptable solution classes and current limitation</h3>
+  <p>The current M3-CRETE key is one resolver-built geometric answer. Per-label optimal assignment already treats repeated same-label parts as interchangeable. ORIENT skips parts when two near-equal axis-aligned bounding-box extents make rotation unobservable to its current proxy; this is a scoring-observability rule, not a declaration of functional rotation equivalence. Those limited rules do not cover every potentially acceptable topology: GAP uses the selected reference's interface graph, and relative POS uses its neighbour graph. A different handed layout, part count, or interface topology can therefore be penalized by the single-reference comparison, and MARB has not established whether such an alternative is functionally acceptable.</p>
+  <p>The v0.10 current-kit audit found no independently validated second complete geometric answer class, so none is declared. Potential alternate layouts remain unvalidated scoring cases, not accepted equivalents and not evidence that one feature tree is uniquely valid. If a future task declares multiple resolver-built classes, MARB will select one complete class for the whole grade rather than cherry-pick a different reference for each metric.</p>
 
   <h2>6. First-run findings (three frontier runs, 2026-05-26)</h2>
   <p>Median placement error under the tight standard. These are one run per cell: hypotheses and a starting line, not a statistically significant ranking.</p>
@@ -95,9 +99,13 @@
   </table>
   <p>At the 5 mm precision a real machine needs, today's frontier AI places about 0% of parts correctly on the absolute scale. The median part is roughly 10 cm off in absolute terms and about 5 cm off relative to its neighbors. Parts land in roughly the correct region, but not at functional precision, and none of these results is buildable yet. The answer-key frame is about 2175 mm wide and the runs' frames are about 2048 mm wide: the models built a slightly smaller machine, which inflates the absolute figures, so the relative metric factors that difference out.</p>
 
-  <h2>7. Planned work</h2>
+  <h2>7. Frontier publication policy</h2>
+  <p>The frontier cells published from 2026-05-26 through 2026-06-11 remain dated v0.9 single-run observations. Effective 2026-08-28, a new frontier cell is published only after at least three independent attempts and three gradeable outputs. A provider seed is recorded where available; otherwise MARB records a distinct independent-run ordinal. Each attempt also records a unique run ID and distinct run-log path and SHA-256 digest; each graded output records its STEP digest, and the grade source identifies the graded run IDs. Attempts and retries within one session never count as separate runs.</p>
+  <p>Repeat-run cells report the median and population standard deviation for GAP, ORIENT, and POS. Attempted and graded counts remain separate so failed exports do not disappear. Task, scoring version, kit, prompt, model/tool, and harness cohort may not be mixed inside one cell.</p>
+
+  <h2>8. Planned work</h2>
   <ol>
-    <li>Statistics with more than one run per cell (median, mean, and standard deviation per cell). The aggregate grader is built and awaits the repeat runs.</li>
+    <li>Populate new frontier cells under the v0.10 repeat-run rule. Retrospective reruns of legacy cells are a separate, budgeted study.</li>
     <li>A random-floor baseline: grade shuffled positions to establish a true floor beneath the current relative median of about 47 mm.</li>
     <li>Principal-axes orientation refinement (OBB or PCA) to catch off-axis rotations the current axis-aligned metric misses.</li>
     <li>A second task on a different machine type, to support a claim of generality.</li>
@@ -105,7 +113,7 @@
   </ol>
 
   <footer>
-    <p>MARB scores are Sunnyday Technologies' own measurements from this published method, on the software versions and dates shown. Each frontier cell is a single run of one task: informational, provided "as is" without warranty, and not a statement about any product's overall quality or fitness for any purpose. Verify independently before relying on them.</p>
+    <p>MARB scores are Sunnyday Technologies' own measurements from this published method, on the software versions and dates shown. Legacy frontier cells are dated single runs; later cells follow the repeat-run rule above. Results are informational, provided "as is" without warranty, and are not manufacturability, safety, certification, or readiness evidence or a statement about any product's overall quality or fitness for purpose. Verify independently before relying on them.</p>
     <p>Sunnyday Technologies is independent and not affiliated with, sponsored by, or endorsed by Anthropic, OpenAI, Autodesk, or Dassault Systemes. The CAD parts in the benchmark kits are licensed separately: OpenBuilds-derived motion-system parts under CC BY-SA 4.0, Sunnyday-authored parts under MIT. V-Slot, C-Beam, and V-Wheel are trademarks of OpenBuilds LLC; other product and company names are trademarks of their respective owners, used only to identify the tools tested.</p>
     <p>&copy; 2026 Sunnyday Technologies &middot; MIT-licensed method &middot; <a href="https://marb.cadclaw.io/">marb.cadclaw.io</a></p>
   </footer>

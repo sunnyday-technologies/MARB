@@ -24,8 +24,10 @@ COLUMNS = [
     ("model", "Model"),
     ("tool", "Tool"),
     ("cohort", "Effort / cohort"),
+    ("provenance_display", "Task / spec / published"),
+    ("reporting_display", "Reporting / runs"),
     ("gap_display", "GAP median"),
-    ("orient_pct", "ORIENT aligned %"),
+    ("orient_display", "ORIENT aligned"),
     ("pos_display", "POS relative median"),
 ]
 
@@ -42,7 +44,31 @@ def board_dataframe(board):
     )
     out = []
     for r in rows:
-        out.append({label: ("" if r.get(key) is None else r.get(key)) for key, label in COLUMNS})
+        display = dict(r)
+        display["provenance_display"] = " · ".join(
+            str(value) for value in (
+                r.get("task"), r.get("spec_version"), r.get("published_date")
+            ) if value is not None
+        )
+        reporting = r.get("reporting") or {}
+        mode = {
+            "legacy-single-run": "single run",
+            "repeat-run": "median ± population SD",
+            "reference": "reference",
+        }.get(reporting.get("mode"), reporting.get("mode"))
+        reporting_bits = [mode] if mode else []
+        attempted = reporting.get("n_attempted")
+        graded = reporting.get("n_graded")
+        if attempted is not None and graded is not None:
+            reporting_bits.append(f"attempted {attempted} · graded {graded}")
+        seed_ids = reporting.get("seed_ids") or []
+        if seed_ids:
+            reporting_bits.append("runs " + ", ".join(str(seed) for seed in seed_ids))
+        display["reporting_display"] = " · ".join(reporting_bits)
+        out.append({
+            label: ("" if display.get(key) is None else display.get(key))
+            for key, label in COLUMNS
+        })
     return pd.DataFrame(out, columns=[label for _, label in COLUMNS])
 
 
@@ -54,12 +80,15 @@ scoreboard_png = os.path.join(HERE, "marb_scoreboard.png")
 header = f"""
 # MARB — Mechanical Assembly Readiness Benchmark
 
-**Can AI assemble a real machine?** Each run builds the same ~100-part machine
-({board['task']}) from the same blind kit and is graded identically by the
-open-source [CADCLAW]({CADCLAW}) engine. Ranked by **GAP** median, the primary
-functional score.
+**Can AI assemble a real machine?** Every row targets the same ~100-part machine
+({board['task']}), but the runs span versioned blind-kit and harness cohorts.
+Results use the scoring version shown per row and are comparable only within a
+matching kit, prompt, tool, and harness cohort. The open-source
+[CADCLAW]({CADCLAW}) engine grades the exported assemblies. Ranked by **GAP**
+median, the primary functional score.
 
-Scoring **{board['scoring_version']}**. {board['comparability_note']}
+Current method **{board['scoring_version']}**; each row retains its own scoring
+version. Results through **{board['results_through']}**. {board['comparability_note']}
 
 [Source repo]({GITHUB}) · [Project site]({SITE}) · [Benchmark input dataset]({DATASET}) · [Answer key (gated)]({ANSWER_KEY})
 """
@@ -68,14 +97,23 @@ metrics = """
 ### Metrics
 - **GAP** — error between the actual and intended interface gap (median mm). About
   0 mm where parts bolt together, about 1 to 2 mm where parts move. Primary score.
-- **ORIENT** — share of orientation-gradeable (asymmetric) parts in the correct
-  rotation (percent aligned). Symmetric parts are skipped.
+- **ORIENT** — share of parts whose rotation the current axis-aligned
+  bounding-box extent proxy can grade and that are in the correct rotation
+  (percent aligned). Parts with two near-equal extents are skipped because the
+  proxy cannot distinguish their rotation.
 - **POS** — per-part position error versus the answer key after a best-fit rigid
   alignment (median mm, neighbor-relative).
 
 The **frontier** rows are hosted models. The **local** rows are open-weight models
 a shop could run offline; the **sighted** row adds the goal image in-loop. Local and
 sighted cells are anchors in their own cohorts, not head-to-head with the frontier.
+
+The eight existing frontier cells are dated single runs under v0.9. New frontier
+cells published from 2026-08-28 onward require at least three attempted and three
+graded independent runs and report median ± population standard deviation. Failed
+attempts remain registered; attempts or retries within one session are not seeds.
+The publication gate also reconciles stable run IDs, per-attempt run-log digests,
+graded STEP digests, and the exact graded runs carried into the aggregate source.
 """
 
 run_it = f"""
@@ -90,7 +128,7 @@ run_it = f"""
 with gr.Blocks(title="MARB Leaderboard", theme=gr.themes.Soft()) as demo:
     gr.Markdown(header)
     if os.path.exists(scoreboard_png):
-        gr.Image(scoreboard_png, label="MARB v0.9 scoreboard", show_label=False)
+        gr.Image(scoreboard_png, label="MARB scoreboard with run provenance", show_label=False)
     gr.Dataframe(value=df, interactive=False, wrap=True)
     gr.Markdown(metrics)
     gr.Markdown(run_it)

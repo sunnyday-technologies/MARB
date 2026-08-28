@@ -1,13 +1,59 @@
 {
- "_comment": "MARB run registry + provenance manifest. SINGLE SOURCE OF TRUTH for which runs exist and their full version traceability. marb_grade_all.py --manifest reads this: it groups runs by `cell`, grades each `step`, aggregates per cell, and carries `toolchain` + per-seed provenance into marb_v0_9_stats.json. New runs: append an entry (drop the STEP anywhere and point `step` at it, or use the runs/<model>_<driver>_<seed>/ convention). Nothing auto-populates this — a run is a human/agent CAD session; register it here.",
- "schema": "marb_runs.v1",
- "marb_scoring_version": "v0.9",
+ "_comment": "MARB run registry + provenance manifest. SINGLE SOURCE OF TRUTH for which runs exist and their full version traceability. marb_grade_all.py --manifest groups by task and stable cell_id (legacy rows inherit L1-ASSEMBLE and use cell as their compatibility id), grades each step against that task's reference, and carries per-seed provenance into the aggregate. New runs must include run_id, cell_id, task, and a distinct seed. Nothing auto-populates this — a run is a human/agent CAD session; register it here.",
+ "schema": "marb_runs.v2",
+ "default_task": "L1-ASSEMBLE",
+ "legacy_defaults": {
+  "task": "L1-ASSEMBLE",
+  "scoring_version": "v0.9"
+ },
+ "tasks": {
+  "L1-ASSEMBLE": {
+   "rung": "L1",
+   "scoring_version": "v0.10",
+   "reference_step": "tasks/m3_crete/m3_reference_round1.step",
+   "spec": "tasks/m3_crete/m3_reference_assembly.yaml"
+  }
+ },
+ "publication_policy": {
+  "effective_date": "2026-08-28",
+  "frontier_min_distinct_runs": 3,
+  "summary": "median",
+  "spread": "population_std",
+  "legacy_frontier_cell_ids": [
+   "m3-l1-opus47-cadquery-max",
+   "m3-l1-opus47-fusion-max",
+   "m3-l1-fable5-cadquery-ultra",
+   "m3-l1-opus48-fusion-max-v13",
+   "m3-l1-fable5-cadquery-medium",
+   "m3-l1-fable5-cadquery-low",
+   "m3-l1-fable5-cadquery-high",
+   "m3-l1-gpt5-codex-cadquery-max"
+  ],
+  "reference_cell_ids": [
+   "m3-l1-reference-ceiling"
+  ]
+ },
+ "legacy_cell_map": {
+  "_comment": "Compatibility map from stable published cell IDs to display labels used by records created before cell_id was required. New records must carry cell_id directly.",
+  "m3-l1-opus47-cadquery-max": "Opus 4.7 · CadQuery",
+  "m3-l1-opus47-fusion-max": "Opus 4.7 · Fusion",
+  "m3-l1-fable5-cadquery-ultra": "Fable 5 (ultra) · CadQuery",
+  "m3-l1-opus48-fusion-max-v13": "Opus 4.8 · Fusion",
+  "m3-l1-fable5-cadquery-medium": "Fable 5 (medium) · CadQuery",
+  "m3-l1-fable5-cadquery-low": "Fable 5 (low) · CadQuery",
+  "m3-l1-fable5-cadquery-high": "Fable 5 (high) · CadQuery",
+  "m3-l1-gpt5-codex-cadquery-max": "GPT-5 Codex · CadQuery",
+  "m3-l1-local-qwen3-coder-next-mechanics-v2": "Local · qwen3-coder-next (mechanics v2)",
+  "m3-l1-local-qwen3-coder-next-lean-v5": "Local · qwen3-coder-next (lean v5)",
+  "m3-l1-sighted-qwen3-vl-lean-v5": "Sighted · qwen3-vl (lean v5, 8 turns)"
+ },
+ "marb_scoring_version": "v0.10",
  "reference_step": "tasks/m3_crete/m3_reference_round1.step",
  "spec": "tasks/m3_crete/m3_reference_assembly.yaml",
  "grader_toolchain": {
   "_comment": "Versions of the GRADER stack (the product). Same for every run unless overridden per-run. cadclaw bumped 0.8.0 -> 0.9.0 on 2026-05-31: inventory.sig (the basis for every v0.9 positional metric) is BYTE-IDENTICAL between the two, so all v0.9 grades stay mutually comparable; 0.9.0 only ADDS assembly_compiler (native-track inventory/interference/floating gates).",
   "cadclaw": "0.9.0",
-  "marb_scoring": "v0.9",
+  "marb_scoring": "v0.10 (metric bands unchanged; published legacy cells retain v0.9 tags)",
   "step_io": "CadQuery (Python) 2.7.0 / OCP-OpenCASCADE",
   "fea_beam_frame": "PyNiteFEA 2.4.1",
   "fea_solid_mesh": "CalculiX 2.23.0 (not exercised by v0.9 positional metrics)"
@@ -1557,9 +1603,16 @@
    }
   }
  ],
- "_pending_runs_template": {
-  "_comment": "Copy an entry into runs[] when each new STEP lands. Fill driver.version for every tool so the contributing-versions axis stays complete.",
-  "cell": "Opus 4.8 · CadQuery",
+  "_pending_runs_template": {
+   "_comment": "Copy an entry into runs[] for every post-policy attempt. Use outcome=graded only when the STEP appears in the aggregate grade source; otherwise use failed-export. A provider seed is preferred; when none exists, seed is a unique independent-run ordinal, never an attempt or retry within one run. Record SHA-256 digests for the graded artifact and every run log, and fill driver.version exactly.",
+   "run_id": "l1-assemble-opus48-cadquery-01",
+   "cell_id": "m3-l1-opus48-cadquery-v13",
+   "task": "L1-ASSEMBLE",
+   "scoring_version": "v0.10",
+   "track": "frontier",
+   "outcome": "graded",
+   "cohort_id": "frontier-v1",
+   "cell": "Opus 4.8 · CadQuery",
   "seed": "01",
   "model": {
    "name": "Claude Opus 4.8",
@@ -1571,8 +1624,11 @@
    "version": "<exact>"
   },
   "step": "runs/claude-opus-4-8_cadquery_01/export.step",
+  "artifact_sha256": "replace-with-64-lowercase-hex",
   "run_log": "runs/claude-opus-4-8_cadquery_01/run_log.yaml",
-  "kit_version": "v1.3",
+  "run_log_sha256": "replace-with-64-lowercase-hex",
+   "kit_version": "v1.3",
+   "prompt_variant": "frozen-core",
   "client": "Claude Code via the VS Code extension (see harness_environment)",
   "blind_method": "neutral folder, no CLAUDE.md, account memory not in play",
   "timing": {
