@@ -18,5 +18,8 @@ jobs:
           python-version: "3.12"
       - name: Validate board and registry provenance
         run: python scripts/validate_frontier_publication.py
-      - name: Exercise publication-policy regressions
-        run: python -m unittest tests.test_frontier_publication tests.test_task_registry tests.test_eco_invariant tests.test_answer_key_guard tests.test_secret_guard tests.test_cohort_runner -v
+      - name: Exercise publication-policy and fake-only execution regressions
+        # Executor/transport/isolation tests inject provider, sandbox, HTTP, and
+        # Docker command runners; limiter/recipe tests are local/static. CI must
+        # not make provider, model, or Docker calls.
+        run: python -m unittest tests.test_frontier_publication tests.test_task_registry tests.test_eco_invariant tests.test_answer_key_guard tests.test_secret_guard tests.test_cohort_runner tests.test_cohort_executor tests.test_provider_transport tests.test_isolated_container tests.test_run_limiter tests.test_container_recipe -v

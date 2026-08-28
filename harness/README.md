@@ -10,26 +10,27 @@ grader on the exported STEP file: `grader/marb_grade_all.py` for the GAP, ORIENT
 positional metrics, and `grader/grade_native_step.py` for the native gates (inventory,
 interference, floating).
 
-## Change-task cohort planner (no execution)
+## Plan and execute a cohort slot
 
-`cohort_runner.py` is the H2a, standard-library-only planner for `L2-RESOLVE`
-and `L4-ECO`. Its only command is `plan`. It validates the selected task's
-frozen public inputs against the digests in the current registry and emits
-deterministic canonical JSON to stdout for at least three distinct seeds.
-
-H2a does not complete H2. H2 remains open until a separate H2b PR provides the
-explicitly authorized, isolated executor and its execution-specific tests. No
-executor is included or called here.
-
-It does **not** import either execution harness, read environment variables or
-credentials, contact a provider, extract a kit, create a run directory, write a
-file, mutate the registry or board, grade an artifact, or authorize spend. Model
-and driver names are inert cohort labels. Every run slot remains `planned`, with
-null outcome and evidence digests.
+`cohort_runner.py` remains the H2a, standard-library-only planner for
+`L1-ASSEMBLE`, `L2-RESOLVE`, and `L4-ECO`. Its `plan` command validates the
+selected task's frozen public inputs against the current registry and emits
+deterministic canonical JSON for at least three distinct seeds. Planning does
+not read credentials, contact a provider, create run evidence, grade an
+artifact, authorize spend, or mutate the registry or board. Model and driver
+names in a plan are inert labels, and every slot remains `planned` with null
+outcome and evidence digests. In particular, `cell_label` and `model.name` are
+operator-supplied display labels, not identity evidence. A publishable model
+identity must use the exact authorized `model.id` confirmed by the provider
+response; H2b has no alias policy. This release accepts only the byte-bound
+`prompt_variant` value `frozen-core`.
 
 ```powershell
 $sourceRevision = git rev-parse HEAD
-python harness/cohort_runner.py plan `
+$pythonExe = "<absolute-python.exe>"
+$planPath = Join-Path (Get-Location) "canonical-plan.json"
+if ($PSVersionTable.PSVersion -lt [version]"7.4") { throw "PowerShell 7.4+ is required for byte-preserving native stdout redirection" }
+& $pythonExe harness/cohort_runner.py plan `
   --task L4-ECO `
   --source-revision $sourceRevision `
   --cell-id l4-eco-example-cadquery `
@@ -39,34 +40,159 @@ python harness/cohort_runner.py plan `
   --model-name "Example Model" `
   --driver cadquery `
   --driver-version 2.7.0 `
-  --prompt-variant frozen-v012 `
+  --prompt-variant frozen-core `
   --seed-basis independent-run-ordinal `
-  --seed 01 --seed 02 --seed 03
+  --seed 01 --seed 02 --seed 03 > $planPath
+if ($LASTEXITCODE -ne 0) { throw "planner failed; discard the incomplete plan file" }
+$planSha256 = (Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash.ToLowerInvariant()
 ```
 
 The full lowercase source commit must match the checked-out `HEAD`. The planner
-also binds the registry's exact UTF-8/LF-normalized representation, its own
-source, and every selected public input to the plan. It deliberately does not claim that the
-whole working tree is clean or that those bytes belong to `HEAD`; each selected
-input is instead checked against its frozen registry digest. It rejects
-frozen-input drift, unsafe or linked paths,
-duplicate or normalized-alias seeds such as `1` and `01`, and run-ID collisions
-with the registry. Planned output paths are also checked against every
-registered artifact, source, report, and run-log path, using Windows-normalized
-path identities. Because the planner does not create or enumerate `runs/`, a
-future executor must separately reject collisions with unregistered local run
-directories. The planner reads the L4 added part directly from the selected ZIP
-for hash validation but never extracts archive content.
+binds the registry's canonical bytes, its own source, and each selected public
+input. It rejects frozen-input drift, unsafe or linked paths, duplicate or
+normalized-alias seeds such as `1` and `01`, and run-ID/path collisions. The L4
+added part is hash-validated directly inside its ZIP without extraction.
+The plan file must preserve the planner's exact canonical UTF-8 stdout bytes,
+including its final newline. PowerShell 7.4+ preserves native byte streams for
+the native `>` redirection above. Do not pipe through `Out-File`, `Set-Content`, or older
+PowerShell native redirection, which can transcode or add a BOM. This capture is
+external to H2a; the planner itself remains read-only and has no file-write path.
 
-Current task plans truthfully report `blocked-before-execution`. In particular,
-L4 cannot be treated as runnable or gradeable while its immutable gated grading
-revision is absent. A printed or saved plan is not a benchmark attempt, run
-evidence, a score, a publication record, or approval to call a model. A future
-executor must be separately reviewed and authorized, revalidate every input,
-and require the exact independently approved plan digest; a self-digest alone
-is not an authenticity or authorization boundary.
+`cohort_executor.py` is the separate H2b executor. It executes exactly one
+planned slot only after fail-closed readback of:
 
-## One-command run
+- the independently supplied plan SHA-256;
+- a canonical `marb_execution_authorization.v2`, time-bounded and bound to that
+  plan, slot, provider, settings, digest-pinned container, absolute Docker and
+  Git executable identities, source revision, and exact planner, executor,
+  provider-transport, isolation-module, and run-limiter blobs;
+- the independently supplied authorization SHA-256 and exact confirmation
+  literal `EXECUTE_MARB_MODEL_CALLS:<plan-sha256>:<planned-run-id>`; and
+- every frozen input from the authorized commit before provider construction.
+
+For prompt fairness, the provider user message contains only the payload between
+the single exact frozen-brief marker lines `` `=== BEGIN ===` `` and
+`` `=== END ===` ``. Preamble/operator text and the grader suffix are excluded;
+malformed or duplicate markers fail before provider construction. The trusted
+system message is separate, and the delivered payload bytes and digest are
+journaled.
+
+The operator CLI separates preparation from execution:
+`authorization-template` writes a complete local-no-charge payload for human
+review, `seal-authorization` digest-wraps that unchanged canonical payload, and
+`validate-authorization` checks it without Docker/provider/model activity. Only
+`execute`, with the exact confirmation literal, can begin a run. Preparation
+status reports contain output basenames only; execution reports a
+repository-relative `runs/<attempt>` path, and retained failures return
+structured JSON with exit code 2. See [`H2B_EXECUTOR.md`](H2B_EXECUTOR.md) for
+the exact commands and their remaining full-preflight boundary.
+
+The v2 authorization and schema validation bind the normalized absolute Git
+path plus its file SHA-256, not a bare executable name.
+`validate-authorization` validates those declared bindings but does not inspect
+the host executable. Execution preflight verifies the actual host path chain
+and executable file digest, rejecting symlink/reparse points or digest drift.
+Production committed-blob reads use only `authorized_git`; no injected blob
+reader is available on that path. The complete host check is repeated
+immediately before every committed-blob spawn. On Windows, the executor opens
+each path component and the executable with native handles and holds them across
+the hash-to-process-creation interval, closing the hash-to-spawn replacement
+window. Git uses only the authorized absolute path as `argv[0]`, never cwd or
+ambient `PATH` resolution. Commit reads use `--no-replace-objects` with
+`GIT_NO_REPLACE_OBJECTS=1` in a minimal explicit environment. The only
+`safe.directory` value is the exact resolved repository supplied per command,
+never `*`; stdout bytes and elapsed timeout are bounded and fail closed. The run log records only a neutral
+Git executable basename/label and verified SHA-256, not the absolute
+workstation path. The copy/paste no-call template in `H2B_EXECUTOR.md` requires
+both `--git-executable` and `--git-executable-sha256`.
+
+This release's execution policy is **local-no-charge only**. Authorization must
+use `billing_mode: local-no-charge`, `max_cost_usd: null`, and an explicit
+zero-cost attestation. A credential may be named only for an HTTPS endpoint;
+transport is direct with ambient proxies disabled, redirects are rejected, and
+only the sanitized origin is journaled. Metered provider execution is not
+supported until MARB has a frozen provider-specific pre-call price/token
+policy; a provider-reported cost that contradicts the zero-cost attestation
+fails the run. `max_total_turns` is one aggregate ceiling shared by baseline
+and change phases, not a per-phase allowance. Global tool-call, Python-call,
+request/transcript-size, wall-clock, and output limits fail closed. Provider
+`write_file` calls are mediated by the trusted host executor and persist
+validated, bounded model-authored text in the checkout-local attempt workspace.
+For `run_python`, the prior host workspace is mounted read-only and copied into
+a size-capped tmpfs. The untrusted child writes only within tmpfs, and its only
+writable host bind is one precreated, file-size-bounded export file. The image-owned limiter
+additionally bounds entry count, path/depth, per-file size, and aggregate bytes
+before a validated export can replace the read-only prior workspace. The full
+staged input root is read-only at `/marb-input`, with its kit subtree also
+read-only at `/workspace/kit` for frozen-brief compatibility. This is the
+complete staged tree, including root brief/docs, reference images, license, and
+other frozen members; `workspace_inputs.container_root` in the run log is
+`/marb-input`. The authorized wall-clock covers normal work from retained
+allocation through Docker inspect/create/readback/start, provider/tools,
+artifact capture, and successful retained-inventory sealing. Docker
+stop/remove/absence readback instead has a separate bounded 15-second safety
+allowance after failure or deadline; minimal fail-closed journal fallback may
+also run after breach.
+
+Those limits and the authorization apply to one logical slot and its one
+retained attempt, not to an entire cohort or campaign. That scope includes
+`max_cost_usd`, which current local-no-charge policy requires to be null. An
+N=3 or N=9 campaign requires a separately approved aggregate ledger with
+concurrency control before provider calls; H2b does not implement that campaign
+ledger.
+
+For L2/L4, one provider session continues from baseline into the requested
+change. The executor freezes the baseline STEP and deterministic editable-source
+ZIP before revealing the change request, then retains changed equivalents and
+a SHA-256-identified run journal. Failed and partial attempts are retained under
+a UUID-backed run directory, with one permanent canonical claim at
+`runs/.slot-claims/<planned-run-id>.json` preventing a second allocation only
+within the same checkout. Because `runs/` is ignored and checkout-local, the
+claim is not a global lock. Cross-clone and cross-host uniqueness remains the
+responsibility of operator/campaign-ledger coordination and later
+registry/publication validation. The executor does not grade, edit
+`results/marb_runs.json`, update board data, rebuild the site, publish, or
+deploy. L4's planned public-invariant and requested-change reports are
+**grader-owned deferred outputs**; an executor result is
+`completed_ungraded`, never publication evidence by itself.
+
+The run-log `output_contract` uses schema `marb_plan_output_binding.v2`.
+Its `executor_owned_outputs` map lists executor-reserved/bound output paths. It
+does not assert that those files were produced: only `artifacts` entries attest
+successfully captured outputs, and a failed or partial run can retain owned
+paths without nonexistent artifacts.
+
+Each deterministic editable-source ZIP retains every safe regular file in the
+authored workspace regardless of a same-named file in the separate staged input
+tree. Canonical STEP output is excluded; reserved source-manifest,
+execution-status, and `.marb_*` identities fail closed. Capture binds initial
+and final full-file inventories to device/inode/size/mtime plus SHA-256 and
+aborts before target creation if a file is added, removed, replaced, or mutated.
+
+Only text-input cells are currently qualified. The run journal records a
+limited, negative `execution_modality` attestation: provider input is text, no
+native image-view tool is exposed, staged image bytes may be inspected through
+model-authored Python, and `vision_attested` is `false`. Do not label or compare
+these runs as sighted or vision cells. The container implementation is currently
+restricted to Windows Docker Desktop host semantics; Linux and rootless-host
+bind ownership behavior has not been qualified. No image/host pair is qualified
+until a real, no-provider/no-network manual smoke succeeds after an operator has
+built and approved an image digest. CI uses injected fakes and makes no Docker,
+provider, or model calls.
+
+Plans truthfully report `blocked-before-execution` because planning never
+authorizes a call. Task-specific blockers remain enforceable: L2/L4 cannot be
+executed as benchmark attempts until their frozen run-evidence/key gates are
+ready, and L4 cannot be graded until its immutable gated grading revision is
+available. See [`H2B_EXECUTOR.md`](H2B_EXECUTOR.md) for the operator protocol
+and [`container/README.md`](container/README.md) for the reproducible image
+inputs and manual attestation gate.
+
+## Legacy local-anchor builder (not H2b)
+
+The commands below drive `marb_local_harness.py`. They predate the H2b
+authorization, continuity, provenance, and container contract and must not be
+used to claim an H2b or post-policy benchmark attempt.
 
 ```powershell
 # Stage the blind kit once into a neutral folder. The kit has no CLAUDE.md and no answer key:
@@ -197,7 +323,11 @@ supercomputer is remote, so runs still log as the `local_anchor` cell.
 
 ## Related files in this folder
 
-- `cohort_runner.py` — deterministic L2/L4 plan generator; never executes a run.
+- `cohort_runner.py` — deterministic L1/L2/L4 plan generator; never executes a run.
+- `cohort_executor.py` — explicit-authorization, one-slot H2b executor.
+- `isolated_container.py` — digest-pinned, networkless Python sandbox policy.
+- `H2B_EXECUTOR.md` — operator authorization, evidence, and non-publication boundary.
+- `container/` — offline runtime build inputs and attestation instructions.
 - `marb_local_harness.py` — the builder described above.
 - `run_batch.py` — runs a cohort of builds for a prompt-variant study.
 - `BATCH_FINDINGS.md` — the batch and prompt-variant results.

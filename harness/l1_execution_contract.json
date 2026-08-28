@@ -1,0 +1,60 @@
+{
+  "schema": "marb_l1_execution_contract.v1",
+  "task": {
+    "id": "L1-ASSEMBLE",
+    "rung": "L1",
+    "scoring_version": "v0.10",
+    "task_revision": "m3-crete-assembly-r1",
+    "provenance_contract": "l1_assemble.v1",
+    "status": "measured"
+  },
+  "change_request": null,
+  "prompt": {
+    "path": "prompts/standard_prompt.md",
+    "sha256": "103a03a1f02bc2a8d881c461805ef843cdabd9ee4e078201a409549edf9f6561",
+    "bytes": 7206,
+    "hash_mode": "utf8-lf"
+  },
+  "drivers": {
+    "cadquery": {
+      "tool": "CadQuery",
+      "kit_version": "v1.1",
+      "kit": {
+        "path": "kits/m3_cadquery_blind_kit.zip",
+        "sha256": "dcf887c2f9adf4626924db8585596b2eb1a4af3b763dceaed9c3a75d30ee6a30",
+        "bytes": 1216570,
+        "hash_mode": "raw-bytes"
+      },
+      "driver_brief": {
+        "path": "prompts/CADQUERY_DRIVER_BRIEF.md",
+        "sha256": "f80b1f58417a3c531705e23af54d614a4f16eefa84255c3c4bc8ab43ad7403fc",
+        "bytes": 9594,
+        "hash_mode": "utf8-lf"
+      }
+    },
+    "fusion": {
+      "tool": "Autodesk Fusion",
+      "kit_version": "v1.3",
+      "kit": {
+        "path": "kits/m3_fusion_blind_kit_v1.3.zip",
+        "sha256": "7c1bd77d0118c8221c8863ce20c1bb6e3776012bc68b86f64d1b19aec553e9d5",
+        "bytes": 1217545,
+        "hash_mode": "raw-bytes"
+      },
+      "driver_brief": {
+        "path": "prompts/FUSION_DRIVER_BRIEF.md",
+        "sha256": "6bd7386f1eac968dfdde3e1894cc1aa6c1cbfa0d0618a62e8eb5d06f2155d79c",
+        "bytes": 11825,
+        "hash_mode": "utf8-lf"
+      }
+    }
+  },
+  "outputs": {
+    "editable_source_capture": "marb_deterministic_editable_source_zip.v1",
+    "baseline_step": "baseline.step",
+    "baseline_editable_source_zip": "baseline_source.zip",
+    "final_step": "final.step",
+    "final_editable_source_zip": "final_source.zip",
+    "run_log": "run_log.json"
+  }
+}
