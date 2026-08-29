@@ -1,0 +1,41 @@
+{
+  "cadclaw": {
+    "calibration_evidence_path": "harness/container/cadclaw-calibration.fad0dd55.json",
+    "calibration_evidence_sha256": "64956f829563978bcfc229b43c773ab2d67828ca79808df71effa3e37b8c4e84",
+    "commit": "fad0dd552a49a0b32336f1845c2b82873ad6360a",
+    "gate_registry_version": "harness-gates.v1",
+    "gate_spec_version": "0.13.0",
+    "git_tree": "97698a9ac17ab5423326c639e492888f219cafba",
+    "package_source_file_count": 53,
+    "package_source_manifest_sha256": "6b6cfd465cd6b32cc90f7a8631601e63830f130553a2c593b45ab2d8302b6831",
+    "version": "0.10.0"
+  },
+  "contract_id": "marb-v0.13-h2b",
+  "historical_grade_compatibility": {
+    "cadclaw_package_source_manifest_sha256": "42170a1db8b7a11baeebf8c9a20a5bf4497019953e995895e15fc05ba070eff0",
+    "grade_contract_id": "marb_l4_eco_invariant.v0.12.0",
+    "grade_runtime_contract": {
+      "cadclaw_commit": "60fc271f68c8a794a4741f856b2dd4c9878416a6",
+      "cadclaw_version": "0.10.0",
+      "cadquery_ocp_version": "7.8.1.1.post1",
+      "cadquery_version": "2.7.0",
+      "invariant_gate_version": "marb_l4_eco_invariant.v0.12.0",
+      "requested_change_grade_method": "marb_task_local_reference.v0.12"
+    },
+    "runtime_contract_path": "harness/container/runtime-contract.v0.12.json",
+    "runtime_contract_sha256": "fdca4e6e46f71b8fe00ed02ac0d867c882166f534039a77eb60f432fa2f32dee",
+    "task_id": "L4-ECO"
+  },
+  "pin_basis": "marb_v0.13_calibrated_cadclaw_fad0dd55",
+  "runtime": {
+    "cadquery_ocp_version": "7.8.1.1.post1",
+    "cadquery_version": "2.7.0"
+  },
+  "schema": "marb_h2b_runtime_contract.v1",
+  "schemas": {
+    "authorization": "marb_execution_authorization.v3",
+    "image_build_provenance": "marb_h2b_image_build_provenance.v3",
+    "run_log": "marb_executor_run_log.v2"
+  },
+  "status": "source_calibrated_runtime_image_unqualified"
+}

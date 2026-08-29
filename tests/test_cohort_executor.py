@@ -243,6 +243,18 @@ class CohortExecutorTests(unittest.TestCase):
                 / "run_limited.py"
             ).read_bytes(),
         )
+        for relative, source in (
+            ("harness/container/runtime-contract.v0.13.json", EXECUTOR.RUNTIME_CONTRACT_PATH),
+            (
+                "harness/container/runtime-contract.v0.12.json",
+                EXECUTOR.HISTORICAL_RUNTIME_CONTRACT_PATH,
+            ),
+            (
+                "harness/container/cadclaw-calibration.fad0dd55.json",
+                EXECUTOR.CADCLAW_CALIBRATION_PATH,
+            ),
+        ):
+            self.fixture._write_bytes(relative, source.read_bytes())
         git_temporary = tempfile.TemporaryDirectory(
             prefix="marb-authorized-git-test-",
             dir=Path(__file__).resolve().parents[1],
@@ -265,6 +277,15 @@ class CohortExecutorTests(unittest.TestCase):
             "isolated_container": self.fixture.path("harness/isolated_container.py"),
             "provider_transport": self.fixture.path("harness/provider_transport.py"),
             "run_limiter": self.fixture.path("harness/container/run_limited.py"),
+            "runtime_contract": self.fixture.path(
+                "harness/container/runtime-contract.v0.13.json"
+            ),
+            "historical_runtime_contract": self.fixture.path(
+                "harness/container/runtime-contract.v0.12.json"
+            ),
+            "cadclaw_calibration": self.fixture.path(
+                "harness/container/cadclaw-calibration.fad0dd55.json"
+            ),
         }
 
     def ready_plan(self, task_id: str = "L2-RESOLVE") -> dict[str, object]:
@@ -274,7 +295,7 @@ class CohortExecutorTests(unittest.TestCase):
         task["answer_key_status"] = "ready"
         if task_id == "L4-ECO":
             task["gated_distribution_revision"] = "f" * 64
-            task.update(EXECUTOR.EXPECTED_RUNTIME)
+            task.update(EXECUTOR.SUPPORTED_L4_GRADE_CONTRACT)
         self.fixture.write_registry()
         return self.fixture.build(task_id)
 
@@ -353,6 +374,11 @@ class CohortExecutorTests(unittest.TestCase):
                     "provider transport source",
                 )["sha256"],
                 "run_limiter_sha256": limiter_digest,
+                "runtime_contract_sha256": EXECUTOR.RUNTIME_CONTRACT_SHA256,
+                "historical_runtime_contract_sha256": (
+                    EXECUTOR.HISTORICAL_RUNTIME_CONTRACT_SHA256
+                ),
+                "cadclaw_calibration_sha256": EXECUTOR.CADCLAW_CALIBRATION_SHA256,
                 "git_executable": self.git_path_text,
                 "git_executable_sha256": self.git_sha256,
             },
@@ -381,6 +407,7 @@ class CohortExecutorTests(unittest.TestCase):
         self.assertRegex(revision, r"^[0-9a-f]{40}$")
         self.assertEqual(kwargs["cwd"], self.repo)
         self.assertEqual(kwargs["env"]["GIT_NO_REPLACE_OBJECTS"], "1")
+        self.assertEqual(kwargs["env"]["GIT_NO_LAZY_FETCH"], "1")
         self.assertNotIn("PATH", kwargs["env"])
         self.git_process_calls.append((arguments, kwargs))
         return FakeGitProcess(self.fixture.path(public_path).read_bytes())
@@ -597,6 +624,99 @@ class CohortExecutorTests(unittest.TestCase):
                 )
         self.assertFalse((self.repo / "runs").exists())
 
+    def test_runtime_contract_pin_hash_and_calibration_mismatches_fail_closed(self) -> None:
+        plan = self.ready_plan()
+        raw, _digest, _literal = self.authorization(plan)
+        payload = json.loads(raw)["authorization"]
+        cases = (
+            ("runtime_contract", "marb-v0.12-h2b"),
+            ("runtime_contract_sha256", "1" * 64),
+            ("cadclaw_commit", EXECUTOR.SUPPORTED_L4_GRADE_CONTRACT["cadclaw_commit"]),
+            (
+                "cadclaw_source_manifest_sha256",
+                EXECUTOR.HISTORICAL_CADCLAW_SOURCE_MANIFEST_SHA256,
+            ),
+            ("cadclaw_calibration_sha256", "2" * 64),
+            ("cadclaw_pin_basis", "marb_v0.12_frozen_functional_core"),
+        )
+        for key, value in cases:
+            changed = copy.deepcopy(payload)
+            changed["container"][key] = value
+            changed_raw, changed_digest = self.reseal_authorization_payload(changed)
+            with self.subTest(key=key), self.assertRaisesRegex(
+                EXECUTOR.ExecutorError, "runtime|pin basis"
+            ):
+                self.verify_authorization_for_plan(
+                    plan, changed_raw, changed_digest
+                )
+
+    def test_calibration_semantic_mutations_fail_closed_even_if_rehashed(self) -> None:
+        contract = json.loads(EXECUTOR.RUNTIME_CONTRACT_PATH.read_text(encoding="utf-8"))
+        historical = json.loads(
+            EXECUTOR.HISTORICAL_RUNTIME_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+        calibration = json.loads(
+            EXECUTOR.CADCLAW_CALIBRATION_PATH.read_text(encoding="utf-8")
+        )
+        EXECUTOR._validate_runtime_contract_content(
+            contract, historical, calibration
+        )
+
+        mutations = {
+            "incompatible": lambda value: value.__setitem__(
+                "classification", "incompatible"
+            ),
+            "failed-check": lambda value: value.__setitem__(
+                "failed_checks", ["candidate_runtime_exact"]
+            ),
+            "relabeled-scope": lambda value: value.__setitem__(
+                "compatibility_scope", "all CADCLAW behavior"
+            ),
+            "stale-candidate": lambda value: value["source_control"].__setitem__(
+                "candidate_commit", EXECUTOR.FROZEN_CADCLAW_COMMIT
+            ),
+            "wrong-candidate-tree": lambda value: value["source_control"].__setitem__(
+                "candidate_tree", EXECUTOR.FROZEN_CADCLAW_TREE
+            ),
+            "stale-source-manifest": lambda value: value["source_manifests"][
+                "source_to_wheel_inputs"
+            ]["candidate"].__setitem__(
+                "manifest_sha256",
+                EXECUTOR.HISTORICAL_CADCLAW_SOURCE_MANIFEST_SHA256,
+            ),
+            "weakened-overlap-gate": lambda value: value[
+                "configured_harness_calibration"
+            ]["cases"][1]["candidate"].__setitem__("exit_code", 0),
+        }
+        for label, mutate in mutations.items():
+            changed = copy.deepcopy(calibration)
+            mutate(changed)
+            with self.subTest(label=label), self.assertRaises(
+                EXECUTOR.ExecutorError
+            ):
+                EXECUTOR._validate_runtime_contract_content(
+                    contract, historical, changed
+                )
+
+    def test_l4_plan_keeps_exact_historical_grade_contract(self) -> None:
+        plan = self.ready_plan("L4-ECO")
+        self.assertEqual(
+            plan["plan"]["task"]["runtime_contract"],
+            EXECUTOR.SUPPORTED_L4_GRADE_CONTRACT,
+        )
+        EXECUTOR._assert_execution_ready(plan)
+        for key, value in (
+            ("cadclaw_commit", EXECUTOR.EXPECTED_RUNTIME["cadclaw_commit"]),
+            ("invariant_gate_version", "marb_l4_eco_invariant.v0.13.0"),
+            ("requested_change_grade_method", "marb_task_local_reference.v0.13"),
+        ):
+            changed = copy.deepcopy(plan)
+            changed["plan"]["task"]["runtime_contract"][key] = value
+            with self.subTest(key=key), self.assertRaisesRegex(
+                EXECUTOR.ExecutorError, "historical contract"
+            ):
+                EXECUTOR._assert_execution_ready(changed)
+
     def test_git_authorization_rejects_bare_relative_wrong_basename_and_digest(self) -> None:
         plan = self.ready_plan()
         raw, _digest, _literal = self.authorization(plan)
@@ -792,6 +912,45 @@ class CohortExecutorTests(unittest.TestCase):
             result["run_log"]["source"]["git_executable"]["reader"],
             "authorized_git",
         )
+        committed_paths = {
+            call[0][-1].split(":", 1)[1] for call in self.git_process_calls
+        }
+        self.assertTrue(
+            {
+                "harness/container/runtime-contract.v0.13.json",
+                "harness/container/runtime-contract.v0.12.json",
+                "harness/container/cadclaw-calibration.fad0dd55.json",
+            }.issubset(committed_paths)
+        )
+        implementation = result["run_log"]["source"]["implementation"]
+        for key in (
+            "runtime_contract",
+            "historical_runtime_contract",
+            "cadclaw_calibration",
+        ):
+            with self.subTest(key=key):
+                self.assertEqual(implementation[key]["hash_mode"], "raw")
+
+    def test_committed_runtime_evidence_drift_fails_before_provider(self) -> None:
+        plan = self.ready_plan()
+        raw, digest, _literal = self.authorization(plan)
+        authorization = self.verify_authorization_for_plan(plan, raw, digest)
+
+        def drifted_reader(repo_root: Path, revision: str, public_path: str) -> bytes:
+            del repo_root, revision
+            if public_path == "harness/container/cadclaw-calibration.fad0dd55.json":
+                return b'{"classification":"incompatible"}\n'
+            return self.fixture.path(public_path).read_bytes()
+
+        with mock.patch.object(
+            EXECUTOR, "_executing_module_paths", side_effect=self.executing_module_paths
+        ), self.assertRaisesRegex(EXECUTOR.ExecutorError, "exact committed blob"):
+            EXECUTOR._verify_committed_implementation(
+                self.repo,
+                plan["plan"],
+                authorization,
+                drifted_reader,
+            )
 
     def test_current_task_blocker_prevents_run_and_provider_activity(self) -> None:
         plan = self.fixture.build("L4-ECO")

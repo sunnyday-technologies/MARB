@@ -5,12 +5,33 @@ a model, and they do not claim that a real image has been built or qualified.
 """
 from __future__ import annotations
 
+import hashlib
+import inspect
 import json
 import re
+import shutil
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
 from harness import cohort_executor, cohort_runner, isolated_container
+from scripts.calibrate_h2b_cadclaw import (
+    CANDIDATE_COMMIT,
+    FROZEN_COMMIT,
+    NIST_TEST_RUNNER,
+    REVISION_PROBE,
+    SYNTHETIC_GENERATOR,
+    CalibrationError,
+    _LocalGit,
+    _archive_commit,
+    _canonical_json,
+    _new_output_path,
+    _normalize_report,
+    _require_expected_commits,
+    _safe_environment,
+    _snapshot_aggregate,
+)
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -34,6 +55,10 @@ LF_PINNED_INPUTS = (
     "harness/container/run_limited.py",
     "harness/container/Dockerfile",
     "harness/container/requirements.lock",
+    "harness/container/runtime-contract.v0.12.json",
+    "harness/container/runtime-contract.v0.13.json",
+    "harness/container/cadclaw-calibration.fad0dd55.json",
+    "scripts/calibrate_h2b_cadclaw.py",
 )
 
 
@@ -104,7 +129,27 @@ class ContainerRecipeTests(unittest.TestCase):
             text,
         )
         self.assertIn("COPY build-context.sha256 /opt/marb/build-context.sha256", text)
-        self.assertIn("marb_h2b_image_build_provenance.v2", text)
+        self.assertIn("marb_h2b_image_build_provenance.v3", text)
+        self.assertIn(
+            "COPY runtime-contract.v0.13.json /opt/marb/runtime-contract.json",
+            text,
+        )
+        self.assertIn(
+            "COPY cadclaw-calibration.fad0dd55.json /opt/marb/cadclaw-calibration.json",
+            text,
+        )
+        self.assertIn("runtime-contract\\.v0\\.13\\.json", text)
+        self.assertIn("cadclaw-calibration\\.fad0dd55\\.json", text)
+        self.assertIn("'runtime-contract.v0.13.json'", text)
+        self.assertIn("'cadclaw-calibration.fad0dd55.json'", text)
+        self.assertIn("candidate_manifest['files']", text)
+        self.assertIn("GATE_SPEC_VERSION", text)
+        self.assertIn("HARNESS_GATE_REGISTRY.version", text)
+        self.assertNotIn("PLACEHOLDER", text)
+        self.assertNotIn("0" * 64, text)
+        self.assertNotIn(cohort_executor.FROZEN_CADCLAW_COMMIT, text)
+        self.assertNotIn("marb-v0.12-h2b", text)
+        self.assertNotIn("marb_v0.12_frozen_functional_core", text)
         for field in (
             "dockerfile_sha256",
             "context_dockerignore_sha256",
@@ -306,7 +351,7 @@ class ContainerRecipeTests(unittest.TestCase):
         for path in (EXECUTOR_NOTES, HARNESS_NOTES):
             with self.subTest(path=path.name):
                 normalized = " ".join(path.read_text(encoding="utf-8").split())
-                self.assertIn("`marb_execution_authorization.v2`", normalized)
+                self.assertIn("`marb_execution_authorization.v3`", normalized)
                 self.assertIn("normalized absolute", normalized)
                 self.assertIn("schema validation bind", normalized)
                 self.assertIn(
@@ -423,6 +468,139 @@ class ContainerRecipeTests(unittest.TestCase):
         self.assertIn("repository-relative `runs/<attempt>`", notes)
         self.assertIn("`retained_failure`", notes)
         self.assertIn("exits 2", notes)
+
+
+class CadclawCalibrationUtilityTests(unittest.TestCase):
+    """Board-policy-visible regressions for the local calibration utility."""
+
+    def test_calibration_requires_exact_versioned_pins(self) -> None:
+        _require_expected_commits(FROZEN_COMMIT, CANDIDATE_COMMIT)
+        with self.assertRaisesRegex(CalibrationError, "unexpected_frozen_commit"):
+            _require_expected_commits("0" * 40, CANDIDATE_COMMIT)
+        with self.assertRaisesRegex(CalibrationError, "unexpected_candidate_commit"):
+            _require_expected_commits(FROZEN_COMMIT, "f" * 40)
+        with self.assertRaisesRegex(CalibrationError, "unexpected_candidate_commit"):
+            _require_expected_commits(FROZEN_COMMIT, CANDIDATE_COMMIT[:12])
+
+    def test_calibration_output_is_canonical_and_never_overwritten(self) -> None:
+        self.assertEqual(
+            _canonical_json({"z": 1, "a": {"b": True}}),
+            b'{\n  "a": {\n    "b": true\n  },\n  "z": 1\n}\n',
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "evidence.json"
+            self.assertEqual(_new_output_path(target), target)
+            target.write_text("historical evidence\n", encoding="utf-8")
+            with self.assertRaisesRegex(CalibrationError, "output_must_be_new"):
+                _new_output_path(target)
+
+    def test_calibration_snapshot_aggregate_uses_path_sorted_manifest(self) -> None:
+        entries = [("z.step", "2" * 64), ("a.step", "1" * 64)]
+        expected = hashlib.sha256(
+            (f"{'1' * 64}  a.step\n{'2' * 64}  z.step\n").encode("utf-8")
+        ).hexdigest()
+        self.assertEqual(_snapshot_aggregate(entries), expected)
+
+    def test_calibration_report_normalization_retains_gate_semantics(self) -> None:
+        report = {
+            "duration_ms": 1.25,
+            "overall": "fail",
+            "meta": {
+                "rules": "C:\\temp\\case.yaml",
+                "gate_spec_version": "0.13.0",
+                "gate_registry": {"version": "harness-gates.v1"},
+            },
+            "findings": [
+                {
+                    "id": "interference.clip",
+                    "duration_ms": 0.5,
+                    "evidence": {"status": "fail"},
+                }
+            ],
+        }
+        normalized = _normalize_report(report, {"C:\\temp": "<temp>"})
+        self.assertNotIn("duration_ms", normalized)
+        self.assertNotIn("duration_ms", normalized["findings"][0])
+        self.assertEqual(normalized["meta"]["rules"], "<temp>\\case.yaml")
+        self.assertEqual(normalized["meta"]["gate_spec_version"], "0.13.0")
+        self.assertEqual(
+            normalized["meta"]["gate_registry"]["version"], "harness-gates.v1"
+        )
+        self.assertEqual(normalized["findings"][0]["id"], "interference.clip")
+
+    def test_calibration_git_reader_ignores_replace_refs_and_lazy_fetch(self) -> None:
+        git_executable = shutil.which("git")
+        if git_executable is None:
+            self.skipTest("git executable is unavailable")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            def git(*arguments: str) -> bytes:
+                completed = subprocess.run(
+                    [git_executable, "-C", str(root), *arguments],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+                self.assertEqual(
+                    completed.returncode,
+                    0,
+                    completed.stderr.decode(errors="replace"),
+                )
+                return completed.stdout
+
+            git("init", "-q")
+            git("config", "user.name", "Calibration Test")
+            git("config", "user.email", "calibration@example.invalid")
+            fixture = root / "sample.txt"
+            fixture.write_bytes(b"original\n")
+            git("add", "sample.txt")
+            git("commit", "-q", "-m", "original")
+            original_commit = git("rev-parse", "HEAD").decode("ascii").strip()
+            original_tree = git("rev-parse", "HEAD^{tree}").decode("ascii").strip()
+            fixture.write_bytes(b"replacement\n")
+            git("add", "sample.txt")
+            git("commit", "-q", "-m", "replacement")
+            replacement_commit = git("rev-parse", "HEAD").decode("ascii").strip()
+            git("replace", original_commit, replacement_commit)
+
+            environment = _safe_environment(root)
+            self.assertEqual(environment["GIT_NO_LAZY_FETCH"], "1")
+            self.assertEqual(environment["GIT_NO_REPLACE_OBJECTS"], "1")
+            reader = _LocalGit(Path(git_executable).resolve(), root, environment)
+            self.assertEqual(reader.blob(original_commit, "sample.txt"), b"original\n")
+            self.assertEqual(
+                reader.text(
+                    "rev-parse",
+                    f"{original_commit}^{{tree}}",
+                    reason_code="test_tree_lookup_failed",
+                ),
+                original_tree,
+            )
+
+    def test_calibration_helpers_fail_closed_on_socket_network_operations(self) -> None:
+        for helper in (SYNTHETIC_GENERATOR, REVISION_PROBE, NIST_TEST_RUNNER):
+            with self.subTest(helper_sha256=hashlib.sha256(helper.encode()).hexdigest()):
+                self.assertIn("socket.create_connection = blocked", helper)
+                self.assertIn("socket.getaddrinfo = blocked", helper)
+                for method in (
+                    "connect",
+                    "connect_ex",
+                    "send",
+                    "sendall",
+                    "sendto",
+                    "sendmsg",
+                ):
+                    self.assertIn(f'"{method}"', helper)
+
+    def test_calibration_archive_enforces_exact_paths_and_blob_bytes(self) -> None:
+        source = inspect.getsource(_archive_commit)
+        self.assertIn("git_archive_path_set_mismatch", source)
+        self.assertIn("git_archive_blob_identity_mismatch", source)
+        self.assertIn("_sha256_file(extracted)", source)
+        self.assertIn("_sha256_bytes(git.blob(commit, path))", source)
 
 
 if __name__ == "__main__":  # pragma: no cover

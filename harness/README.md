@@ -62,7 +62,7 @@ external to H2a; the planner itself remains read-only and has no file-write path
 planned slot only after fail-closed readback of:
 
 - the independently supplied plan SHA-256;
-- a canonical `marb_execution_authorization.v2`, time-bounded and bound to that
+- a canonical `marb_execution_authorization.v3`, time-bounded and bound to that
   plan, slot, provider, settings, digest-pinned container, absolute Docker and
   Git executable identities, source revision, and exact planner, executor,
   provider-transport, isolation-module, and run-limiter blobs;
@@ -87,7 +87,28 @@ repository-relative `runs/<attempt>` path, and retained failures return
 structured JSON with exit code 2. See [`H2B_EXECUTOR.md`](H2B_EXECUTOR.md) for
 the exact commands and their remaining full-preflight boundary.
 
-The v2 authorization and schema validation bind the normalized absolute Git
+The active H2b execution runtime is `marb-v0.13-h2b`: CADCLAW 0.10.0 at exact
+commit `fad0dd552a49a0b32336f1845c2b82873ad6360a`, gate-spec `0.13.0`, registry
+`harness-gates.v1`, and pin basis
+`marb_v0.13_calibrated_cadclaw_fad0dd55`. Authorization v3 binds the exact
+runtime-contract, source-manifest, and calibration-evidence SHA-256 identities;
+the image records the same identities in `runtime.json`, image labels, and
+`marb_h2b_image_build_provenance.v3`. Run journals use
+`marb_executor_run_log.v2`.
+
+At execution preflight, the active v0.13 contract, preserved v0.12 contract,
+and calibration JSON must each match both the reviewed raw-byte digest and the
+tracked Git blob at the plan's exact `source_revision`. A mutable working-tree
+copy or executor constant cannot substitute for that committed provenance.
+
+This execution-runtime change does not replace the L4 grade contract. L4 keeps
+its historical v0.12 invariant and CADCLAW commit
+`60fc271f68c8a794a4741f856b2dd4c9878416a6`; the v0.13 runtime contract binds
+the calibration evidence supporting only the declared compatibility surface.
+It does not relabel historical evidence or change the task, grader, or answer
+key.
+
+The v3 authorization and schema validation bind the normalized absolute Git
 path plus its file SHA-256, not a bare executable name.
 `validate-authorization` validates those declared bindings but does not inspect
 the host executable. Execution preflight verifies the actual host path chain
@@ -99,7 +120,8 @@ each path component and the executable with native handles and holds them across
 the hash-to-process-creation interval, closing the hash-to-spawn replacement
 window. Git uses only the authorized absolute path as `argv[0]`, never cwd or
 ambient `PATH` resolution. Commit reads use `--no-replace-objects` with
-`GIT_NO_REPLACE_OBJECTS=1` in a minimal explicit environment. The only
+`GIT_NO_REPLACE_OBJECTS=1` and `GIT_NO_LAZY_FETCH=1` in a minimal explicit
+environment. The only
 `safe.directory` value is the exact resolved repository supplied per command,
 never `*`; stdout bytes and elapsed timeout are bounded and fail closed. The run log records only a neutral
 Git executable basename/label and verified SHA-256, not the absolute
@@ -221,16 +243,17 @@ execution-status, and `.marb_*` identities fail closed. Capture binds initial
 and final full-file inventories to device/inode/size/mtime plus SHA-256 and
 aborts before target creation if a file is added, removed, replaced, or mutated.
 
-Only text-input cells are currently qualified. The run journal records a
+H2b currently supports only text-input cells. The run journal records a
 limited, negative `execution_modality` attestation: provider input is text, no
 native image-view tool is exposed, staged image bytes may be inspected through
 model-authored Python, and `vision_attested` is `false`. Do not label or compare
 these runs as sighted or vision cells. The container implementation is currently
 restricted to Windows Docker Desktop host semantics; Linux and rootless-host
-bind ownership behavior has not been qualified. No image/host pair is qualified
+bind ownership behavior has not been qualified. The source calibration and
+versioned contract do not qualify an image. No image/host pair is qualified
 until a real, no-provider/no-network manual smoke succeeds after an operator has
-built and approved an image digest. CI uses injected fakes and makes no Docker,
-provider, or model calls.
+built and approved an exact image RepoDigest and read back its v3 provenance.
+CI uses injected fakes and makes no Docker, provider, or model calls.
 
 Plans truthfully report `blocked-before-execution` because planning never
 authorizes a call. Task-specific blockers remain enforceable: L2/L4 cannot be

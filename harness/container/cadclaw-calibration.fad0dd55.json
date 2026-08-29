@@ -1,0 +1,1464 @@
+{
+  "calibration_id": "cadclaw-fad0dd55-vs-60fc271f-20260829",
+  "calibration_kind": "local_software_compatibility",
+  "checks": [
+    {
+      "id": "source_to_wheel_inputs_frozen_identity",
+      "status": "pass"
+    },
+    {
+      "id": "source_to_wheel_inputs_candidate_identity",
+      "status": "pass"
+    },
+    {
+      "id": "requested_core_source_frozen_identity",
+      "status": "pass"
+    },
+    {
+      "id": "requested_core_source_candidate_identity",
+      "status": "pass"
+    },
+    {
+      "id": "frozen_package_contract_exact",
+      "status": "pass"
+    },
+    {
+      "id": "candidate_package_contract_exact",
+      "status": "pass"
+    },
+    {
+      "id": "package_contract_parity",
+      "status": "pass"
+    },
+    {
+      "id": "frozen_runtime_exact",
+      "status": "pass"
+    },
+    {
+      "id": "candidate_runtime_exact",
+      "status": "pass"
+    },
+    {
+      "id": "cadclaw_loaded_from_frozen_archive",
+      "status": "pass"
+    },
+    {
+      "id": "cadclaw_loaded_from_candidate_archive",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_source_equal_1",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_snapshot_parity_1",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_source_equal_2",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_snapshot_parity_2",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_source_equal_3",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_snapshot_parity_3",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_source_equal_4",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_snapshot_parity_4",
+      "status": "pass"
+    },
+    {
+      "id": "tracked_fixture_snapshot_aggregate_parity",
+      "status": "pass"
+    },
+    {
+      "id": "synthetic_three_solid_part_count",
+      "status": "pass"
+    },
+    {
+      "id": "synthetic_three_solid_snapshot_parity",
+      "status": "pass"
+    },
+    {
+      "id": "frozen_render_smoke",
+      "status": "pass"
+    },
+    {
+      "id": "candidate_render_smoke",
+      "status": "pass"
+    },
+    {
+      "id": "configured_harness_frozen_separated-three-solid_vacuous_baseline",
+      "status": "pass"
+    },
+    {
+      "id": "configured_harness_candidate_separated-three-solid_fail_closed",
+      "status": "pass"
+    },
+    {
+      "id": "configured_harness_frozen_overlap-three-solid_vacuous_baseline",
+      "status": "pass"
+    },
+    {
+      "id": "configured_harness_candidate_overlap-three-solid_fail_closed",
+      "status": "pass"
+    },
+    {
+      "id": "frozen_gate_identity",
+      "status": "pass"
+    },
+    {
+      "id": "candidate_gate_identity",
+      "status": "pass"
+    },
+    {
+      "id": "frozen_nist_roundtrip_integration",
+      "status": "pass"
+    },
+    {
+      "id": "candidate_nist_roundtrip_integration",
+      "status": "pass"
+    }
+  ],
+  "classification": "compatible",
+  "compatibility_scope": "low-level snapshot/grade-input, render-call, and exact NIST roundtrip surfaces; configured-harness report semantics intentionally advance to gate 0.13.0 and harness-gates.v1",
+  "configured_harness_calibration": {
+    "cases": [
+      {
+        "candidate": {
+          "checked": [
+            "interference"
+          ],
+          "exit_code": 0,
+          "finding_ids": [],
+          "gate_registry_aggregate_status": "pass",
+          "gate_registry_version": "harness-gates.v1",
+          "normalized_report_sha256": "c889b467ce6177c24c6f5e7749a0c848ed2dbccc16c9a87c9442da038706d919",
+          "not_checked": [],
+          "overall": "pass",
+          "stderr_present": false
+        },
+        "frozen": {
+          "checked": [],
+          "exit_code": 0,
+          "finding_ids": [],
+          "gate_registry_aggregate_status": null,
+          "gate_registry_version": null,
+          "normalized_report_sha256": "189fd757be7df1b685bc98fb7abd1701a18ca97e0065844650045a0e9273dd2b",
+          "not_checked": [],
+          "overall": "pass",
+          "stderr_present": false
+        },
+        "id": "separated-three-solid",
+        "synthetic_step_sha256": "fab1ebaab508a63727c42447a26b75a01b57a23e3e7252f07c33ab5e5f52fc1c"
+      },
+      {
+        "candidate": {
+          "checked": [
+            "interference"
+          ],
+          "exit_code": 1,
+          "finding_ids": [
+            "interference.clip"
+          ],
+          "gate_registry_aggregate_status": "fail",
+          "gate_registry_version": "harness-gates.v1",
+          "normalized_report_sha256": "9e835b7f53310ad298b0d42a007b2d9ef0530312d9bdf2613f778216a2f74368",
+          "not_checked": [],
+          "overall": "fail",
+          "stderr_present": false
+        },
+        "frozen": {
+          "checked": [],
+          "exit_code": 0,
+          "finding_ids": [],
+          "gate_registry_aggregate_status": null,
+          "gate_registry_version": null,
+          "normalized_report_sha256": "f1316e4ff102954221011393d3bdf4d17e12e0cea1235bdefc18ede0f9b97677",
+          "not_checked": [],
+          "overall": "pass",
+          "stderr_present": false
+        },
+        "id": "overlap-three-solid",
+        "synthetic_step_sha256": "7d0f6607cdcbb8b846112b36f9ccb7e53c493755fe716870e72056ca86db939d"
+      }
+    ],
+    "gate_identity": {
+      "candidate": {
+        "gate_registry": {
+          "ids": [
+            "inventory",
+            "interference",
+            "bom_audit",
+            "claim_audit",
+            "publish_audit",
+            "pmi_present",
+            "roundtrip_step",
+            "orientation",
+            "floating",
+            "color"
+          ],
+          "status": "present",
+          "version": "harness-gates.v1"
+        },
+        "gate_spec_version": "0.13.0"
+      },
+      "frozen": {
+        "gate_registry": {
+          "ids": [],
+          "status": "absent",
+          "version": null
+        },
+        "gate_spec_version": "0.12.0"
+      }
+    },
+    "intentional_versioned_delta": "frozen 0.12 CLI records a vacuous pass with no checked gate; candidate 0.13 executes interference through harness-gates.v1 and fails overlap",
+    "method": "cadclaw harness --only interference --report-format json",
+    "normalization": "duration_ms removed and known temporary paths replaced; all gate semantics, findings, checked sets, registry data, and exit codes retained"
+  },
+  "failed_checks": [],
+  "high_value_files": [
+    {
+      "candidate": {
+        "sha256": "a2772920c192b7253a5345b0b09a92cda1b6f3d11fd5c51eb3305610d29151c3",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "a2772920c192b7253a5345b0b09a92cda1b6f3d11fd5c51eb3305610d29151c3",
+        "status": "present"
+      },
+      "path": "pyproject.toml"
+    },
+    {
+      "candidate": {
+        "sha256": "5cd3bca11c03b7fc8f02ae3e2901112934e86107df3861e1388b28033e0e5c83",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "994c3c38b6e004fa2a56d908d28be8957f6032df615c37d7016a1e048b2b310f",
+        "status": "present"
+      },
+      "path": "cadclaw/__init__.py"
+    },
+    {
+      "candidate": {
+        "sha256": "d4f488e9fb1e90993d750a73009cb7014affe71c309ee0d8bbf8cdac1dd423f2",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "d4f488e9fb1e90993d750a73009cb7014affe71c309ee0d8bbf8cdac1dd423f2",
+        "status": "present"
+      },
+      "path": "cadclaw/roundtrip.py"
+    },
+    {
+      "candidate": {
+        "sha256": "3c61f94393e9ec58ec67eded0213ec7ef79ba31acb7ffd305e1635d524538740",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "77c9a7dcb623fdfefc5680c687081e764f3e2ecc331c9836a89aad72a482789b",
+        "status": "present"
+      },
+      "path": "cadclaw/render.py"
+    },
+    {
+      "candidate": {
+        "sha256": "d3f437339da14349da39aeaa34ab1fc27de84a0f04255e610f42d191db3c7d75",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "63a1a9d75afbf5f3518ed95287cf891e63e30214b46632d7311150ada71709cd",
+        "status": "present"
+      },
+      "path": "cadclaw/pmi.py"
+    },
+    {
+      "candidate": {
+        "sha256": "74cde733b8718a16427cd412f8a6fae2047dcd2b502a1b362710385f487366c8",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "477ca36ea26b3078baaab809b62987eadf211043bb01f946e6edaaf321c50af0",
+        "status": "present"
+      },
+      "path": "cadclaw/harness.py"
+    },
+    {
+      "candidate": {
+        "sha256": "d13a75b5d42423307e5741ef77d4ca243e89133b0684feb67760f68c857dc15b",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": null,
+        "status": "absent"
+      },
+      "path": "cadclaw/gate_registry.py"
+    },
+    {
+      "candidate": {
+        "sha256": "e7ebcdb2f16428c32aaf9037a8123b014463959d5e44ce71f577216f78f22802",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "ba2b39d3d7e59027b7a923155f5655fb279580ee02c5fac47ea6ee00bb8dc72a",
+        "status": "present"
+      },
+      "path": "cadclaw_cli/main.py"
+    },
+    {
+      "candidate": {
+        "sha256": "61bb5366a782896d2c232c36e11febc4628feaa1689690a2f540b34a4eb5afb7",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "74b719910040fedc468749e7a33a04b2db86a88ae5fb62f4c39c814aebde533b",
+        "status": "present"
+      },
+      "path": "cadharness/__init__.py"
+    },
+    {
+      "candidate": {
+        "sha256": "299eccf3e57d70dda90825d9cebfb80de1eb254a622cab533ac97c6224ecd584",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "299eccf3e57d70dda90825d9cebfb80de1eb254a622cab533ac97c6224ecd584",
+        "status": "present"
+      },
+      "path": "tests/test_roundtrip.py"
+    },
+    {
+      "candidate": {
+        "sha256": "20a92edf514ae0989d556f9c7b9f065aed741cfbb361b7fe4cb7938a1eb5c232",
+        "status": "present"
+      },
+      "frozen": {
+        "sha256": "20a92edf514ae0989d556f9c7b9f065aed741cfbb361b7fe4cb7938a1eb5c232",
+        "status": "present"
+      },
+      "path": "tests/fixtures/pmi_semantic/nist_ftc_11_asme1_ap242-e2.stp"
+    }
+  ],
+  "limitations": [
+    "This is software calibration, not a benchmark, grade, or model-selection result.",
+    "No Docker image was built, pulled, pushed, or run; no OCI RepoDigest or runtime image is qualified.",
+    "No model or provider was contacted, no H2b attempt was allocated, and no board or grade was mutated.",
+    "Common Python socket egress APIs are blocked fail-closed, but this is not OS or network-namespace isolation; categorical isolation requires an externally disabled network.",
+    "Render hashes are recorded as smoke evidence and are not treated as cross-version pixel-equivalence gates.",
+    "The NIST fixture is an authored software-qualification input; its use does not imply NIST endorsement or an error-free conformance reference.",
+    "This calibration makes no compliance, manufacturability, physical-validation, durability, or readiness claim."
+  ],
+  "nist_roundtrip_integration": {
+    "candidate": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "status": "pass",
+      "tests_run": 1
+    },
+    "fixture_path": "tests/fixtures/pmi_semantic/nist_ftc_11_asme1_ap242-e2.stp",
+    "fixture_sha256": {
+      "candidate": "20a92edf514ae0989d556f9c7b9f065aed741cfbb361b7fe4cb7938a1eb5c232",
+      "frozen": "20a92edf514ae0989d556f9c7b9f065aed741cfbb361b7fe4cb7938a1eb5c232"
+    },
+    "frozen": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "status": "pass",
+      "tests_run": 1
+    },
+    "test_id": "test_roundtrip.TestNistRoundtripIntegration.test_real_ap242_export_reimport_preserves_geometry_and_pmi"
+  },
+  "not_a_benchmark_or_grade": true,
+  "package_contract": {
+    "candidate": {
+      "dependencies": [
+        "cadquery>=2.7",
+        "cadquery-ocp>=7.8",
+        "Pillow>=10.0",
+        "pyyaml>=6.0",
+        "pydantic>=2.5",
+        "vtk>=9.3"
+      ],
+      "name": "cadclaw",
+      "package_include": [
+        "cadclaw*",
+        "cadclaw_mcp*",
+        "cadclaw_cli*",
+        "cadharness*"
+      ],
+      "requires_python": ">=3.10",
+      "scripts": {
+        "cadclaw": "cadclaw_cli.main:main",
+        "cadclaw-mcp": "cadclaw_mcp.server:main"
+      },
+      "version": "0.10.0"
+    },
+    "expected": {
+      "dependencies": [
+        "cadquery>=2.7",
+        "cadquery-ocp>=7.8",
+        "Pillow>=10.0",
+        "pyyaml>=6.0",
+        "pydantic>=2.5",
+        "vtk>=9.3"
+      ],
+      "name": "cadclaw",
+      "package_include": [
+        "cadclaw*",
+        "cadclaw_mcp*",
+        "cadclaw_cli*",
+        "cadharness*"
+      ],
+      "requires_python": ">=3.10",
+      "scripts": {
+        "cadclaw": "cadclaw_cli.main:main",
+        "cadclaw-mcp": "cadclaw_mcp.server:main"
+      },
+      "version": "0.10.0"
+    },
+    "frozen": {
+      "dependencies": [
+        "cadquery>=2.7",
+        "cadquery-ocp>=7.8",
+        "Pillow>=10.0",
+        "pyyaml>=6.0",
+        "pydantic>=2.5",
+        "vtk>=9.3"
+      ],
+      "name": "cadclaw",
+      "package_include": [
+        "cadclaw*",
+        "cadclaw_mcp*",
+        "cadclaw_cli*",
+        "cadharness*"
+      ],
+      "requires_python": ">=3.10",
+      "scripts": {
+        "cadclaw": "cadclaw_cli.main:main",
+        "cadclaw-mcp": "cadclaw_mcp.server:main"
+      },
+      "version": "0.10.0"
+    }
+  },
+  "probe_summary": {
+    "configured_harness_expected_divergence_status": "pass",
+    "configured_harness_semantics": "intentional_versioned_delta",
+    "low_level_common_surfaces_status": "pass",
+    "required_probe_ids": [
+      "source_to_wheel_input_manifest",
+      "package_and_runtime_contract",
+      "tracked_fixture_snapshot_geometry",
+      "synthetic_three_solid_snapshot_geometry",
+      "synthetic_three_solid_render_step_to_png",
+      "nist_ftc_11_exact_roundtrip_unittest",
+      "configured_harness_separated_interference",
+      "configured_harness_overlap_interference"
+    ],
+    "semantically_identical": false,
+    "source_contract_status": "pass"
+  },
+  "render_step_to_png_smoke": {
+    "candidate": {
+      "bytes": 22755,
+      "dimensions": [
+        200,
+        150
+      ],
+      "sha256": "61c2ad4ccdea35e5a11a19bb2a6499615066653ab1dd56849c3c21892442da5f",
+      "status": "pass"
+    },
+    "expected_dimensions": [
+      200,
+      150
+    ],
+    "frozen": {
+      "bytes": 22755,
+      "dimensions": [
+        200,
+        150
+      ],
+      "sha256": "61c2ad4ccdea35e5a11a19bb2a6499615066653ab1dd56849c3c21892442da5f",
+      "status": "pass"
+    },
+    "input": "synthetic/separated-three-solid.step"
+  },
+  "runtime": {
+    "candidate": {
+      "Pillow": "12.2.0",
+      "PyYAML": "6.0.3",
+      "cadclaw": "0.10.0",
+      "cadquery": "2.7.0",
+      "cadquery-ocp": "7.8.1.1.post1",
+      "pydantic": "2.13.4",
+      "python": "3.11.15",
+      "vtk": "9.3.1"
+    },
+    "expected": {
+      "Pillow": "12.2.0",
+      "PyYAML": "6.0.3",
+      "cadclaw": "0.10.0",
+      "cadquery": "2.7.0",
+      "cadquery-ocp": "7.8.1.1.post1",
+      "pydantic": "2.13.4",
+      "python": "3.11.15",
+      "vtk": "9.3.1"
+    },
+    "frozen": {
+      "Pillow": "12.2.0",
+      "PyYAML": "6.0.3",
+      "cadclaw": "0.10.0",
+      "cadquery": "2.7.0",
+      "cadquery-ocp": "7.8.1.1.post1",
+      "pydantic": "2.13.4",
+      "python": "3.11.15",
+      "vtk": "9.3.1"
+    }
+  },
+  "schema": "marb_h2b_cadclaw_calibration.v1",
+  "snapshot_geometry": {
+    "normalization": "canonical compact sorted JSON of GeometrySnapshot.to_dict with only step_path omitted",
+    "synthetic_three_solid": {
+      "generator_sha256": "9995d299ac1828f3b85129f40f56f8bf3f8ec7c276d25d8133745de1531d33ba",
+      "parity": true,
+      "part_count": {
+        "candidate": 3,
+        "frozen": 3
+      },
+      "snapshot_sha256": {
+        "candidate": "fdfe66800f8a75d022cf6c2e58d60843d764798497dba10456457eaecd28fdc9",
+        "frozen": "fdfe66800f8a75d022cf6c2e58d60843d764798497dba10456457eaecd28fdc9"
+      },
+      "source_step_sha256": "fab1ebaab508a63727c42447a26b75a01b57a23e3e7252f07c33ab5e5f52fc1c"
+    },
+    "tracked_fixture_aggregate": {
+      "algorithm": "path-sorted snapshot sha256, two spaces, POSIX path, LF",
+      "candidate_sha256": "4b59ca9fcfee9d0e2411ce6d4934caf9ccb8354830122eb33600b6e1838b15c1",
+      "frozen_sha256": "4b59ca9fcfee9d0e2411ce6d4934caf9ccb8354830122eb33600b6e1838b15c1",
+      "parity": true
+    },
+    "tracked_fixtures": [
+      {
+        "parity": true,
+        "part_count": {
+          "candidate": 1,
+          "frozen": 1
+        },
+        "path": "examples/m3_crete/generated/ZPMM_6p1_motor_mount_spacer_6mm_holes.step",
+        "snapshot_sha256": {
+          "candidate": "25c66a795e1121fef4f74eae0600ba5f95e5133aebb38dee3674139e086e3c09",
+          "frozen": "25c66a795e1121fef4f74eae0600ba5f95e5133aebb38dee3674139e086e3c09"
+        },
+        "source_bytes_equal": true,
+        "source_sha256": {
+          "candidate": "ddf443baec7ddc42f7f22dc817f6c023538b7bc522930eb6a669f342282b0943",
+          "frozen": "ddf443baec7ddc42f7f22dc817f6c023538b7bc522930eb6a669f342282b0943"
+        }
+      },
+      {
+        "parity": true,
+        "part_count": {
+          "candidate": 1,
+          "frozen": 1
+        },
+        "path": "examples/relative_placement/parts/plate.step",
+        "snapshot_sha256": {
+          "candidate": "fd0e52c229d683ed249f47474086e72a64a18bbdfd290fdcc8c63fa4b1a860cc",
+          "frozen": "fd0e52c229d683ed249f47474086e72a64a18bbdfd290fdcc8c63fa4b1a860cc"
+        },
+        "source_bytes_equal": true,
+        "source_sha256": {
+          "candidate": "0318632ddd9fb62a2539837f968088a53166b454bd86b6aed38a0f43f2923aa8",
+          "frozen": "0318632ddd9fb62a2539837f968088a53166b454bd86b6aed38a0f43f2923aa8"
+        }
+      },
+      {
+        "parity": true,
+        "part_count": {
+          "candidate": 1,
+          "frozen": 1
+        },
+        "path": "examples/relative_placement/parts/rail_x.step",
+        "snapshot_sha256": {
+          "candidate": "6ac50d183f475b759ee5b7b3f9bf2e8d40110227ab53fd3418d9fa81b5d6bf03",
+          "frozen": "6ac50d183f475b759ee5b7b3f9bf2e8d40110227ab53fd3418d9fa81b5d6bf03"
+        },
+        "source_bytes_equal": true,
+        "source_sha256": {
+          "candidate": "4af47e3e191776f83402bdb02d250e3edb2e11e26bbddea6a971803312ef5117",
+          "frozen": "4af47e3e191776f83402bdb02d250e3edb2e11e26bbddea6a971803312ef5117"
+        }
+      },
+      {
+        "parity": true,
+        "part_count": {
+          "candidate": 1,
+          "frozen": 1
+        },
+        "path": "examples/relative_placement/parts/rail_y.step",
+        "snapshot_sha256": {
+          "candidate": "cb7721c72e37f711ba7ce5163c69c21fb79aaf64082992c1434e9eb77e3e76f9",
+          "frozen": "cb7721c72e37f711ba7ce5163c69c21fb79aaf64082992c1434e9eb77e3e76f9"
+        },
+        "source_bytes_equal": true,
+        "source_sha256": {
+          "candidate": "102dc8c91c4eefdd169a6f3d63c2dd34a54c4d5ae0094e6576fb5d4821e457b4",
+          "frozen": "102dc8c91c4eefdd169a6f3d63c2dd34a54c4d5ae0094e6576fb5d4821e457b4"
+        }
+      }
+    ]
+  },
+  "source_control": {
+    "candidate_commit": "fad0dd552a49a0b32336f1845c2b82873ad6360a",
+    "candidate_matches_fetched_origin_main": true,
+    "candidate_tree": "97698a9ac17ab5423326c639e492888f219cafba",
+    "fetch_performed": false,
+    "frozen_commit": "60fc271f68c8a794a4741f856b2dd4c9878416a6",
+    "frozen_is_ancestor_of_candidate": true,
+    "frozen_tree": "6b1cdeade8e6cfe46527d56c0011d05b360daec7",
+    "origin_main_ref": "refs/remotes/origin/main"
+  },
+  "source_manifests": {
+    "algorithm": "path-sorted lowercase-sha256, two spaces, POSIX path, LF",
+    "requested_core_source": {
+      "candidate": {
+        "file_count": 47,
+        "files": [
+          {
+            "path": "cadclaw/__init__.py",
+            "sha256": "5cd3bca11c03b7fc8f02ae3e2901112934e86107df3861e1388b28033e0e5c83"
+          },
+          {
+            "path": "cadclaw/adjacency.py",
+            "sha256": "004bf73c5c8829c5f5c3bb7d645cafb2d81c19fd2578a643c29c292fc609c77e"
+          },
+          {
+            "path": "cadclaw/assembly_compiler.py",
+            "sha256": "21d636c6da107888458735df8d23eaf0316b7410d1f13843e2701005bd51492d"
+          },
+          {
+            "path": "cadclaw/assembly_spec.py",
+            "sha256": "38fa8034651f32c6ff495d752b96737e3a0aa0f1ca223ef86614782222323f38"
+          },
+          {
+            "path": "cadclaw/bbox.py",
+            "sha256": "f79283d219b6e1a222ba358d06600695b6d9cc543add54df1899dcad96eed7d6"
+          },
+          {
+            "path": "cadclaw/bom_audit.py",
+            "sha256": "b756d05e81094207b7d61b481a46c44babcd9a8d404c238bc1a3f2dd5dfc7423"
+          },
+          {
+            "path": "cadclaw/bom_loader.py",
+            "sha256": "d5c2628f2905ae77985ebb6e8b5b2d67d6c386c605af1da270546bc2d0d87eb1"
+          },
+          {
+            "path": "cadclaw/claim_audit.py",
+            "sha256": "0a0c23d6d172871fc59704adc9dd0407c5855891ca8aab112bf4239aec333379"
+          },
+          {
+            "path": "cadclaw/color_check.py",
+            "sha256": "4deb790114f756e6f700ef03871525892807d5aa6c17639736011f071938aa29"
+          },
+          {
+            "path": "cadclaw/component_manifest.py",
+            "sha256": "d05ed4db38ebd36a0a1176a813270b6f79caf5001f9224952cbb2bf6e95d74aa"
+          },
+          {
+            "path": "cadclaw/connector_metadata.py",
+            "sha256": "8a81ce12492e978c7fabc240f527a423c1319e5e0f1216fc304d0267b66ab708"
+          },
+          {
+            "path": "cadclaw/dimensional.py",
+            "sha256": "ac1a07eeba415ebf5e4a01861594340092ee10762a14ae7bb60c2eef33362afc"
+          },
+          {
+            "path": "cadclaw/disassembly.py",
+            "sha256": "d7f297a0a52c2e040053bac52061b898f95f078bfb929c8626f3716b43745fa3"
+          },
+          {
+            "path": "cadclaw/doctor.py",
+            "sha256": "573213524483467c9cc03a7282f1415cb2cbc77e13312e67cf24dd64d9627af2"
+          },
+          {
+            "path": "cadclaw/fea/__init__.py",
+            "sha256": "d7dbfabea06d50bc1f38f54f13c4482cc0d10c5da65e24455054aeefe017fed7"
+          },
+          {
+            "path": "cadclaw/fea/frame_model.py",
+            "sha256": "6b3b996f239bf93664a432fc6db7503731582bf3784cb8f73a537c269e4b9a0e"
+          },
+          {
+            "path": "cadclaw/fea/joint_adequacy.py",
+            "sha256": "f2f92ee0a1c72f3e1f2b93b439b6b61381955ec052e647bc14f983449388a0c2"
+          },
+          {
+            "path": "cadclaw/fea/m3_frame.py",
+            "sha256": "e0b8b441d0bd486e71154f04055d5d1a734372aa5748ef209bee34cd60e28a6d"
+          },
+          {
+            "path": "cadclaw/fea/solver.py",
+            "sha256": "b7bc8b1825b4254f725b902e0cee0fd38c8d91d3620187a24d6cf0bf38a04dc9"
+          },
+          {
+            "path": "cadclaw/fea/visualize.py",
+            "sha256": "d43bbf23564f5288539135a80dc7f6c9a8f5a0a9f5cbcfa94c14872cdc9a40c9"
+          },
+          {
+            "path": "cadclaw/findings.py",
+            "sha256": "8333478ed1bb6491dd00dfb5b50dc13bd9387ac727cc6455130b0f5f5e7fe597"
+          },
+          {
+            "path": "cadclaw/floating.py",
+            "sha256": "b5920dd1de29cc3c42251e0377c0ef48ed871e6a6040fe6d20561e2d5e2bdfee"
+          },
+          {
+            "path": "cadclaw/gate_registry.py",
+            "sha256": "d13a75b5d42423307e5741ef77d4ca243e89133b0684feb67760f68c857dc15b"
+          },
+          {
+            "path": "cadclaw/gate_spec.py",
+            "sha256": "746845ffd57f7adbf03200bef89ae816ba323bfef54525373dffb89730e52ad5"
+          },
+          {
+            "path": "cadclaw/geometry_import.py",
+            "sha256": "b3a6e86689e95a11b1ee9add76e348594530f9dd46f28dbfbe5e4d76a0081b89"
+          },
+          {
+            "path": "cadclaw/harness.py",
+            "sha256": "74cde733b8718a16427cd412f8a6fae2047dcd2b502a1b362710385f487366c8"
+          },
+          {
+            "path": "cadclaw/inspect.py",
+            "sha256": "f2673f336b2e5f6a62e24e6fa098076279322ee8f8c3bf21efa05a174c5ae3f8"
+          },
+          {
+            "path": "cadclaw/interference.py",
+            "sha256": "c8bb8ff47b96459c10686b6633b993cbaeb8a29bbfc8f53cc7daa76d1e55f870"
+          },
+          {
+            "path": "cadclaw/inventory.py",
+            "sha256": "722bf8e025f40d4d3909301a00ff4734117a58b1416752ce587fcfbdb0a3301a"
+          },
+          {
+            "path": "cadclaw/kinematics.py",
+            "sha256": "589a650d9527e4194e5a98597d450f6db134a63764e40f9674593c405ef92fb0"
+          },
+          {
+            "path": "cadclaw/orientation.py",
+            "sha256": "b28368047ce4847dcb4c7497419a8f3fecb41808429ec5507248835c462a8205"
+          },
+          {
+            "path": "cadclaw/parity.py",
+            "sha256": "f6d33d5ca866b4c4b27d988a745d3e563153f75510048be34337ae459e56ae17"
+          },
+          {
+            "path": "cadclaw/pmi.py",
+            "sha256": "d3f437339da14349da39aeaa34ab1fc27de84a0f04255e610f42d191db3c7d75"
+          },
+          {
+            "path": "cadclaw/publish_audit.py",
+            "sha256": "9d743f89ad1f0c6b736acc2842ae7224d86049301957b945e707e377131f4058"
+          },
+          {
+            "path": "cadclaw/render.py",
+            "sha256": "3c61f94393e9ec58ec67eded0213ec7ef79ba31acb7ffd305e1635d524538740"
+          },
+          {
+            "path": "cadclaw/reporters/__init__.py",
+            "sha256": "1bf53c599c4b5108cf0a3270865a253e51d7ea07297f4d3bb5b0462f3f489ef5"
+          },
+          {
+            "path": "cadclaw/reporters/json_writer.py",
+            "sha256": "7f321964842c4e538c9ef3380c10db0fbc2265e479440a61a93afff0f66231c8"
+          },
+          {
+            "path": "cadclaw/reporters/markdown.py",
+            "sha256": "e551144b0b79839043a5109271dbc26dcf9ac9ebb1335ed6c7db0c0872219cf5"
+          },
+          {
+            "path": "cadclaw/reporters/text.py",
+            "sha256": "c89b3be81a9de15e118a44ba1ae2f5f9b81f061cf85e51bbd4dfe5ae3596e4e2"
+          },
+          {
+            "path": "cadclaw/roundtrip.py",
+            "sha256": "d4f488e9fb1e90993d750a73009cb7014affe71c309ee0d8bbf8cdac1dd423f2"
+          },
+          {
+            "path": "cadclaw/rules.py",
+            "sha256": "e7bcbbe52b53cb0b81637dd45127af4756844adabc002b7e5400525fb9253862"
+          },
+          {
+            "path": "cadclaw/tolerance.py",
+            "sha256": "e4dcddfedced8d30bf8ae00a3a51b029ac13bf977b787fbfdc07965a75a51553"
+          },
+          {
+            "path": "cadclaw_cli/__init__.py",
+            "sha256": "fd462b76446c5a56d53913b6085ac1edb2f2c9d2d971be82824c54216b06d48f"
+          },
+          {
+            "path": "cadclaw_cli/__main__.py",
+            "sha256": "212c31094cb7b0b9fcd7c39fe006a80c1f1a058b50b882d9382c714b50de326b"
+          },
+          {
+            "path": "cadclaw_cli/main.py",
+            "sha256": "e7ebcdb2f16428c32aaf9037a8123b014463959d5e44ce71f577216f78f22802"
+          },
+          {
+            "path": "cadharness/__init__.py",
+            "sha256": "61bb5366a782896d2c232c36e11febc4628feaa1689690a2f540b34a4eb5afb7"
+          },
+          {
+            "path": "pyproject.toml",
+            "sha256": "a2772920c192b7253a5345b0b09a92cda1b6f3d11fd5c51eb3305610d29151c3"
+          }
+        ],
+        "manifest_sha256": "b9f01d60aece254108ac20b63aecb05a3194f244c1db1939c2554b4df38599e7"
+      },
+      "frozen": {
+        "file_count": 45,
+        "files": [
+          {
+            "path": "cadclaw/__init__.py",
+            "sha256": "994c3c38b6e004fa2a56d908d28be8957f6032df615c37d7016a1e048b2b310f"
+          },
+          {
+            "path": "cadclaw/adjacency.py",
+            "sha256": "004bf73c5c8829c5f5c3bb7d645cafb2d81c19fd2578a643c29c292fc609c77e"
+          },
+          {
+            "path": "cadclaw/assembly_compiler.py",
+            "sha256": "21d636c6da107888458735df8d23eaf0316b7410d1f13843e2701005bd51492d"
+          },
+          {
+            "path": "cadclaw/assembly_spec.py",
+            "sha256": "38fa8034651f32c6ff495d752b96737e3a0aa0f1ca223ef86614782222323f38"
+          },
+          {
+            "path": "cadclaw/bom_audit.py",
+            "sha256": "b756d05e81094207b7d61b481a46c44babcd9a8d404c238bc1a3f2dd5dfc7423"
+          },
+          {
+            "path": "cadclaw/bom_loader.py",
+            "sha256": "d5c2628f2905ae77985ebb6e8b5b2d67d6c386c605af1da270546bc2d0d87eb1"
+          },
+          {
+            "path": "cadclaw/claim_audit.py",
+            "sha256": "caa37c1981e51435e65f373cff12310c9db587398d1b8928fa8d58111686ee44"
+          },
+          {
+            "path": "cadclaw/color_check.py",
+            "sha256": "6ea5e56b17791d2737e49e0f564a449f5e3b7e90ca08a45d63c9a2685576c002"
+          },
+          {
+            "path": "cadclaw/component_manifest.py",
+            "sha256": "d05ed4db38ebd36a0a1176a813270b6f79caf5001f9224952cbb2bf6e95d74aa"
+          },
+          {
+            "path": "cadclaw/connector_metadata.py",
+            "sha256": "8a81ce12492e978c7fabc240f527a423c1319e5e0f1216fc304d0267b66ab708"
+          },
+          {
+            "path": "cadclaw/dimensional.py",
+            "sha256": "ac1a07eeba415ebf5e4a01861594340092ee10762a14ae7bb60c2eef33362afc"
+          },
+          {
+            "path": "cadclaw/disassembly.py",
+            "sha256": "d7f297a0a52c2e040053bac52061b898f95f078bfb929c8626f3716b43745fa3"
+          },
+          {
+            "path": "cadclaw/doctor.py",
+            "sha256": "573213524483467c9cc03a7282f1415cb2cbc77e13312e67cf24dd64d9627af2"
+          },
+          {
+            "path": "cadclaw/fea/__init__.py",
+            "sha256": "d7dbfabea06d50bc1f38f54f13c4482cc0d10c5da65e24455054aeefe017fed7"
+          },
+          {
+            "path": "cadclaw/fea/frame_model.py",
+            "sha256": "6b3b996f239bf93664a432fc6db7503731582bf3784cb8f73a537c269e4b9a0e"
+          },
+          {
+            "path": "cadclaw/fea/joint_adequacy.py",
+            "sha256": "f2f92ee0a1c72f3e1f2b93b439b6b61381955ec052e647bc14f983449388a0c2"
+          },
+          {
+            "path": "cadclaw/fea/m3_frame.py",
+            "sha256": "e0b8b441d0bd486e71154f04055d5d1a734372aa5748ef209bee34cd60e28a6d"
+          },
+          {
+            "path": "cadclaw/fea/solver.py",
+            "sha256": "b7bc8b1825b4254f725b902e0cee0fd38c8d91d3620187a24d6cf0bf38a04dc9"
+          },
+          {
+            "path": "cadclaw/fea/visualize.py",
+            "sha256": "d43bbf23564f5288539135a80dc7f6c9a8f5a0a9f5cbcfa94c14872cdc9a40c9"
+          },
+          {
+            "path": "cadclaw/findings.py",
+            "sha256": "8333478ed1bb6491dd00dfb5b50dc13bd9387ac727cc6455130b0f5f5e7fe597"
+          },
+          {
+            "path": "cadclaw/floating.py",
+            "sha256": "a7b7d0390829c78ba132d27cea061f7d4003503ceae845e1b8c61d928a91cda5"
+          },
+          {
+            "path": "cadclaw/gate_spec.py",
+            "sha256": "2cdd422830b198b7763aa18fbf228e6fcdbb906df737548046831e2e659267fc"
+          },
+          {
+            "path": "cadclaw/geometry_import.py",
+            "sha256": "b3a6e86689e95a11b1ee9add76e348594530f9dd46f28dbfbe5e4d76a0081b89"
+          },
+          {
+            "path": "cadclaw/harness.py",
+            "sha256": "477ca36ea26b3078baaab809b62987eadf211043bb01f946e6edaaf321c50af0"
+          },
+          {
+            "path": "cadclaw/inspect.py",
+            "sha256": "8de6d2ecc3f387d60e0b6904b91e071583eb82adafd856c92f3e0f70e30677b2"
+          },
+          {
+            "path": "cadclaw/interference.py",
+            "sha256": "5ef6ff8c7e835cc381ff37d14b176b6160b1556c6cab63ef432ac645da042c3e"
+          },
+          {
+            "path": "cadclaw/inventory.py",
+            "sha256": "c66f2a5d5c23c71b4a9b337ebcf64ce6e7009f041b3a5277a9d7026cc5f7ad6a"
+          },
+          {
+            "path": "cadclaw/kinematics.py",
+            "sha256": "589a650d9527e4194e5a98597d450f6db134a63764e40f9674593c405ef92fb0"
+          },
+          {
+            "path": "cadclaw/orientation.py",
+            "sha256": "1e699a53b188fa979967158a5ab91eddc0d90235c09af024e3c11c96de2eedc3"
+          },
+          {
+            "path": "cadclaw/parity.py",
+            "sha256": "f6d33d5ca866b4c4b27d988a745d3e563153f75510048be34337ae459e56ae17"
+          },
+          {
+            "path": "cadclaw/pmi.py",
+            "sha256": "63a1a9d75afbf5f3518ed95287cf891e63e30214b46632d7311150ada71709cd"
+          },
+          {
+            "path": "cadclaw/publish_audit.py",
+            "sha256": "173b4b987aeb1fc3ce7091f7a3ab8e1409371b0dd70ccaf52b0a0304a4448724"
+          },
+          {
+            "path": "cadclaw/render.py",
+            "sha256": "77c9a7dcb623fdfefc5680c687081e764f3e2ecc331c9836a89aad72a482789b"
+          },
+          {
+            "path": "cadclaw/reporters/__init__.py",
+            "sha256": "1bf53c599c4b5108cf0a3270865a253e51d7ea07297f4d3bb5b0462f3f489ef5"
+          },
+          {
+            "path": "cadclaw/reporters/json_writer.py",
+            "sha256": "7f321964842c4e538c9ef3380c10db0fbc2265e479440a61a93afff0f66231c8"
+          },
+          {
+            "path": "cadclaw/reporters/markdown.py",
+            "sha256": "e551144b0b79839043a5109271dbc26dcf9ac9ebb1335ed6c7db0c0872219cf5"
+          },
+          {
+            "path": "cadclaw/reporters/text.py",
+            "sha256": "c89b3be81a9de15e118a44ba1ae2f5f9b81f061cf85e51bbd4dfe5ae3596e4e2"
+          },
+          {
+            "path": "cadclaw/roundtrip.py",
+            "sha256": "d4f488e9fb1e90993d750a73009cb7014affe71c309ee0d8bbf8cdac1dd423f2"
+          },
+          {
+            "path": "cadclaw/rules.py",
+            "sha256": "eb8133aceb8bbdd2526d19a245206886d8b6d6a92e4fa491f1eebafff5d4f4bc"
+          },
+          {
+            "path": "cadclaw/tolerance.py",
+            "sha256": "e4dcddfedced8d30bf8ae00a3a51b029ac13bf977b787fbfdc07965a75a51553"
+          },
+          {
+            "path": "cadclaw_cli/__init__.py",
+            "sha256": "fd462b76446c5a56d53913b6085ac1edb2f2c9d2d971be82824c54216b06d48f"
+          },
+          {
+            "path": "cadclaw_cli/__main__.py",
+            "sha256": "212c31094cb7b0b9fcd7c39fe006a80c1f1a058b50b882d9382c714b50de326b"
+          },
+          {
+            "path": "cadclaw_cli/main.py",
+            "sha256": "ba2b39d3d7e59027b7a923155f5655fb279580ee02c5fac47ea6ee00bb8dc72a"
+          },
+          {
+            "path": "cadharness/__init__.py",
+            "sha256": "74b719910040fedc468749e7a33a04b2db86a88ae5fb62f4c39c814aebde533b"
+          },
+          {
+            "path": "pyproject.toml",
+            "sha256": "a2772920c192b7253a5345b0b09a92cda1b6f3d11fd5c51eb3305610d29151c3"
+          }
+        ],
+        "manifest_sha256": "d6fbf9fd3bcd3b9a94eeee6e8e08f8d62d5439479e61c89aba70997bb7414e37"
+      },
+      "scope": [
+        "cadclaw",
+        "cadclaw_cli",
+        "cadharness",
+        "pyproject.toml"
+      ]
+    },
+    "source_to_wheel_inputs": {
+      "candidate": {
+        "file_count": 53,
+        "files": [
+          {
+            "path": "LICENSE",
+            "sha256": "8df961d5b9ecf5264c6dc4e853f8900aee161fac232d924f59c7772fa7a769ad"
+          },
+          {
+            "path": "README.md",
+            "sha256": "32a2e69511a81cf9cff2c0227d84134606f2244197db4b077824943a65f2bd9f"
+          },
+          {
+            "path": "cadclaw/__init__.py",
+            "sha256": "5cd3bca11c03b7fc8f02ae3e2901112934e86107df3861e1388b28033e0e5c83"
+          },
+          {
+            "path": "cadclaw/adjacency.py",
+            "sha256": "004bf73c5c8829c5f5c3bb7d645cafb2d81c19fd2578a643c29c292fc609c77e"
+          },
+          {
+            "path": "cadclaw/assembly_compiler.py",
+            "sha256": "21d636c6da107888458735df8d23eaf0316b7410d1f13843e2701005bd51492d"
+          },
+          {
+            "path": "cadclaw/assembly_spec.py",
+            "sha256": "38fa8034651f32c6ff495d752b96737e3a0aa0f1ca223ef86614782222323f38"
+          },
+          {
+            "path": "cadclaw/bbox.py",
+            "sha256": "f79283d219b6e1a222ba358d06600695b6d9cc543add54df1899dcad96eed7d6"
+          },
+          {
+            "path": "cadclaw/bom_audit.py",
+            "sha256": "b756d05e81094207b7d61b481a46c44babcd9a8d404c238bc1a3f2dd5dfc7423"
+          },
+          {
+            "path": "cadclaw/bom_loader.py",
+            "sha256": "d5c2628f2905ae77985ebb6e8b5b2d67d6c386c605af1da270546bc2d0d87eb1"
+          },
+          {
+            "path": "cadclaw/claim_audit.py",
+            "sha256": "0a0c23d6d172871fc59704adc9dd0407c5855891ca8aab112bf4239aec333379"
+          },
+          {
+            "path": "cadclaw/color_check.py",
+            "sha256": "4deb790114f756e6f700ef03871525892807d5aa6c17639736011f071938aa29"
+          },
+          {
+            "path": "cadclaw/component_manifest.py",
+            "sha256": "d05ed4db38ebd36a0a1176a813270b6f79caf5001f9224952cbb2bf6e95d74aa"
+          },
+          {
+            "path": "cadclaw/connector_metadata.py",
+            "sha256": "8a81ce12492e978c7fabc240f527a423c1319e5e0f1216fc304d0267b66ab708"
+          },
+          {
+            "path": "cadclaw/dimensional.py",
+            "sha256": "ac1a07eeba415ebf5e4a01861594340092ee10762a14ae7bb60c2eef33362afc"
+          },
+          {
+            "path": "cadclaw/disassembly.py",
+            "sha256": "d7f297a0a52c2e040053bac52061b898f95f078bfb929c8626f3716b43745fa3"
+          },
+          {
+            "path": "cadclaw/doctor.py",
+            "sha256": "573213524483467c9cc03a7282f1415cb2cbc77e13312e67cf24dd64d9627af2"
+          },
+          {
+            "path": "cadclaw/fea/__init__.py",
+            "sha256": "d7dbfabea06d50bc1f38f54f13c4482cc0d10c5da65e24455054aeefe017fed7"
+          },
+          {
+            "path": "cadclaw/fea/frame_model.py",
+            "sha256": "6b3b996f239bf93664a432fc6db7503731582bf3784cb8f73a537c269e4b9a0e"
+          },
+          {
+            "path": "cadclaw/fea/joint_adequacy.py",
+            "sha256": "f2f92ee0a1c72f3e1f2b93b439b6b61381955ec052e647bc14f983449388a0c2"
+          },
+          {
+            "path": "cadclaw/fea/m3_frame.py",
+            "sha256": "e0b8b441d0bd486e71154f04055d5d1a734372aa5748ef209bee34cd60e28a6d"
+          },
+          {
+            "path": "cadclaw/fea/solver.py",
+            "sha256": "b7bc8b1825b4254f725b902e0cee0fd38c8d91d3620187a24d6cf0bf38a04dc9"
+          },
+          {
+            "path": "cadclaw/fea/visualize.py",
+            "sha256": "d43bbf23564f5288539135a80dc7f6c9a8f5a0a9f5cbcfa94c14872cdc9a40c9"
+          },
+          {
+            "path": "cadclaw/findings.py",
+            "sha256": "8333478ed1bb6491dd00dfb5b50dc13bd9387ac727cc6455130b0f5f5e7fe597"
+          },
+          {
+            "path": "cadclaw/floating.py",
+            "sha256": "b5920dd1de29cc3c42251e0377c0ef48ed871e6a6040fe6d20561e2d5e2bdfee"
+          },
+          {
+            "path": "cadclaw/gate_registry.py",
+            "sha256": "d13a75b5d42423307e5741ef77d4ca243e89133b0684feb67760f68c857dc15b"
+          },
+          {
+            "path": "cadclaw/gate_spec.py",
+            "sha256": "746845ffd57f7adbf03200bef89ae816ba323bfef54525373dffb89730e52ad5"
+          },
+          {
+            "path": "cadclaw/geometry_import.py",
+            "sha256": "b3a6e86689e95a11b1ee9add76e348594530f9dd46f28dbfbe5e4d76a0081b89"
+          },
+          {
+            "path": "cadclaw/harness.py",
+            "sha256": "74cde733b8718a16427cd412f8a6fae2047dcd2b502a1b362710385f487366c8"
+          },
+          {
+            "path": "cadclaw/inspect.py",
+            "sha256": "f2673f336b2e5f6a62e24e6fa098076279322ee8f8c3bf21efa05a174c5ae3f8"
+          },
+          {
+            "path": "cadclaw/interference.py",
+            "sha256": "c8bb8ff47b96459c10686b6633b993cbaeb8a29bbfc8f53cc7daa76d1e55f870"
+          },
+          {
+            "path": "cadclaw/inventory.py",
+            "sha256": "722bf8e025f40d4d3909301a00ff4734117a58b1416752ce587fcfbdb0a3301a"
+          },
+          {
+            "path": "cadclaw/kinematics.py",
+            "sha256": "589a650d9527e4194e5a98597d450f6db134a63764e40f9674593c405ef92fb0"
+          },
+          {
+            "path": "cadclaw/orientation.py",
+            "sha256": "b28368047ce4847dcb4c7497419a8f3fecb41808429ec5507248835c462a8205"
+          },
+          {
+            "path": "cadclaw/parity.py",
+            "sha256": "f6d33d5ca866b4c4b27d988a745d3e563153f75510048be34337ae459e56ae17"
+          },
+          {
+            "path": "cadclaw/pmi.py",
+            "sha256": "d3f437339da14349da39aeaa34ab1fc27de84a0f04255e610f42d191db3c7d75"
+          },
+          {
+            "path": "cadclaw/publish_audit.py",
+            "sha256": "9d743f89ad1f0c6b736acc2842ae7224d86049301957b945e707e377131f4058"
+          },
+          {
+            "path": "cadclaw/render.py",
+            "sha256": "3c61f94393e9ec58ec67eded0213ec7ef79ba31acb7ffd305e1635d524538740"
+          },
+          {
+            "path": "cadclaw/reporters/__init__.py",
+            "sha256": "1bf53c599c4b5108cf0a3270865a253e51d7ea07297f4d3bb5b0462f3f489ef5"
+          },
+          {
+            "path": "cadclaw/reporters/json_writer.py",
+            "sha256": "7f321964842c4e538c9ef3380c10db0fbc2265e479440a61a93afff0f66231c8"
+          },
+          {
+            "path": "cadclaw/reporters/markdown.py",
+            "sha256": "e551144b0b79839043a5109271dbc26dcf9ac9ebb1335ed6c7db0c0872219cf5"
+          },
+          {
+            "path": "cadclaw/reporters/text.py",
+            "sha256": "c89b3be81a9de15e118a44ba1ae2f5f9b81f061cf85e51bbd4dfe5ae3596e4e2"
+          },
+          {
+            "path": "cadclaw/roundtrip.py",
+            "sha256": "d4f488e9fb1e90993d750a73009cb7014affe71c309ee0d8bbf8cdac1dd423f2"
+          },
+          {
+            "path": "cadclaw/rules.py",
+            "sha256": "e7bcbbe52b53cb0b81637dd45127af4756844adabc002b7e5400525fb9253862"
+          },
+          {
+            "path": "cadclaw/tolerance.py",
+            "sha256": "e4dcddfedced8d30bf8ae00a3a51b029ac13bf977b787fbfdc07965a75a51553"
+          },
+          {
+            "path": "cadclaw_cli/__init__.py",
+            "sha256": "fd462b76446c5a56d53913b6085ac1edb2f2c9d2d971be82824c54216b06d48f"
+          },
+          {
+            "path": "cadclaw_cli/__main__.py",
+            "sha256": "212c31094cb7b0b9fcd7c39fe006a80c1f1a058b50b882d9382c714b50de326b"
+          },
+          {
+            "path": "cadclaw_cli/main.py",
+            "sha256": "e7ebcdb2f16428c32aaf9037a8123b014463959d5e44ce71f577216f78f22802"
+          },
+          {
+            "path": "cadclaw_mcp/README.md",
+            "sha256": "9a71262a07d342dd6ae8e0278d0c810fe1a4ef788144a1086ab25e17d3e15d64"
+          },
+          {
+            "path": "cadclaw_mcp/__init__.py",
+            "sha256": "1d6070f69538ebb91022d20b61a220120d7ab6e8147e872d0c053d3b98619a98"
+          },
+          {
+            "path": "cadclaw_mcp/__main__.py",
+            "sha256": "84d2e320e5467db3c105ae565ffee271029c5a7048fbf98a739af8e2a4d967e3"
+          },
+          {
+            "path": "cadclaw_mcp/server.py",
+            "sha256": "7aa09ffcf76c2bcc87b08acbde6a1e2f1cd21055c6681c1b85b85cfb07d1bf7a"
+          },
+          {
+            "path": "cadharness/__init__.py",
+            "sha256": "61bb5366a782896d2c232c36e11febc4628feaa1689690a2f540b34a4eb5afb7"
+          },
+          {
+            "path": "pyproject.toml",
+            "sha256": "a2772920c192b7253a5345b0b09a92cda1b6f3d11fd5c51eb3305610d29151c3"
+          }
+        ],
+        "manifest_sha256": "6b6cfd465cd6b32cc90f7a8631601e63830f130553a2c593b45ab2d8302b6831"
+      },
+      "frozen": {
+        "file_count": 51,
+        "files": [
+          {
+            "path": "LICENSE",
+            "sha256": "8df961d5b9ecf5264c6dc4e853f8900aee161fac232d924f59c7772fa7a769ad"
+          },
+          {
+            "path": "README.md",
+            "sha256": "37fe8abf88d6f17f82f932166776df4d6f7fe59e3cec070fbd156bd416b49a78"
+          },
+          {
+            "path": "cadclaw/__init__.py",
+            "sha256": "994c3c38b6e004fa2a56d908d28be8957f6032df615c37d7016a1e048b2b310f"
+          },
+          {
+            "path": "cadclaw/adjacency.py",
+            "sha256": "004bf73c5c8829c5f5c3bb7d645cafb2d81c19fd2578a643c29c292fc609c77e"
+          },
+          {
+            "path": "cadclaw/assembly_compiler.py",
+            "sha256": "21d636c6da107888458735df8d23eaf0316b7410d1f13843e2701005bd51492d"
+          },
+          {
+            "path": "cadclaw/assembly_spec.py",
+            "sha256": "38fa8034651f32c6ff495d752b96737e3a0aa0f1ca223ef86614782222323f38"
+          },
+          {
+            "path": "cadclaw/bom_audit.py",
+            "sha256": "b756d05e81094207b7d61b481a46c44babcd9a8d404c238bc1a3f2dd5dfc7423"
+          },
+          {
+            "path": "cadclaw/bom_loader.py",
+            "sha256": "d5c2628f2905ae77985ebb6e8b5b2d67d6c386c605af1da270546bc2d0d87eb1"
+          },
+          {
+            "path": "cadclaw/claim_audit.py",
+            "sha256": "caa37c1981e51435e65f373cff12310c9db587398d1b8928fa8d58111686ee44"
+          },
+          {
+            "path": "cadclaw/color_check.py",
+            "sha256": "6ea5e56b17791d2737e49e0f564a449f5e3b7e90ca08a45d63c9a2685576c002"
+          },
+          {
+            "path": "cadclaw/component_manifest.py",
+            "sha256": "d05ed4db38ebd36a0a1176a813270b6f79caf5001f9224952cbb2bf6e95d74aa"
+          },
+          {
+            "path": "cadclaw/connector_metadata.py",
+            "sha256": "8a81ce12492e978c7fabc240f527a423c1319e5e0f1216fc304d0267b66ab708"
+          },
+          {
+            "path": "cadclaw/dimensional.py",
+            "sha256": "ac1a07eeba415ebf5e4a01861594340092ee10762a14ae7bb60c2eef33362afc"
+          },
+          {
+            "path": "cadclaw/disassembly.py",
+            "sha256": "d7f297a0a52c2e040053bac52061b898f95f078bfb929c8626f3716b43745fa3"
+          },
+          {
+            "path": "cadclaw/doctor.py",
+            "sha256": "573213524483467c9cc03a7282f1415cb2cbc77e13312e67cf24dd64d9627af2"
+          },
+          {
+            "path": "cadclaw/fea/__init__.py",
+            "sha256": "d7dbfabea06d50bc1f38f54f13c4482cc0d10c5da65e24455054aeefe017fed7"
+          },
+          {
+            "path": "cadclaw/fea/frame_model.py",
+            "sha256": "6b3b996f239bf93664a432fc6db7503731582bf3784cb8f73a537c269e4b9a0e"
+          },
+          {
+            "path": "cadclaw/fea/joint_adequacy.py",
+            "sha256": "f2f92ee0a1c72f3e1f2b93b439b6b61381955ec052e647bc14f983449388a0c2"
+          },
+          {
+            "path": "cadclaw/fea/m3_frame.py",
+            "sha256": "e0b8b441d0bd486e71154f04055d5d1a734372aa5748ef209bee34cd60e28a6d"
+          },
+          {
+            "path": "cadclaw/fea/solver.py",
+            "sha256": "b7bc8b1825b4254f725b902e0cee0fd38c8d91d3620187a24d6cf0bf38a04dc9"
+          },
+          {
+            "path": "cadclaw/fea/visualize.py",
+            "sha256": "d43bbf23564f5288539135a80dc7f6c9a8f5a0a9f5cbcfa94c14872cdc9a40c9"
+          },
+          {
+            "path": "cadclaw/findings.py",
+            "sha256": "8333478ed1bb6491dd00dfb5b50dc13bd9387ac727cc6455130b0f5f5e7fe597"
+          },
+          {
+            "path": "cadclaw/floating.py",
+            "sha256": "a7b7d0390829c78ba132d27cea061f7d4003503ceae845e1b8c61d928a91cda5"
+          },
+          {
+            "path": "cadclaw/gate_spec.py",
+            "sha256": "2cdd422830b198b7763aa18fbf228e6fcdbb906df737548046831e2e659267fc"
+          },
+          {
+            "path": "cadclaw/geometry_import.py",
+            "sha256": "b3a6e86689e95a11b1ee9add76e348594530f9dd46f28dbfbe5e4d76a0081b89"
+          },
+          {
+            "path": "cadclaw/harness.py",
+            "sha256": "477ca36ea26b3078baaab809b62987eadf211043bb01f946e6edaaf321c50af0"
+          },
+          {
+            "path": "cadclaw/inspect.py",
+            "sha256": "8de6d2ecc3f387d60e0b6904b91e071583eb82adafd856c92f3e0f70e30677b2"
+          },
+          {
+            "path": "cadclaw/interference.py",
+            "sha256": "5ef6ff8c7e835cc381ff37d14b176b6160b1556c6cab63ef432ac645da042c3e"
+          },
+          {
+            "path": "cadclaw/inventory.py",
+            "sha256": "c66f2a5d5c23c71b4a9b337ebcf64ce6e7009f041b3a5277a9d7026cc5f7ad6a"
+          },
+          {
+            "path": "cadclaw/kinematics.py",
+            "sha256": "589a650d9527e4194e5a98597d450f6db134a63764e40f9674593c405ef92fb0"
+          },
+          {
+            "path": "cadclaw/orientation.py",
+            "sha256": "1e699a53b188fa979967158a5ab91eddc0d90235c09af024e3c11c96de2eedc3"
+          },
+          {
+            "path": "cadclaw/parity.py",
+            "sha256": "f6d33d5ca866b4c4b27d988a745d3e563153f75510048be34337ae459e56ae17"
+          },
+          {
+            "path": "cadclaw/pmi.py",
+            "sha256": "63a1a9d75afbf5f3518ed95287cf891e63e30214b46632d7311150ada71709cd"
+          },
+          {
+            "path": "cadclaw/publish_audit.py",
+            "sha256": "173b4b987aeb1fc3ce7091f7a3ab8e1409371b0dd70ccaf52b0a0304a4448724"
+          },
+          {
+            "path": "cadclaw/render.py",
+            "sha256": "77c9a7dcb623fdfefc5680c687081e764f3e2ecc331c9836a89aad72a482789b"
+          },
+          {
+            "path": "cadclaw/reporters/__init__.py",
+            "sha256": "1bf53c599c4b5108cf0a3270865a253e51d7ea07297f4d3bb5b0462f3f489ef5"
+          },
+          {
+            "path": "cadclaw/reporters/json_writer.py",
+            "sha256": "7f321964842c4e538c9ef3380c10db0fbc2265e479440a61a93afff0f66231c8"
+          },
+          {
+            "path": "cadclaw/reporters/markdown.py",
+            "sha256": "e551144b0b79839043a5109271dbc26dcf9ac9ebb1335ed6c7db0c0872219cf5"
+          },
+          {
+            "path": "cadclaw/reporters/text.py",
+            "sha256": "c89b3be81a9de15e118a44ba1ae2f5f9b81f061cf85e51bbd4dfe5ae3596e4e2"
+          },
+          {
+            "path": "cadclaw/roundtrip.py",
+            "sha256": "d4f488e9fb1e90993d750a73009cb7014affe71c309ee0d8bbf8cdac1dd423f2"
+          },
+          {
+            "path": "cadclaw/rules.py",
+            "sha256": "eb8133aceb8bbdd2526d19a245206886d8b6d6a92e4fa491f1eebafff5d4f4bc"
+          },
+          {
+            "path": "cadclaw/tolerance.py",
+            "sha256": "e4dcddfedced8d30bf8ae00a3a51b029ac13bf977b787fbfdc07965a75a51553"
+          },
+          {
+            "path": "cadclaw_cli/__init__.py",
+            "sha256": "fd462b76446c5a56d53913b6085ac1edb2f2c9d2d971be82824c54216b06d48f"
+          },
+          {
+            "path": "cadclaw_cli/__main__.py",
+            "sha256": "212c31094cb7b0b9fcd7c39fe006a80c1f1a058b50b882d9382c714b50de326b"
+          },
+          {
+            "path": "cadclaw_cli/main.py",
+            "sha256": "ba2b39d3d7e59027b7a923155f5655fb279580ee02c5fac47ea6ee00bb8dc72a"
+          },
+          {
+            "path": "cadclaw_mcp/README.md",
+            "sha256": "ca6262588ac571c86624fe9468b601269db0ae4e87bd76f8ca70f4e8b4911517"
+          },
+          {
+            "path": "cadclaw_mcp/__init__.py",
+            "sha256": "1d6070f69538ebb91022d20b61a220120d7ab6e8147e872d0c053d3b98619a98"
+          },
+          {
+            "path": "cadclaw_mcp/__main__.py",
+            "sha256": "84d2e320e5467db3c105ae565ffee271029c5a7048fbf98a739af8e2a4d967e3"
+          },
+          {
+            "path": "cadclaw_mcp/server.py",
+            "sha256": "cadf1ed159e78bc011277bfa37eef32e0c1008a7ff020f73bd9ea0c7fed687f8"
+          },
+          {
+            "path": "cadharness/__init__.py",
+            "sha256": "74b719910040fedc468749e7a33a04b2db86a88ae5fb62f4c39c814aebde533b"
+          },
+          {
+            "path": "pyproject.toml",
+            "sha256": "a2772920c192b7253a5345b0b09a92cda1b6f3d11fd5c51eb3305610d29151c3"
+          }
+        ],
+        "manifest_sha256": "42170a1db8b7a11baeebf8c9a20a5bf4497019953e995895e15fc05ba070eff0"
+      },
+      "scope": [
+        "cadclaw",
+        "cadclaw_cli",
+        "cadclaw_mcp",
+        "cadharness",
+        "pyproject.toml",
+        "README.md",
+        "LICENSE"
+      ]
+    }
+  }
+}

@@ -17,24 +17,38 @@ The executor accepts only an immutable
 the local Docker engine. A tag, local image ID, placeholder digest, or digest
 copied from an unverified build is not authorization.
 
-## Frozen runtime contract
+## Versioned runtime contract
 
-- CADCLAW 0.10.0 from commit
-  `60fc271f68c8a794a4741f856b2dd4c9878416a6`
-- pin basis `marb_v0.12_frozen_functional_core`
+- execution-runtime contract `marb-v0.13-h2b`, with the exact SHA-256 of
+  `runtime-contract.v0.13.json` bound by authorization and the image
+- CADCLAW 0.10.0 from exact commit
+  `fad0dd552a49a0b32336f1845c2b82873ad6360a`
+- CADCLAW gate-spec `0.13.0` and gate registry `harness-gates.v1`
+- pin basis `marb_v0.13_calibrated_cadclaw_fad0dd55`
+- the checked-in `cadclaw-calibration.fad0dd55.json`, its exact SHA-256, and
+  the calibrated CADCLAW package-source manifest SHA-256
 - CadQuery 2.7.0
 - cadquery-ocp 7.8.1.1.post1
 - CPython 3.11 at `/usr/local/bin/python3`
 - exact package resolution in `requirements.lock`
 - exact aggregate-storage limiter source at `/opt/marb/run_limited.py`
 - all wheel bytes bound by an operator-created `wheelhouse.sha256`
-- exact Dockerfile, effective context-control `.dockerignore`, and complete
-  non-self-referential build-context manifest digests
+- exact Dockerfile, effective context-control `.dockerignore`, runtime contract,
+  calibration evidence, and complete non-self-referential build-context
+  manifest digests
 - base image supplied by immutable digest
+- authorization schema `marb_execution_authorization.v3`, run-log schema
+  `marb_executor_run_log.v2`, and image provenance schema
+  `marb_h2b_image_build_provenance.v3`
 
-The CADCLAW commit is the functional core audited for MARB v0.12. It is not the
-latest-upstream claim. A newer CADCLAW revision requires separate calibration
-and a versioned MARB contract change.
+This commit was selected from CADCLAW `main` for this exact contract; it is not
+a floating latest-upstream claim. Its executable source calibration is scoped
+by the checked-in evidence and does not qualify a wheel, OCI image, or host.
+The L4 grader remains frozen separately at
+`marb_l4_eco_invariant.v0.12.0` and CADCLAW commit
+`60fc271f68c8a794a4741f856b2dd4c9878416a6`. The v0.13 execution runtime binds
+the calibrated compatibility relation without modifying that historical grade
+contract or its evidence.
 
 `requirements.lock` records the exact resolution observed for this contract.
 The Linux wheelhouse and final image have not been built or qualified in this
@@ -56,21 +70,26 @@ not put provider credentials in the build context or Docker configuration.
    built from the audited commit. Retain exactly one compatible wheel per lock
    entry and no source distributions; ambiguous duplicate wheels are a review
    blocker.
-3. From the `harness/container/` directory, create a byte-sorted manifest whose
+3. Verify the tracked `runtime-contract.v0.13.json` and
+   `cadclaw-calibration.fad0dd55.json` before later copying them unchanged into
+   the reviewed temporary context. Their hashes must match the active executor
+   constants and the contract's calibration binding; a regenerated,
+   reformatted, stale, or substituted file is a blocker.
+4. From the `harness/container/` directory, create a byte-sorted manifest whose
    entries are relative paths such as
    `wheelhouse/cadquery-2.7.0-...whl`:
 
    ```bash
    find wheelhouse -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > wheelhouse.sha256
-   sha256sum requirements.lock run_limited.py wheelhouse.sha256 wheelhouse/cadclaw-0.10.0-py3-none-any.whl
+   sha256sum requirements.lock run_limited.py runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json wheelhouse.sha256 wheelhouse/cadclaw-0.10.0-py3-none-any.whl
    ```
 
-4. Record those four preliminary SHA-256 values in
+5. Record those six preliminary SHA-256 values in
    `harness/container/private-build-record.json`. That named record is ignored
    by Git and must remain local; it contains public artifact identities and
-   approval metadata only, never credentials. The digests are build arguments,
-   not values to guess or commit as placeholders.
-5. Select a base that provides CPython 3.11, `/bin/sh`, `sha256sum`, and the
+   approval metadata only, never credentials. The digests are reviewed build
+   inputs, not values to guess or commit as placeholders.
+6. Select a base that provides CPython 3.11, `/bin/sh`, `sha256sum`, and the
    native libraries required by CadQuery/OCP. Resolve it to a verified
    `repository@sha256:...` value and record that exact value. The Dockerfile
    rejects a non-digest base reference.
@@ -84,21 +103,24 @@ prevents an ambient file from silently entering an image. Assemble the exact
 temporary allowlisted context below only after review.
 
 The Dockerfile rejects nested/non-wheel inputs and alternate CADCLAW
-candidates, validates the manifest, exact audited CADCLAW wheel, run-limiter
-source, and lock digests, and installs the audited CADCLAW wheel by its verified
-path before resolving the remaining offline lock. It then imports CADCLAW,
-CadQuery, and OCP, checks the exact distribution versions and installed-wheel
-hash, writes the exact `/opt/marb/runtime.json` consumed by preflight, and
-persists the base, lock, limiter, wheelhouse, Dockerfile, effective
-`.dockerignore`, and context-manifest identities in image labels and
-`/opt/marb/build-provenance.json` (`marb_h2b_image_build_provenance.v2`).
+candidates; validates the complete context, exact CADCLAW wheel, run-limiter,
+lock, runtime-contract, and calibration-evidence digests; and installs the
+CADCLAW wheel by its verified path before resolving the remaining offline lock.
+It then imports CADCLAW, CadQuery, and OCP, checks the exact distribution and
+gate/registry versions, installed-wheel integrity, and calibrated source
+identity. It writes the exact `/opt/marb/runtime.json` consumed by preflight and
+persists the runtime contract, CADCLAW commit/pin/source/calibration identities,
+base, lock, limiter, wheelhouse, Dockerfile, effective `.dockerignore`, and
+context-manifest identities in image labels and
+`/opt/marb/build-provenance.json` (`marb_h2b_image_build_provenance.v3`).
 
 ## Offline build
 
 Preload the separately approved base digest. Then assemble a fresh temporary
 context whose build payload contains exactly `Dockerfile`, `requirements.lock`,
-`run_limited.py`, `wheelhouse.sha256`, and the reviewed top-level
-`wheelhouse/*.whl` files, plus `build-context.sha256` and the effective
+`run_limited.py`, `runtime-contract.v0.13.json`,
+`cadclaw-calibration.fad0dd55.json`, `wheelhouse.sha256`, and the reviewed
+top-level `wheelhouse/*.whl` files, plus `build-context.sha256` and the effective
 context-control `.dockerignore`. Write that `.dockerignore` with exact UTF-8/LF
 bytes using these exact allowlist entries and no broader negation:
 
@@ -107,6 +129,8 @@ bytes using these exact allowlist entries and no broader negation:
 !Dockerfile
 !requirements.lock
 !run_limited.py
+!runtime-contract.v0.13.json
+!cadclaw-calibration.fad0dd55.json
 !wheelhouse.sha256
 !build-context.sha256
 !wheelhouse/
@@ -120,11 +144,11 @@ separately recorded digest of `build-context.sha256` binds the manifest itself.
 
 ```bash
 {
-  sha256sum Dockerfile .dockerignore requirements.lock run_limited.py wheelhouse.sha256
+  sha256sum Dockerfile .dockerignore requirements.lock run_limited.py runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json wheelhouse.sha256
   find wheelhouse -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
 } | LC_ALL=C sort -k2 > build-context.sha256
 sha256sum -c build-context.sha256
-sha256sum Dockerfile .dockerignore build-context.sha256
+sha256sum Dockerfile .dockerignore runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json build-context.sha256
 ```
 
 Do not copy `private-build-record.json`, repository configuration, credentials,
@@ -138,6 +162,8 @@ $baseImage = "<approved-python-base>@sha256:<verified-base-digest>"
 $dockerfilePath = Join-Path $contextRoot "Dockerfile"
 $lockSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "requirements.lock") -Algorithm SHA256).Hash.ToLowerInvariant()
 $runLimiterSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "run_limited.py") -Algorithm SHA256).Hash.ToLowerInvariant()
+$runtimeContractSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "runtime-contract.v0.13.json") -Algorithm SHA256).Hash.ToLowerInvariant()
+$calibrationEvidenceSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "cadclaw-calibration.fad0dd55.json") -Algorithm SHA256).Hash.ToLowerInvariant()
 $wheelhouseManifestSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "wheelhouse.sha256") -Algorithm SHA256).Hash.ToLowerInvariant()
 $cadclawWheelSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "wheelhouse/cadclaw-0.10.0-py3-none-any.whl") -Algorithm SHA256).Hash.ToLowerInvariant()
 $dockerfileSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "Dockerfile") -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -145,6 +171,10 @@ $contextDockerignoreSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot ".d
 $buildContextManifestSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "build-context.sha256") -Algorithm SHA256).Hash.ToLowerInvariant()
 $dockerExe = "C:/Program Files/Docker/Docker/resources/bin/docker.exe"
 $dockerExeSha = (Get-FileHash -LiteralPath $dockerExe -Algorithm SHA256).Hash.ToLowerInvariant()
+
+# Compare $runtimeContractSha and $calibrationEvidenceSha with the exact
+# reviewed values in cohort_executor.py and runtime-contract.v0.13.json before
+# invoking Docker. Any mismatch stops qualification.
 
 & $dockerExe build --pull=false --network=none `
   --build-arg "PYTHON_BASE_IMAGE=$baseImage" `
@@ -165,8 +195,9 @@ Building a local tag produces an image ID, not the RepoDigest required by H2b.
 Publishing to an approved registry and pulling it back by digest are separate,
 approval-gated operator actions. After that readback, use the exact RepoDigest
 in the execution authorization and retain the image ID, base digest, lock
-digest, run-limiter digest, wheelhouse-manifest digest, CADCLAW-wheel digest,
-Dockerfile digest, effective context-control `.dockerignore` digest,
+digest, run-limiter digest, runtime-contract digest, calibration-evidence and
+CADCLAW source-manifest digests, wheelhouse-manifest digest, CADCLAW-wheel
+digest, Dockerfile digest, effective context-control `.dockerignore` digest,
 build-context-manifest digest, exact lowercase Docker executable digest, build
 tool/version, and build timestamp in
 `harness/container/private-build-record.json`.
@@ -199,12 +230,15 @@ probe and a separate non-secret staged input root containing its required
   file at `/marb-export/workspace.tar`, bounded by the file-size policy and
   host-side validation; environment keys are exactly
   the allowlisted runtime keys, and no host credential variable is present;
-- CADCLAW/CadQuery/OCP versions and the CADCLAW pin basis match the frozen
-  contract;
-- `/opt/marb/runtime.json`, `/opt/marb/build-provenance.json`, the retained
-  `build-context.sha256`, and the image labels match the reviewed base, lock,
-  wheelhouse-manifest, audited CADCLAW wheel, run-limiter, Dockerfile, effective
-  `.dockerignore`, and context-manifest identities in the private build record;
+- the active `marb-v0.13-h2b` identity and hash, CADCLAW commit/gate/registry,
+  source-manifest and calibration hashes, CADCLAW/CadQuery/OCP versions, and pin
+  basis all match the versioned execution contract;
+- `/opt/marb/runtime.json`, `/opt/marb/runtime-contract.json`,
+  `/opt/marb/cadclaw-calibration.json`, `/opt/marb/build-provenance.json`, the
+  retained `build-context.sha256`, and the image labels match each other and the
+  reviewed runtime-contract, calibration, base, lock, wheelhouse-manifest,
+  CADCLAW wheel, run-limiter, Dockerfile, effective `.dockerignore`, and
+  context-manifest identities in the private build record;
 - stdout/stderr, process, memory, CPU, tmpfs, entry/path/depth, per-file, and
   aggregate-byte limits fail closed; the bounded export is written only to the
   exact precreated file, and its archive members are not extracted or allowed
