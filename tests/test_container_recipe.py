@@ -259,8 +259,16 @@ class ContainerRecipeTests(unittest.TestCase):
         normalized = " ".join(notes.split())
         self.assertIn("exactly one logical slot and its one retained attempt", normalized)
         self.assertIn("`max_cost_usd`", normalized)
-        self.assertIn("aggregate campaign ledger with concurrency control", normalized)
-        self.assertIn("H2b does not implement", normalized)
+        self.assertIn(
+            "separately approved aggregate Nightwatch campaign authorization",
+            normalized,
+        )
+        self.assertIn("reviewed per-slot H2b authorizations", normalized)
+        self.assertIn("H2b does not implement aggregate authority or coordination", normalized)
+        self.assertIn(
+            "implements the separate serial local ledger and concurrency controller",
+            normalized,
+        )
         self.assertIn("`execution_modality`", normalized)
         self.assertIn("no native image-view tool", normalized)
         self.assertIn(

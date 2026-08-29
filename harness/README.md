@@ -137,9 +137,61 @@ also run after breach.
 Those limits and the authorization apply to one logical slot and its one
 retained attempt, not to an entire cohort or campaign. That scope includes
 `max_cost_usd`, which current local-no-charge policy requires to be null. An
-N=3 or N=9 campaign requires a separately approved aggregate ledger with
-concurrency control before provider calls; H2b does not implement that campaign
-ledger.
+N=3 or N=9 campaign still requires a separately approved aggregate campaign
+authorization plus reviewed per-slot H2b authorizations. H2b remains a one-slot
+executor; Nightwatch implements the serial local campaign ledger and
+concurrency control without broadening any slot authorization.
+
+## Nightwatch serial repeat-run controller
+
+[`nightwatch.py`](nightwatch.py) implements the local serial wrapper specified
+in [`NIGHTWATCH.md`](NIGHTWATCH.md). It consumes an immutable,
+independently digest-approved `marb_nightwatch_campaign.v1` envelope. The
+campaign binds a UUID, approval and execution window, one MARB source revision,
+the LF-normalized Nightwatch controller identity, explicit execution and safety
+policy blocks, aggregate slot/failure limits, and an ordered list of
+repository-relative plan and authorization bindings. Multiple normal cohort
+slots may reuse the same plan path only with an identical digest;
+authorization paths remain unique and may not alias a plan path. Every slot
+includes its independently retained plan and authorization digests, exact
+planned run ID, and exact H2b literal
+`EXECUTE_MARB_MODEL_CALLS:<plan-sha256>:<planned-run-id>`.
+
+The automated policy is serial (`max_concurrency: 1`) and accepts only
+loopback, credential-free, local-no-charge slots with an exact zero-cost spend
+attestation. External, credentialed, metered, and otherwise potentially paid
+providers stay manual-only under the one-slot H2b protocol. The controller's
+dedicated fake/local tests exist and are included in board-policy CI. Those
+tests do not invoke a real provider, model, Docker runtime, or network. No real
+provider/model/Docker campaign or runtime qualification has been performed,
+and no completed real campaign is claimed.
+
+Read and reconcile state without writes or execution:
+
+```powershell
+python harness/nightwatch.py status `
+  --campaign <campaign.json> `
+  --expected-campaign-sha256 <campaign-sha256>
+```
+
+Run the currently approved campaign window with the exact aggregate
+confirmation literal:
+
+```powershell
+python harness/nightwatch.py run `
+  --campaign <campaign.json> `
+  --expected-campaign-sha256 <campaign-sha256> `
+  --confirmation-literal "EXECUTE_MARB_NIGHTWATCH:<campaign-sha256>"
+```
+
+Execution uses one OS-backed writer lock, atomically replaced canonical ledger
+snapshots, and append-only sequenced events under
+`runs/.nightwatch/<campaign-uuid>/`. Reconciliation treats H2b's permanent slot
+claims and matching sealed run logs as authoritative. A claimed or retained
+attempt is consumed and is never retried automatically; missing or
+contradictory evidence requires manual review. Nightwatch's strongest success
+state is `completed_ungraded`; it never grades, edits the registry or board,
+rebuilds site source, publishes, or deploys.
 
 For L2/L4, one provider session continues from baseline into the requested
 change. The executor freezes the baseline STEP and deterministic editable-source
@@ -325,6 +377,8 @@ supercomputer is remote, so runs still log as the `local_anchor` cell.
 
 - `cohort_runner.py` — deterministic L1/L2/L4 plan generator; never executes a run.
 - `cohort_executor.py` — explicit-authorization, one-slot H2b executor.
+- `nightwatch.py` — serial, aggregate-approval-bound local campaign controller.
+- `NIGHTWATCH.md` — exact campaign schema, CLI, ledger, and recovery contract.
 - `isolated_container.py` — digest-pinned, networkless Python sandbox policy.
 - `H2B_EXECUTOR.md` — operator authorization, evidence, and non-publication boundary.
 - `container/` — offline runtime build inputs and attestation instructions.
