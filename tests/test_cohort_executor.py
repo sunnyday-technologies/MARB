@@ -900,6 +900,27 @@ class CohortExecutorTests(unittest.TestCase):
         self.assertEqual(log["failure"]["category"], "artifact_failure")
         self.assertNotIn("changed_step", log["artifacts"])
 
+    def test_step_replacement_after_discovery_retains_artifact_failure(self) -> None:
+        plan = self.fixture.build("L1-ASSEMBLE")
+        original_find = EXECUTOR._find_step_output
+
+        def replace_after_discovery(workspace, deadline_check=None):
+            discovered = original_find(workspace, deadline_check=deadline_check)
+            replacement = workspace / ".replacement.step"
+            replacement.write_bytes(discovered.path.read_bytes())
+            os.replace(replacement, discovered.path)
+            return discovered
+
+        with mock.patch.object(
+            EXECUTOR, "_find_step_output", side_effect=replace_after_discovery
+        ), self.assertRaises(EXECUTOR.RunExecutionError) as caught:
+            self.execute_ready(plan)
+
+        log = json.loads((caught.exception.run_dir / "run_log.json").read_text())
+        self.assertEqual(log["failure"]["category"], "artifact_failure")
+        self.assertNotIn("baseline_step", log["artifacts"])
+        self.assertFalse((caught.exception.run_dir / "evidence" / "baseline.step").exists())
+
     def test_partial_run_never_labels_uncaptured_owned_outputs_as_produced(self) -> None:
         class FailOnChangeProvider(FakeProvider):
             def complete(self, messages, tools, settings):
@@ -1499,6 +1520,81 @@ class CohortExecutorTests(unittest.TestCase):
         (workspace / "Export.step").write_bytes(b"ISO-10303-21\n")
         with self.assertRaisesRegex(EXECUTOR.ArtifactError, "exact published spelling"):
             EXECUTOR._find_step_output(workspace)
+
+    def test_discovered_step_copy_accepts_unchanged_identity(self) -> None:
+        workspace = self.repo / "step-copy-unchanged"
+        workspace.mkdir()
+        source = workspace / "export.step"
+        payload = b"ISO-10303-21\nUNCHANGED\n"
+        source.write_bytes(payload)
+        run_dir = self.repo / "runs" / "unchanged"
+        target = run_dir / "evidence" / "baseline.step"
+        target.parent.mkdir(parents=True)
+
+        discovered = EXECUTOR._find_step_output(workspace)
+        self.assertEqual(discovered.path, source)
+        record = EXECUTOR._copy_discovered_step(discovered, target, run_dir)
+
+        self.assertEqual(target.read_bytes(), payload)
+        self.assertEqual(record["sha256"], hashlib.sha256(payload).hexdigest())
+        self.assertEqual(record["bytes"], len(payload))
+
+    def test_discovered_step_copy_rejects_same_inode_rewrite_with_restored_mtime(
+        self,
+    ) -> None:
+        workspace = self.repo / "step-copy-rewritten"
+        workspace.mkdir()
+        source = workspace / "export.step"
+        original = b"ISO-10303-21\nORIGINAL\n"
+        replacement = b"ISO-10303-21\nREPLACED\n"
+        self.assertEqual(len(original), len(replacement))
+        source.write_bytes(original)
+        discovered = EXECUTOR._find_step_output(workspace)
+        original_stat = source.lstat()
+
+        with source.open("r+b") as handle:
+            handle.write(replacement)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.utime(
+            source,
+            ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns),
+        )
+        rewritten_stat = source.lstat()
+        self.assertEqual(rewritten_stat.st_ino, original_stat.st_ino)
+        self.assertEqual(rewritten_stat.st_size, original_stat.st_size)
+        self.assertEqual(rewritten_stat.st_mtime_ns, original_stat.st_mtime_ns)
+
+        run_dir = self.repo / "runs" / "rewritten"
+        target = run_dir / "evidence" / "baseline.step"
+        target.parent.mkdir(parents=True)
+        with self.assertRaises(EXECUTOR.ArtifactError):
+            EXECUTOR._copy_discovered_step(discovered, target, run_dir)
+        self.assertFalse(target.exists())
+
+    def test_discovered_step_copy_rejects_atomic_identical_content_replacement(
+        self,
+    ) -> None:
+        workspace = self.repo / "step-copy-replaced"
+        workspace.mkdir()
+        source = workspace / "export.step"
+        payload = b"ISO-10303-21\nIDENTICAL\n"
+        source.write_bytes(payload)
+        discovered = EXECUTOR._find_step_output(workspace)
+        original_stat = source.lstat()
+        replacement = workspace / "replacement.tmp"
+        replacement.write_bytes(payload)
+        os.replace(replacement, source)
+        replaced_stat = source.lstat()
+        self.assertNotEqual(replaced_stat.st_ino, original_stat.st_ino)
+        self.assertEqual(source.read_bytes(), payload)
+
+        run_dir = self.repo / "runs" / "replaced"
+        target = run_dir / "evidence" / "baseline.step"
+        target.parent.mkdir(parents=True)
+        with self.assertRaises(EXECUTOR.ArtifactError):
+            EXECUTOR._copy_discovered_step(discovered, target, run_dir)
+        self.assertFalse(target.exists())
 
     def test_late_nonzero_response_records_both_violations_with_cost_first(self) -> None:
         immutable_inputs = self.repo / "late-inputs"

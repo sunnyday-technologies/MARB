@@ -35,6 +35,11 @@ release never relabels an older result.
   baseline/changed STEP and deterministic editable-source ZIP evidence, retain
   failed and partial UUID-backed attempts, and record bounded provenance without
   mutating the registry, board, task definitions, site, or deployment workflow.
+- Bind each canonical workspace STEP to the device, inode, mode, size,
+  nanosecond mtime, byte count, and SHA-256 accepted during discovery. Evidence
+  capture reopens the file and requires that exact identity and content through
+  the completed copy; rewrites or path replacements fail closed and leave no
+  retained STEP target.
 - Freeze cohort execution to `prompt_variant: frozen-core` and deliver only the
   payload between the exact backticked BEGIN/END marker lines; exclude driver
   preamble and grader suffix text and journal the delivered payload identity.
