@@ -1,19 +1,24 @@
 """Static regressions for the offline H2b OCI runtime recipe.
 
-These tests parse tracked source only. They never invoke Docker, a provider, or
-a model, and they do not claim that a real image has been built or qualified.
+These tests inspect tracked source and may invoke a local POSIX shell for a
+syntax-only quoting probe. They never invoke Docker, a provider, or a model,
+and they do not claim that a real image has been built or qualified.
 """
 from __future__ import annotations
 
 import hashlib
 import inspect
 import json
+import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
+from unittest import mock
 
 from harness import cohort_executor, cohort_runner, isolated_container
 from scripts.calibrate_h2b_cadclaw import (
@@ -63,6 +68,76 @@ LF_PINNED_INPUTS = (
 
 
 class ContainerRecipeTests(unittest.TestCase):
+    def test_generated_runtime_preflight_source_compiles(self) -> None:
+        docker_identity = {
+            "path": "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+            "sha256": "0" * 64,
+        }
+        container = {
+            "image": "ghcr.io/sunnyday-technologies/marb-worker@sha256:" + "1" * 64,
+            "docker_executable": docker_identity["path"],
+        }
+        with (
+            mock.patch.object(
+                cohort_executor,
+                "_verify_host_docker_executable",
+                return_value=docker_identity,
+            ),
+            mock.patch.object(isolated_container, "IsolatedDockerPython"),
+        ):
+            sandbox = cohort_executor._default_sandbox_factory(
+                REPO,
+                REPO,
+                container,
+                uuid.UUID(int=0),
+            )
+
+        source = sandbox._PREFLIGHT
+        self.assertIsInstance(source, str)
+        compile(source, "<DockerSandboxAdapter._PREFLIGHT>", "exec")
+
+    def test_source_integrity_command_survives_posix_shell_dequoting(self) -> None:
+        shell = os.environ.get("MARB_TEST_POSIX_SHELL") or shutil.which("sh")
+        if shell is None:
+            self.skipTest("POSIX shell is unavailable")
+
+        line = next(
+            (
+                row
+                for row in DOCKERFILE.read_text(encoding="utf-8").splitlines()
+                if "candidate_manifest" in row
+                and row.lstrip().startswith("&& /usr/local/bin/python3 -c \"")
+            ),
+            None,
+        )
+        self.assertIsNotNone(line, "source-integrity Python command is missing")
+        command = line.strip()
+        self.assertTrue(command.startswith("&& "))
+        self.assertTrue(command.endswith(" \\"))
+        command = command.removeprefix("&& ").removesuffix(" \\")
+
+        probe = (
+            f"set -- {command}\n"
+            'test "$#" -eq 3\n'
+            '"$MARB_TEST_PYTHON" -c '
+            "'import sys;compile(sys.argv[1],\"<Dockerfile RUN>\",\"exec\")' \"$3\""
+        )
+        environment = {"MARB_TEST_PYTHON": Path(sys.executable).as_posix()}
+        completed = subprocess.run(
+            [shell, "-c", probe],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=environment,
+            check=False,
+        )
+        stderr = completed.stderr.decode(errors="replace")
+        if "SyntaxError" in stderr:
+            diagnostic = "Dockerfile Python source becomes invalid after POSIX shell dequoting"
+        else:
+            diagnostic = stderr[-1000:] or f"shell probe exited {completed.returncode}"
+        self.assertEqual(completed.returncode, 0, diagnostic)
+
     def test_runtime_manifest_exactly_matches_executor_preflight(self) -> None:
         text = DOCKERFILE.read_text(encoding="utf-8")
         expected = {

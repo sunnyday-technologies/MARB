@@ -4021,7 +4021,7 @@ assert calibration["classification"] == "compatible" and calibration["failed_che
 assert calibration["source_control"]["candidate_commit"] == measured_runtime["cadclaw_commit"]
 candidate_manifest = calibration["source_manifests"]["source_to_wheel_inputs"]["candidate"]
 manifest_bytes = b"".join(
-    (item["sha256"] + "  " + item["path"] + "\n").encode("utf-8")
+    (item["sha256"] + "  " + item["path"] + chr(10)).encode("utf-8")
     for item in candidate_manifest["files"]
 )
 assert len(candidate_manifest["files"]) == candidate_manifest["file_count"] == 53
@@ -4034,10 +4034,10 @@ expected_package_files = {
 }
 cadclaw_distribution = distribution("cadclaw")
 installed_package_files = sorted(
-    str(item).replace("\\", "/")
+    str(item).replace(chr(92), "/")
     for item in (cadclaw_distribution.files or [])
-    if str(item).replace("\\", "/").startswith(package_roots)
-    and str(item).replace("\\", "/").endswith(".py")
+    if str(item).replace(chr(92), "/").startswith(package_roots)
+    and str(item).replace(chr(92), "/").endswith(".py")
 )
 assert installed_package_files == sorted(expected_package_files)
 assert all(

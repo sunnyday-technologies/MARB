@@ -108,6 +108,12 @@ release never relabels an older result.
   `marb_h2b_image_build_provenance.v3`. No real image RepoDigest or passing
   no-provider/no-network runtime smoke is claimed by this source release; the
   image remains unqualified.
+- Repair the v0.13 runtime's nested source quoting at both preflight boundaries:
+  the Dockerfile source-integrity command now survives POSIX shell dequoting,
+  and the executor's generated preflight source preserves manifest newlines and
+  path normalization without escape-layer loss. Compile-only regressions cover
+  both actual generated command payloads without building or qualifying an
+  image.
 - Mediate provider `write_file` requests through the trusted host executor into
   the checkout-local retained workspace. For `run_python`, confine untrusted
   child-process writes to size-capped tmpfs mounts and expose only one
