@@ -56,7 +56,7 @@ site, or deployment action.
   succeeds. Linux and rootless-host bind/file ownership behavior for container
   UID/GID `65532:65532` remains unqualified.
 - No real runtime image digest is shipped or implied by this repository. An
-  operator must build or obtain the frozen image, record its registry
+  operator must build or obtain the versioned image, record its registry
   `RepoDigest`, and complete the no-provider/no-network manual smoke in
   [`container/README.md`](container/README.md) before any real run.
 
@@ -66,7 +66,7 @@ A saved plan is not authorization. Before the provider object can be created,
 the executor requires all of the following to agree exactly:
 
 1. canonical plan bytes and an independently supplied plan SHA-256;
-2. one unexpired `marb_execution_authorization.v2` payload naming the exact
+2. one unexpired `marb_execution_authorization.v3` payload naming the exact
    plan digest and planned run ID;
 3. the authorization's independently supplied SHA-256;
 4. the exact literal
@@ -74,16 +74,18 @@ the executor requires all of the following to agree exactly:
 5. explicit grants for execution, model calls, provider access, and the
    authorized zero-cost policy;
 6. the exact provider protocol/model/endpoint/settings, optional credential
-   environment-variable **name**, immutable container RepoDigest, normalized
-   absolute `docker.exe` path plus its file SHA-256, normalized absolute Git
-   executable path plus its file SHA-256, and exact run-limiter SHA-256;
+   environment-variable **name**, immutable container RepoDigest, active H2b
+   runtime-contract identity and SHA-256, CADCLAW commit/gate/source-manifest/
+   calibration identities, normalized absolute `docker.exe` path plus its file
+   SHA-256, normalized absolute Git executable path plus its file SHA-256, and
+   exact run-limiter SHA-256;
 7. the exact MARB source commit and SHA-256 identities of
    `harness/cohort_runner.py`, `harness/cohort_executor.py`,
    `harness/provider_transport.py`, `harness/isolated_container.py`, and
    `harness/container/run_limited.py`; and
 8. commit-blob readback of every frozen plan input and implementation file.
 
-The v2 authorization and schema validation bind the normalized absolute Git
+The v3 authorization and schema validation bind the normalized absolute Git
 path plus its file SHA-256 independently of the repository being authenticated.
 `validate-authorization` validates those declared bindings but does not inspect
 the host executable. Execution preflight verifies the actual host path chain
@@ -308,8 +310,9 @@ registered and unregistered local collisions,
 including Windows-normalized aliases. Frozen kit members are staged read-only
 and their commit and staged hashes are checked again during execution. STEP and
 deterministic editable-source ZIP artifacts are journaled when created; failed
-and partial attempts are retained rather than overwritten. Run logs bind the plan,
-authorization, implementation, committed inputs, request/response and
+and partial attempts are retained rather than overwritten. Run logs use
+`marb_executor_run_log.v2` and bind the plan, authorization, implementation,
+committed inputs, request/response and
 transcript hashes, actual provider response identity where available, timing,
 usage status, container attestation, events, and the final retained inventory.
 Failed or timed-out provider attempts are `attempted_not_reported`; they are
@@ -362,14 +365,34 @@ silently rescored.
 
 ## CADCLAW runtime pin
 
-H2b authorizes CADCLAW 0.10.0 commit
-`60fc271f68c8a794a4741f856b2dd4c9878416a6`, CadQuery 2.7.0, and
-cadquery-ocp 7.8.1.1.post1 under pin basis
-`marb_v0.12_frozen_functional_core`. The CADCLAW commit is the audited
-functional core frozen by the MARB v0.12 L4 invariant contract; it is not a
-claim that this is the latest CADCLAW `main`. Newer upstream or qualification
-commits, including a fresh candidate, must be independently calibrated and the
-MARB contract versioned before replacing this pin.
+The active execution-runtime contract is `marb-v0.13-h2b`. It authorizes
+CADCLAW 0.10.0 at exact commit
+`fad0dd552a49a0b32336f1845c2b82873ad6360a`, gate-spec version `0.13.0`,
+gate-registry version `harness-gates.v1`, CadQuery 2.7.0, and cadquery-ocp
+7.8.1.1.post1 under pin basis
+`marb_v0.13_calibrated_cadclaw_fad0dd55`. The exact bytes of
+`container/runtime-contract.v0.13.json`, the CADCLAW package-source manifest,
+and `container/cadclaw-calibration.fad0dd55.json` are SHA-256-bound through the
+authorization, image runtime manifest, labels, and v3 build provenance. This is
+an immutable commit-specific contract, not a floating claim about future
+CADCLAW `main`.
+
+Execution preflight also authenticates the active v0.13 contract, preserved
+v0.12 contract, and calibration JSON as raw tracked blobs at the plan's exact
+`source_revision`. Matching mutable local bytes or matching executor constants
+alone are insufficient.
+
+The L4 grading contract is deliberately separate and unchanged. L4 retains
+`marb_l4_eco_invariant.v0.12.0`, CADCLAW commit
+`60fc271f68c8a794a4741f856b2dd4c9878416a6`, and the complete historical v0.12
+grade-runtime identity. The v0.13 execution contract records a narrow,
+calibration-backed compatibility relation to that historical contract; it does
+not relabel or replace the grader, task, answer key, or prior evidence.
+
+The source calibration does not qualify a container. No OCI image/host pair is
+qualified until its exact RepoDigest passes the mandatory no-provider,
+no-network smoke and provenance readback below; no provider or model call may
+precede that gate.
 
 ## CI and manual gates
 

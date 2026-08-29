@@ -39,14 +39,36 @@ except ImportError:  # pragma: no cover - exercised by CLI smoke tests
     import cohort_runner  # type: ignore[no-redef]
 
 
-AUTH_SCHEMA = "marb_execution_authorization.v2"
-RUN_LOG_SCHEMA = "marb_executor_run_log.v1"
+AUTH_SCHEMA = "marb_execution_authorization.v3"
+RUN_LOG_SCHEMA = "marb_executor_run_log.v2"
 EVENT_SCHEMA = "marb_executor_event.v1"
 PROVIDER_PROTOCOL = "openai-compatible-chat-completions"
 EXECUTE_LITERAL_PREFIX = "EXECUTE_MARB_MODEL_CALLS"
+RUNTIME_CONTRACT_ID = "marb-v0.13-h2b"
+RUNTIME_CONTRACT_SHA256 = (
+    "2b5c4d9fef3189d95a6d8e550bb50f2cf7a7d0171000bd130c7bd18ecf9a7d80"
+)
+CADCLAW_SOURCE_MANIFEST_SHA256 = (
+    "6b6cfd465cd6b32cc90f7a8631601e63830f130553a2c593b45ab2d8302b6831"
+)
+HISTORICAL_CADCLAW_SOURCE_MANIFEST_SHA256 = (
+    "42170a1db8b7a11baeebf8c9a20a5bf4497019953e995895e15fc05ba070eff0"
+)
+CADCLAW_CALIBRATION_SHA256 = (
+    "64956f829563978bcfc229b43c773ab2d67828ca79808df71effa3e37b8c4e84"
+)
+HISTORICAL_RUNTIME_CONTRACT_SHA256 = (
+    "fdca4e6e46f71b8fe00ed02ac0d867c882166f534039a77eb60f432fa2f32dee"
+)
 EXPECTED_RUNTIME = {
+    "runtime_contract": RUNTIME_CONTRACT_ID,
+    "runtime_contract_sha256": RUNTIME_CONTRACT_SHA256,
     "cadclaw_version": "0.10.0",
-    "cadclaw_commit": "60fc271f68c8a794a4741f856b2dd4c9878416a6",
+    "cadclaw_commit": "fad0dd552a49a0b32336f1845c2b82873ad6360a",
+    "cadclaw_gate_spec_version": "0.13.0",
+    "cadclaw_gate_registry_version": "harness-gates.v1",
+    "cadclaw_source_manifest_sha256": CADCLAW_SOURCE_MANIFEST_SHA256,
+    "cadclaw_calibration_sha256": CADCLAW_CALIBRATION_SHA256,
     "cadquery_version": "2.7.0",
     "cadquery_ocp_version": "7.8.1.1.post1",
 }
@@ -63,7 +85,35 @@ EXPECTED_CONTAINER_ENV_KEYS = sorted(
         "PATH",
     }
 )
-CADCLAW_PIN_BASIS = "marb_v0.12_frozen_functional_core"
+CADCLAW_PIN_BASIS = "marb_v0.13_calibrated_cadclaw_fad0dd55"
+CADCLAW_CALIBRATION_ID = "cadclaw-fad0dd55-vs-60fc271f-20260829"
+CADCLAW_CALIBRATION_SCOPE = (
+    "low-level snapshot/grade-input, render-call, and exact NIST roundtrip "
+    "surfaces; configured-harness report semantics intentionally advance "
+    "to gate 0.13.0 and harness-gates.v1"
+)
+FROZEN_CADCLAW_COMMIT = "60fc271f68c8a794a4741f856b2dd4c9878416a6"
+FROZEN_CADCLAW_TREE = "6b1cdeade8e6cfe46527d56c0011d05b360daec7"
+CURRENT_CADCLAW_TREE = "97698a9ac17ab5423326c639e492888f219cafba"
+SUPPORTED_L4_GRADE_CONTRACT = {
+    "cadclaw_version": "0.10.0",
+    "cadclaw_commit": FROZEN_CADCLAW_COMMIT,
+    "cadquery_version": "2.7.0",
+    "cadquery_ocp_version": "7.8.1.1.post1",
+    "invariant_gate_version": "marb_l4_eco_invariant.v0.12.0",
+    "requested_change_grade_method": "marb_task_local_reference.v0.12",
+}
+RUNTIME_CONTRACT_PATH = (
+    Path(__file__).resolve().parent / "container" / "runtime-contract.v0.13.json"
+)
+HISTORICAL_RUNTIME_CONTRACT_PATH = (
+    Path(__file__).resolve().parent / "container" / "runtime-contract.v0.12.json"
+)
+CADCLAW_CALIBRATION_PATH = (
+    Path(__file__).resolve().parent
+    / "container"
+    / "cadclaw-calibration.fad0dd55.json"
+)
 GENERIC_PLAN_BLOCKERS = {
     "this plan does not authorize execution, provider access, or spend",
     "planned slots are not benchmark attempts or run evidence",
@@ -244,6 +294,305 @@ def _stable_read(path: Path, label: str) -> bytes:
     ) or len(raw) != after.st_size:
         _fail(f"{label} changed while it was being read")
     return raw
+
+
+def _validate_calibration_manifest(
+    value: Any,
+    *,
+    expected_count: int,
+    expected_sha256: str,
+    label: str,
+) -> None:
+    if not isinstance(value, dict) or set(value) != {
+        "file_count",
+        "manifest_sha256",
+        "files",
+    }:
+        _fail(f"{label} source manifest is malformed")
+    files = value.get("files")
+    if (
+        value.get("file_count") != expected_count
+        or value.get("manifest_sha256") != expected_sha256
+        or not isinstance(files, list)
+        or len(files) != expected_count
+    ):
+        _fail(f"{label} source manifest identity is unsupported")
+    normalized: list[tuple[str, str]] = []
+    for item in files:
+        if not isinstance(item, dict) or set(item) != {"path", "sha256"}:
+            _fail(f"{label} source manifest member is malformed")
+        path = item.get("path")
+        digest = item.get("sha256")
+        try:
+            safe_path = _safe_relative(path, f"{label} source manifest path").as_posix()
+        except (ExecutorError, TypeError):
+            _fail(f"{label} source manifest member is malformed")
+        if safe_path != path or not isinstance(digest, str) or not HEX64.fullmatch(digest):
+            _fail(f"{label} source manifest member is malformed")
+        normalized.append((path, digest))
+    if [path for path, _digest in normalized] != sorted(
+        {path for path, _digest in normalized}
+    ):
+        _fail(f"{label} source manifest paths are not unique and sorted")
+    manifest_raw = b"".join(
+        f"{digest}  {path}\n".encode("utf-8") for path, digest in normalized
+    )
+    if hashlib.sha256(manifest_raw).hexdigest() != expected_sha256:
+        _fail(f"{label} source manifest bytes contradict its identity")
+
+
+def _validate_runtime_contract_content(
+    contract: Any, historical: Any, calibration: Any
+) -> None:
+    """Validate the semantics behind the three independently hash-bound files."""
+    if (
+        not isinstance(contract, dict)
+        or contract.get("schema") != "marb_h2b_runtime_contract.v1"
+        or contract.get("contract_id") != RUNTIME_CONTRACT_ID
+        or contract.get("pin_basis") != CADCLAW_PIN_BASIS
+        or contract.get("status")
+        != "source_calibrated_runtime_image_unqualified"
+    ):
+        _fail("H2b runtime contract content is unsupported")
+    cadclaw = contract.get("cadclaw")
+    runtime = contract.get("runtime")
+    grade = contract.get("historical_grade_compatibility")
+    if (
+        not isinstance(cadclaw, dict)
+        or cadclaw.get("commit") != EXPECTED_RUNTIME["cadclaw_commit"]
+        or cadclaw.get("version") != EXPECTED_RUNTIME["cadclaw_version"]
+        or cadclaw.get("gate_spec_version")
+        != EXPECTED_RUNTIME["cadclaw_gate_spec_version"]
+        or cadclaw.get("gate_registry_version")
+        != EXPECTED_RUNTIME["cadclaw_gate_registry_version"]
+        or cadclaw.get("git_tree") != CURRENT_CADCLAW_TREE
+        or cadclaw.get("package_source_file_count") != 53
+        or cadclaw.get("package_source_manifest_sha256")
+        != CADCLAW_SOURCE_MANIFEST_SHA256
+        or cadclaw.get("calibration_evidence_sha256")
+        != CADCLAW_CALIBRATION_SHA256
+        or not isinstance(runtime, dict)
+        or runtime.get("cadquery_version")
+        != EXPECTED_RUNTIME["cadquery_version"]
+        or runtime.get("cadquery_ocp_version")
+        != EXPECTED_RUNTIME["cadquery_ocp_version"]
+        or not isinstance(grade, dict)
+        or grade.get("runtime_contract_sha256")
+        != HISTORICAL_RUNTIME_CONTRACT_SHA256
+        or grade.get("cadclaw_package_source_manifest_sha256")
+        != HISTORICAL_CADCLAW_SOURCE_MANIFEST_SHA256
+        or grade.get("grade_runtime_contract") != SUPPORTED_L4_GRADE_CONTRACT
+        or grade.get("task_id") != "L4-ECO"
+        or grade.get("grade_contract_id")
+        != SUPPORTED_L4_GRADE_CONTRACT["invariant_gate_version"]
+    ):
+        _fail("H2b runtime contract content contradicts its bound sources")
+    historical_cadclaw = (
+        historical.get("cadclaw") if isinstance(historical, dict) else None
+    )
+    if (
+        not isinstance(historical, dict)
+        or historical.get("contract_id") != "marb-v0.12-h2b"
+        or historical.get("pin_basis") != "marb_v0.12_frozen_functional_core"
+        or historical.get("status") != "historical_preserved"
+        or not isinstance(historical_cadclaw, dict)
+        or historical_cadclaw.get("commit") != FROZEN_CADCLAW_COMMIT
+        or historical_cadclaw.get("gate_spec_version") != "0.12.0"
+        or historical_cadclaw.get("gate_registry_version") is not None
+        or historical_cadclaw.get("package_source_file_count") != 51
+        or historical_cadclaw.get("package_source_manifest_sha256")
+        != HISTORICAL_CADCLAW_SOURCE_MANIFEST_SHA256
+        or not isinstance(calibration, dict)
+        or calibration.get("schema") != "marb_h2b_cadclaw_calibration.v1"
+    ):
+        _fail("H2b historical or calibration evidence is unsupported")
+
+    source_control = calibration.get("source_control")
+    manifests = calibration.get("source_manifests")
+    wheel_source = (
+        manifests.get("source_to_wheel_inputs") if isinstance(manifests, dict) else None
+    )
+    expected_scope = [
+        "cadclaw",
+        "cadclaw_cli",
+        "cadclaw_mcp",
+        "cadharness",
+        "pyproject.toml",
+        "README.md",
+        "LICENSE",
+    ]
+    if (
+        calibration.get("calibration_id") != CADCLAW_CALIBRATION_ID
+        or calibration.get("calibration_kind") != "local_software_compatibility"
+        or calibration.get("classification") != "compatible"
+        or calibration.get("compatibility_scope") != CADCLAW_CALIBRATION_SCOPE
+        or calibration.get("not_a_benchmark_or_grade") is not True
+        or calibration.get("failed_checks") != []
+        or not isinstance(source_control, dict)
+        or source_control.get("fetch_performed") is not False
+        or source_control.get("origin_main_ref") != "refs/remotes/origin/main"
+        or source_control.get("candidate_matches_fetched_origin_main") is not True
+        or source_control.get("frozen_is_ancestor_of_candidate") is not True
+        or source_control.get("frozen_commit") != FROZEN_CADCLAW_COMMIT
+        or source_control.get("candidate_commit")
+        != EXPECTED_RUNTIME["cadclaw_commit"]
+        or source_control.get("frozen_tree") != FROZEN_CADCLAW_TREE
+        or source_control.get("candidate_tree") != CURRENT_CADCLAW_TREE
+        or not isinstance(manifests, dict)
+        or manifests.get("algorithm")
+        != "path-sorted lowercase-sha256, two spaces, POSIX path, LF"
+        or not isinstance(wheel_source, dict)
+        or wheel_source.get("scope") != expected_scope
+    ):
+        _fail("CADCLAW calibration classification or source identity is unsupported")
+    _validate_calibration_manifest(
+        wheel_source.get("frozen"),
+        expected_count=51,
+        expected_sha256=HISTORICAL_CADCLAW_SOURCE_MANIFEST_SHA256,
+        label="frozen CADCLAW",
+    )
+    _validate_calibration_manifest(
+        wheel_source.get("candidate"),
+        expected_count=53,
+        expected_sha256=CADCLAW_SOURCE_MANIFEST_SHA256,
+        label="candidate CADCLAW",
+    )
+
+    expected_calibration_runtime = {
+        "python": "3.11.15",
+        "cadclaw": "0.10.0",
+        "cadquery": "2.7.0",
+        "cadquery-ocp": "7.8.1.1.post1",
+        "Pillow": "12.2.0",
+        "PyYAML": "6.0.3",
+        "pydantic": "2.13.4",
+        "vtk": "9.3.1",
+    }
+    calibration_runtime = calibration.get("runtime")
+    configured = calibration.get("configured_harness_calibration")
+    gate_identity = configured.get("gate_identity") if isinstance(configured, dict) else None
+    cases = configured.get("cases") if isinstance(configured, dict) else None
+    candidate_gate = (
+        gate_identity.get("candidate") if isinstance(gate_identity, dict) else None
+    )
+    candidate_registry = (
+        candidate_gate.get("gate_registry")
+        if isinstance(candidate_gate, dict)
+        else None
+    )
+    if (
+        not isinstance(calibration_runtime, dict)
+        or calibration_runtime.get("expected") != expected_calibration_runtime
+        or calibration_runtime.get("frozen") != expected_calibration_runtime
+        or calibration_runtime.get("candidate") != expected_calibration_runtime
+        or not isinstance(configured, dict)
+        or configured.get("method")
+        != "cadclaw harness --only interference --report-format json"
+        or not isinstance(gate_identity, dict)
+        or gate_identity.get("frozen")
+        != {
+            "gate_spec_version": "0.12.0",
+            "gate_registry": {"status": "absent", "version": None, "ids": []},
+        }
+        or not isinstance(candidate_gate, dict)
+        or candidate_gate.get("gate_spec_version") != "0.13.0"
+        or not isinstance(candidate_registry, dict)
+        or candidate_registry.get("status") != "present"
+        or candidate_registry.get("version") != "harness-gates.v1"
+        or not isinstance(candidate_registry.get("ids"), list)
+        or "interference" not in candidate_registry["ids"]
+        or not isinstance(cases, list)
+    ):
+        _fail("CADCLAW calibration runtime or gate identity is unsupported")
+    cases_by_id = {
+        item.get("id"): item for item in cases if isinstance(item, dict)
+    }
+    separated = cases_by_id.get("separated-three-solid", {})
+    overlap = cases_by_id.get("overlap-three-solid", {})
+    separated_frozen = separated.get("frozen") if isinstance(separated, dict) else None
+    separated_candidate = (
+        separated.get("candidate") if isinstance(separated, dict) else None
+    )
+    overlap_frozen = overlap.get("frozen") if isinstance(overlap, dict) else None
+    overlap_candidate = overlap.get("candidate") if isinstance(overlap, dict) else None
+    if (
+        set(cases_by_id) != {"separated-three-solid", "overlap-three-solid"}
+        or not isinstance(separated_frozen, dict)
+        or separated_frozen.get("exit_code") != 0
+        or separated_frozen.get("checked") != []
+        or not isinstance(separated_candidate, dict)
+        or separated_candidate.get("exit_code") != 0
+        or separated_candidate.get("overall") != "pass"
+        or separated_candidate.get("checked") != ["interference"]
+        or not isinstance(overlap_frozen, dict)
+        or overlap_frozen.get("exit_code") != 0
+        or overlap_frozen.get("checked") != []
+        or not isinstance(overlap_candidate, dict)
+        or overlap_candidate.get("exit_code") != 1
+        or overlap_candidate.get("overall") != "fail"
+        or overlap_candidate.get("finding_ids") != ["interference.clip"]
+        or overlap_candidate.get("checked") != ["interference"]
+    ):
+        _fail("CADCLAW calibrated configured-harness behavior is unsupported")
+    snapshot = calibration.get("snapshot_geometry")
+    aggregate = snapshot.get("tracked_fixture_aggregate") if isinstance(snapshot, dict) else None
+    synthetic = snapshot.get("synthetic_three_solid") if isinstance(snapshot, dict) else None
+    nist = calibration.get("nist_roundtrip_integration")
+    expected_nist = {
+        "status": "pass",
+        "tests_run": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+    }
+    checks = calibration.get("checks")
+    if (
+        not isinstance(aggregate, dict)
+        or aggregate.get("parity") is not True
+        or not isinstance(synthetic, dict)
+        or synthetic.get("parity") is not True
+        or synthetic.get("part_count") != {"frozen": 3, "candidate": 3}
+        or not isinstance(nist, dict)
+        or nist.get("frozen") != expected_nist
+        or nist.get("candidate") != expected_nist
+        or not isinstance(checks, list)
+        or not checks
+        or any(
+            not isinstance(item, dict)
+            or set(item) != {"id", "status"}
+            or item.get("status") != "pass"
+            for item in checks
+        )
+        or len({item["id"] for item in checks}) != len(checks)
+    ):
+        _fail("CADCLAW calibration executable evidence is incomplete")
+
+
+def _validate_runtime_contract_sources() -> None:
+    """Bind the active runtime to reviewed, tracked contract/calibration bytes."""
+    contract_raw = _stable_read(RUNTIME_CONTRACT_PATH, "H2b runtime contract")
+    if hashlib.sha256(contract_raw).hexdigest() != RUNTIME_CONTRACT_SHA256:
+        _fail("H2b runtime contract digest does not match the executor")
+    historical_raw = _stable_read(
+        HISTORICAL_RUNTIME_CONTRACT_PATH, "historical H2b runtime contract"
+    )
+    if (
+        hashlib.sha256(historical_raw).hexdigest()
+        != HISTORICAL_RUNTIME_CONTRACT_SHA256
+    ):
+        _fail("historical H2b runtime contract digest does not match the executor")
+    calibration_raw = _stable_read(
+        CADCLAW_CALIBRATION_PATH, "CADCLAW calibration evidence"
+    )
+    if hashlib.sha256(calibration_raw).hexdigest() != CADCLAW_CALIBRATION_SHA256:
+        _fail("CADCLAW calibration digest does not match the executor")
+    try:
+        contract = json.loads(contract_raw.decode("utf-8"))
+        historical = json.loads(historical_raw.decode("utf-8"))
+        calibration = json.loads(calibration_raw.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        _fail("H2b runtime contract evidence is malformed")
+    _validate_runtime_contract_content(contract, historical, calibration)
 
 
 def _stream_read_bounded(
@@ -501,6 +850,7 @@ def verify_authorization(
     now: dt.datetime,
 ) -> dict[str, Any]:
     """Verify the externally digest-bound execution authorization envelope."""
+    _validate_runtime_contract_sources()
     try:
         value, _ = cohort_runner._decode_json(raw, "execution authorization")
     except cohort_runner.PlanError as exc:
@@ -692,6 +1042,9 @@ def verify_authorization(
             "isolated_container_sha256",
             "provider_transport_sha256",
             "run_limiter_sha256",
+            "runtime_contract_sha256",
+            "historical_runtime_contract_sha256",
+            "cadclaw_calibration_sha256",
             "git_executable",
             "git_executable_sha256",
         },
@@ -707,11 +1060,26 @@ def verify_authorization(
         "isolated_container_sha256",
         "provider_transport_sha256",
         "run_limiter_sha256",
+        "runtime_contract_sha256",
+        "historical_runtime_contract_sha256",
+        "cadclaw_calibration_sha256",
     ):
         if not isinstance(implementation.get(key), str) or not HEX64.fullmatch(implementation[key]):
             _fail(f"authorized implementation {key} is malformed")
     if implementation["run_limiter_sha256"] != container["run_limiter_sha256"]:
         _fail("authorized container and implementation limiter identities disagree")
+    if (
+        implementation["runtime_contract_sha256"]
+        != container["runtime_contract_sha256"]
+        or implementation["runtime_contract_sha256"] != RUNTIME_CONTRACT_SHA256
+        or implementation["historical_runtime_contract_sha256"]
+        != HISTORICAL_RUNTIME_CONTRACT_SHA256
+        or implementation["cadclaw_calibration_sha256"]
+        != container["cadclaw_calibration_sha256"]
+        or implementation["cadclaw_calibration_sha256"]
+        != CADCLAW_CALIBRATION_SHA256
+    ):
+        _fail("authorized runtime evidence identities disagree")
     implementation["git_executable"] = _validated_git_executable_text(
         implementation.get("git_executable")
     )
@@ -785,11 +1153,13 @@ def _assert_execution_ready(envelope: dict[str, Any]) -> None:
     driver_id = envelope["plan"]["cohort"]["driver"]["id"]
     if driver_id != "cadquery":
         _fail("only the isolated CadQuery execution backend is currently supported")
-    runtime = envelope["plan"]["task"].get("runtime_contract", {})
-    if runtime:
-        for key in EXPECTED_RUNTIME:
-            if key in runtime and runtime[key] != EXPECTED_RUNTIME[key]:
-                _fail(f"plan runtime field {key} contradicts the executor runtime")
+    task = envelope["plan"]["task"]
+    runtime = task.get("runtime_contract", {})
+    if task.get("id") == "L4-ECO":
+        if runtime != SUPPORTED_L4_GRADE_CONTRACT:
+            _fail("L4 plan grade contract is not the calibrated historical contract")
+    elif runtime != {}:
+        _fail("non-L4 plan must not invent a grade runtime contract")
 
 
 def _assert_runs_root(repo_root: Path, runs_root: Path) -> Path:
@@ -1649,6 +2019,16 @@ def _text_source_identity(path: Path, public_path: str, label: str) -> dict[str,
     }
 
 
+def _raw_source_identity(path: Path, public_path: str, label: str) -> dict[str, Any]:
+    raw = _stable_read(path, label)
+    return {
+        "path": public_path,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "bytes": len(raw),
+        "hash_mode": "raw",
+    }
+
+
 def _minimal_git_env() -> dict[str, str]:
     allowed = ("SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT", "TEMP", "TMP")
     result = {key: os.environ[key] for key in allowed if key in os.environ}
@@ -2039,6 +2419,9 @@ def _executing_module_paths() -> dict[str, Path]:
         "isolated_container": Path(executing_isolation.__file__).resolve(strict=True),
         "provider_transport": Path(executing_transport.__file__).resolve(strict=True),
         "run_limiter": Path(__file__).resolve(strict=True).parent / "container" / "run_limited.py",
+        "runtime_contract": RUNTIME_CONTRACT_PATH,
+        "historical_runtime_contract": HISTORICAL_RUNTIME_CONTRACT_PATH,
+        "cadclaw_calibration": CADCLAW_CALIBRATION_PATH,
     }
 
 
@@ -2053,19 +2436,37 @@ def _verify_committed_implementation(
     if approved["source_revision"] != revision:
         _fail("authorized implementation revision does not match the plan")
     paths = {
-        "planner": ("harness/cohort_runner.py", approved["planner_sha256"]),
-        "executor": ("harness/cohort_executor.py", approved["executor_sha256"]),
+        "planner": ("harness/cohort_runner.py", approved["planner_sha256"], "utf8-lf"),
+        "executor": ("harness/cohort_executor.py", approved["executor_sha256"], "utf8-lf"),
         "isolated_container": (
             "harness/isolated_container.py",
             approved["isolated_container_sha256"],
+            "utf8-lf",
         ),
         "provider_transport": (
             "harness/provider_transport.py",
             approved["provider_transport_sha256"],
+            "utf8-lf",
         ),
         "run_limiter": (
             "harness/container/run_limited.py",
             approved["run_limiter_sha256"],
+            "utf8-lf",
+        ),
+        "runtime_contract": (
+            "harness/container/runtime-contract.v0.13.json",
+            approved["runtime_contract_sha256"],
+            "raw",
+        ),
+        "historical_runtime_contract": (
+            "harness/container/runtime-contract.v0.12.json",
+            approved["historical_runtime_contract_sha256"],
+            "raw",
+        ),
+        "cadclaw_calibration": (
+            "harness/container/cadclaw-calibration.fad0dd55.json",
+            approved["cadclaw_calibration_sha256"],
+            "raw",
         ),
     }
     executing_paths = _executing_module_paths()
@@ -2073,16 +2474,21 @@ def _verify_committed_implementation(
     if repo_root.resolve(strict=True) != expected_repository:
         _fail("repo_root is not the repository containing the executing H2b modules")
     identities: dict[str, dict[str, Any]] = {}
-    for key, (public_path, expected) in paths.items():
+    for key, (public_path, expected, hash_mode) in paths.items():
         actual_path = executing_paths.get(key)
         required_path = repo_root.joinpath(*public_path.split("/")).resolve(strict=True)
         if actual_path is None or actual_path.resolve(strict=True) != required_path:
             _fail(f"executing {key} module is outside the authorized repository")
-        working = _text_source_identity(
-            actual_path, public_path, f"{key} implementation"
-        )
+        identity = _raw_source_identity if hash_mode == "raw" else _text_source_identity
+        working = identity(actual_path, public_path, f"{key} implementation")
         committed_raw = blob_reader(repo_root, revision, public_path)
-        committed_digest = _normalized_text_digest(committed_raw, f"committed {key} implementation")
+        committed_digest = (
+            hashlib.sha256(committed_raw).hexdigest()
+            if hash_mode == "raw"
+            else _normalized_text_digest(
+                committed_raw, f"committed {key} implementation"
+            )
+        )
         if working["sha256"] != expected or committed_digest != expected:
             _fail(f"authorized {key} implementation is not the exact committed blob")
         identities[key] = working
@@ -3567,8 +3973,11 @@ def _default_sandbox_factory(
 import hashlib
 import json
 import os
-from importlib.metadata import version
+from importlib.metadata import distribution, version
 from pathlib import Path
+
+from cadclaw.gate_registry import HARNESS_GATE_REGISTRY
+from cadclaw.gate_spec import GATE_SPEC_VERSION
 
 expected_env = {
     "HOME", "TMPDIR", "XDG_CACHE_HOME", "PYTHONDONTWRITEBYTECODE",
@@ -3585,14 +3994,66 @@ for line in Path("/proc/mounts").read_text(encoding="utf-8").splitlines():
     if len(fields) >= 4 and fields[1] == "/":
         root_options = fields[3].split(",")
 runtime = json.loads(Path("/opt/marb/runtime.json").read_text(encoding="utf-8"))
-measured_versions = {
+contract_raw = Path("/opt/marb/runtime-contract.json").read_bytes()
+calibration_raw = Path("/opt/marb/cadclaw-calibration.json").read_bytes()
+contract = json.loads(contract_raw.decode("utf-8"))
+calibration = json.loads(calibration_raw.decode("utf-8"))
+provenance = json.loads(
+    Path("/opt/marb/build-provenance.json").read_text(encoding="utf-8")
+)
+measured_runtime = {
+    "runtime_contract": contract["contract_id"],
+    "runtime_contract_sha256": hashlib.sha256(contract_raw).hexdigest(),
     "cadclaw_version": version("cadclaw"),
+    "cadclaw_commit": contract["cadclaw"]["commit"],
+    "cadclaw_gate_spec_version": GATE_SPEC_VERSION,
+    "cadclaw_gate_registry_version": HARNESS_GATE_REGISTRY.version,
+    "cadclaw_source_manifest_sha256": contract["cadclaw"]["package_source_manifest_sha256"],
+    "cadclaw_calibration_sha256": hashlib.sha256(calibration_raw).hexdigest(),
     "cadquery_version": version("cadquery"),
     "cadquery_ocp_version": version("cadquery-ocp"),
 }
-assert all(runtime.get(key) == value for key, value in measured_versions.items())
+assert contract["cadclaw"]["calibration_evidence_sha256"] == measured_runtime["cadclaw_calibration_sha256"]
+assert runtime.get("cadclaw_pin_basis") == contract["pin_basis"]
+assert all(runtime.get(key) == value for key, value in measured_runtime.items())
 assert runtime.get("run_limiter_sha256") == hashlib.sha256(Path("/opt/marb/run_limited.py").read_bytes()).hexdigest()
-runtime.update(measured_versions)
+assert calibration["classification"] == "compatible" and calibration["failed_checks"] == []
+assert calibration["source_control"]["candidate_commit"] == measured_runtime["cadclaw_commit"]
+candidate_manifest = calibration["source_manifests"]["source_to_wheel_inputs"]["candidate"]
+manifest_bytes = b"".join(
+    (item["sha256"] + "  " + item["path"] + "\n").encode("utf-8")
+    for item in candidate_manifest["files"]
+)
+assert len(candidate_manifest["files"]) == candidate_manifest["file_count"] == 53
+assert hashlib.sha256(manifest_bytes).hexdigest() == candidate_manifest["manifest_sha256"] == measured_runtime["cadclaw_source_manifest_sha256"]
+package_roots = ("cadclaw/", "cadclaw_cli/", "cadclaw_mcp/", "cadharness/")
+expected_package_files = {
+    item["path"]: item["sha256"]
+    for item in candidate_manifest["files"]
+    if item["path"].startswith(package_roots) and item["path"].endswith(".py")
+}
+cadclaw_distribution = distribution("cadclaw")
+installed_package_files = sorted(
+    str(item).replace("\\", "/")
+    for item in (cadclaw_distribution.files or [])
+    if str(item).replace("\\", "/").startswith(package_roots)
+    and str(item).replace("\\", "/").endswith(".py")
+)
+assert installed_package_files == sorted(expected_package_files)
+assert all(
+    hashlib.sha256(Path(cadclaw_distribution.locate_file(path)).read_bytes()).hexdigest()
+    == digest
+    for path, digest in expected_package_files.items()
+)
+assert provenance["schema"] == "marb_h2b_image_build_provenance.v3"
+for key in (
+    "runtime_contract", "runtime_contract_sha256", "cadclaw_commit",
+    "cadclaw_gate_spec_version", "cadclaw_gate_registry_version",
+    "cadclaw_source_manifest_sha256", "cadclaw_calibration_sha256",
+):
+    assert provenance[key] == measured_runtime[key]
+assert provenance["cadclaw_pin_basis"] == contract["pin_basis"]
+runtime.update(measured_runtime)
 probe = Path("/workspace/.marb-write-probe")
 probe.write_text("ok", encoding="ascii")
 probe.unlink()
@@ -4535,6 +4996,9 @@ def _authorization_template_payload(args: argparse.Namespace) -> dict[str, Any]:
                 "provider transport source",
             )["sha256"],
             "run_limiter_sha256": limiter_identity["sha256"],
+            "runtime_contract_sha256": RUNTIME_CONTRACT_SHA256,
+            "historical_runtime_contract_sha256": HISTORICAL_RUNTIME_CONTRACT_SHA256,
+            "cadclaw_calibration_sha256": CADCLAW_CALIBRATION_SHA256,
             "git_executable": args.git_executable,
             "git_executable_sha256": args.git_executable_sha256,
         },

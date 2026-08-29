@@ -20,7 +20,7 @@ create, infer, renew, or weaken any of them:
 1. One or more canonical `marb_cohort_plan.v1` envelopes, each verified against
    its independently retained plan SHA-256. Normal N-slot cohorts may reuse one
    plan path across slots only when every reuse binds the identical digest.
-2. One reviewed and sealed `marb_execution_authorization.v2` per slot. Each
+2. One reviewed and sealed `marb_execution_authorization.v3` per slot. Each
    authorization remains bound to exactly one plan digest, planned run ID,
    model, provider configuration, source revision, implementation, runtime,
    settings, and validity window.
@@ -28,6 +28,13 @@ create, infer, renew, or weaken any of them:
    envelope. Its digest approves the controller identity, aggregate window and
    limits, exact automation policy, ordered slots, and every per-slot plan,
    authorization, digest, and H2b confirmation literal.
+
+Each slot authorization must bind the active `marb-v0.13-h2b`
+execution-runtime contract, exact CADCLAW
+`fad0dd552a49a0b32336f1845c2b82873ad6360a` source and calibration identities,
+and a qualified image RepoDigest. The unchanged L4
+v0.12/`60fc271f68c8a794a4741f856b2dd4c9878416a6` grade contract remains a
+separate historical identity; Nightwatch does not alter either contract.
 
 `make_campaign_envelope(payload)` digest-wraps reviewed campaign payload bytes;
 it does not approve execution. The envelope is canonical JSON with one LF

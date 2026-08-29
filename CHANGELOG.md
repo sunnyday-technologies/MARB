@@ -31,6 +31,19 @@ release never relabels an older result.
   `--no-replace-objects` and `GIT_NO_REPLACE_OBJECTS=1`; authorize only the
   exact resolved repository with per-command `safe.directory` (never `*`); and fail closed on
   timeout or bounded-stdout overflow.
+- Add the active `marb-v0.13-h2b` execution-runtime contract and advance active
+  authorization/run-log schemas to `marb_execution_authorization.v3` and
+  `marb_executor_run_log.v2`. The contract pins CADCLAW 0.10.0 commit
+  `fad0dd552a49a0b32336f1845c2b82873ad6360a`, gate-spec `0.13.0`, gate registry
+  `harness-gates.v1`, its package-source manifest, and executable calibration
+  evidence. Authorization, `/opt/marb/runtime.json`, image labels, and
+  `marb_h2b_image_build_provenance.v3` carry the same versioned identities and
+  fail closed on stale or mismatched pins.
+- Preserve the L4 v0.12 grade contract at CADCLAW commit
+  `60fc271f68c8a794a4741f856b2dd4c9878416a6`. The v0.13 H2b execution contract
+  records a narrow calibration-backed compatibility relation; it does not
+  rewrite the L4 task, grader, answer key, method identity, or historical
+  evidence.
 - Preserve one provider session across L2/L4 baseline and change phases, freeze
   baseline/changed STEP and deterministic editable-source ZIP evidence, retain
   failed and partial UUID-backed attempts, and record bounded provenance without
@@ -89,10 +102,12 @@ release never relabels an older result.
   exercise authorization, limits, provenance, cleanup, and non-mutation without
   making Docker, provider, or model calls.
 - Add an offline OCI build contract whose base image, wheelhouse manifest,
-  CADCLAW wheel, Dockerfile, effective temporary-context `.dockerignore`,
-  complete context manifest, and final runtime are operator-supplied and
-  digest-attested. No real image RepoDigest or runtime smoke is claimed by this
-  source release.
+  CADCLAW wheel, runtime-contract and calibration files, Dockerfile, effective
+  temporary-context `.dockerignore`, complete context manifest, and final
+  runtime are digest-attested. The active provenance schema is
+  `marb_h2b_image_build_provenance.v3`. No real image RepoDigest or passing
+  no-provider/no-network runtime smoke is claimed by this source release; the
+  image remains unqualified.
 - Mediate provider `write_file` requests through the trusted host executor into
   the checkout-local retained workspace. For `run_python`, confine untrusted
   child-process writes to size-capped tmpfs mounts and expose only one

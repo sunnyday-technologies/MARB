@@ -1,4 +1,6 @@
-# Exact runtime resolution observed for the MARB v0.12 H2b functional core.
+# Exact dependency resolution retained for the calibrated MARB v0.13 H2b
+# execution runtime. CADCLAW source identity is bound separately by the active
+# runtime contract and calibration evidence; package version alone is not a pin.
 # Artifact bytes are independently pinned by the operator-supplied
 # wheelhouse.sha256 manifest described in README.md. Builds are offline.
 aiohappyeyeballs==2.6.1

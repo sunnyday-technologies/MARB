@@ -1,0 +1,30 @@
+{
+  "cadclaw": {
+    "commit": "60fc271f68c8a794a4741f856b2dd4c9878416a6",
+    "gate_registry_version": null,
+    "gate_spec_version": "0.12.0",
+    "package_source_file_count": 51,
+    "package_source_manifest_sha256": "42170a1db8b7a11baeebf8c9a20a5bf4497019953e995895e15fc05ba070eff0",
+    "version": "0.10.0"
+  },
+  "contract_id": "marb-v0.12-h2b",
+  "historical_recipe": {
+    "dockerfile_sha256": "31c60cae095c22c9b102b47d8d5131c0fa1cd882f0f2ef37bcbbdc995ee88459",
+    "executor_sha256": "34193f171ca6a542407802d403487ecec6eb733e2d074f089538b422fa9837f3",
+    "requirements_lock_sha256": "f8adc0bf2a5bd3b9dbeb81f9e0791735f9524bb41698bce7b3a79281473ba8c6",
+    "run_limiter_sha256": "659c8fd6e9070f8591a868f337cb6be7375c87910bb01ac09974653045408c1b",
+    "source_revision": "4bbe7c6ab7595a266814e7c8ad45b4ba4d23a21e"
+  },
+  "pin_basis": "marb_v0.12_frozen_functional_core",
+  "runtime": {
+    "cadquery_ocp_version": "7.8.1.1.post1",
+    "cadquery_version": "2.7.0"
+  },
+  "schema": "marb_h2b_runtime_contract.v1",
+  "schemas": {
+    "authorization": "marb_execution_authorization.v2",
+    "image_build_provenance": "marb_h2b_image_build_provenance.v2",
+    "run_log": "marb_executor_run_log.v1"
+  },
+  "status": "historical_preserved"
+}
