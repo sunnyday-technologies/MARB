@@ -4,7 +4,7 @@ Scoring-method versions describe the method and publication contract. Every
 published cell keeps the version that was used when it was graded; a method
 release never relabels an older result.
 
-## Unreleased — H2a planner and H2b executor
+## Unreleased — H2a planner, H2b executor, and Nightwatch controller
 
 - Add the standalone, deterministic H2a `L1-ASSEMBLE` / `L2-RESOLVE` /
   `L4-ECO` cohort planner that
@@ -47,10 +47,33 @@ release never relabels an older result.
   publishable model identity to the exact authorized ID returned by the
   provider, with no H2b alias policy.
 - Scope every authorization and limit to one logical slot/attempt, not an
-  aggregate cohort budget; N=3/N=9 execution remains blocked on a separately
-  approved campaign ledger with concurrency control. Record the limited
-  negative modality attestation: text provider input, no native image-view
-  tool, Python-only access to staged image bytes, and `vision_attested: false`.
+  aggregate cohort budget. N=3/N=9 execution requires a separately approved
+  aggregate Nightwatch campaign authorization plus reviewed per-slot H2b
+  authorizations; Nightwatch supplies the serial local ledger and concurrency
+  controller without broadening slot authority. Record the limited negative
+  modality attestation: text provider input, no native image-view tool,
+  Python-only access to staged image bytes, and `vision_attested: false`.
+- Add the Nightwatch local repeat-run controller and document its exact
+  `marb_nightwatch_campaign.v1`, `marb_nightwatch_ledger.v1`, and
+  `marb_nightwatch_event.v1` contracts. The immutable digest-approved campaign
+  binds a UUID, approval window, MARB revision, controller source identity,
+  exact execution/safety policy, aggregate limits, and reviewed per-slot H2b
+  plan and authorization paths, digests, run IDs, and literals. Normal cohort
+  slots may share one plan path only with the same digest; authorization paths
+  remain unique and may not alias plan paths. `status` is read-only; `run`
+  requires
+  `EXECUTE_MARB_NIGHTWATCH:<campaign-sha256>`. Automated execution is serial
+  (`max_concurrency: 1`), loopback, credential-free, and local-no-charge;
+  external, credentialed, metered, and otherwise potentially paid providers
+  remain manual-only. Use an OS-backed writer lock, atomic ledger snapshots,
+  append-only sequenced events, and claim/sealed-log reconciliation. Claimed or
+  retained attempts are never retried automatically, and the strongest success
+  state remains `completed_ungraded` with no grading, registry, board, site,
+  publication, or deployment authority. Dedicated fake/local Nightwatch tests
+  exist and are included in board-policy CI without making real provider,
+  model, Docker, or network calls. No real provider/model/Docker campaign or
+  runtime qualification has been performed, and no completed real campaign is
+  claimed here.
 - Clarify that the permanent `.slot-claims` record prevents duplicate claims
   only within one checkout because `runs/` is ignored and checkout-local.
   Cross-clone and cross-host uniqueness remains an operator/campaign-ledger and
@@ -81,11 +104,12 @@ release never relabels an older result.
   final inventories plus captured bytes must agree on path, device, inode, size,
   nanosecond mtime, and SHA-256, or capture fails before creating the ZIP.
 
-This source release adds H2a planning and H2b execution plumbing but creates no
-benchmark attempt, score, board row, task revision, scoring-method version,
-model call, site rebuild, or deployment. H2 remains open for independently
-authorized, genuinely graded cohorts. L4 planned grade reports remain
-grader-owned deferred outputs, not executor-produced evidence.
+This source release adds H2a planning, H2b execution, and Nightwatch serial
+campaign plumbing but creates no benchmark attempt, score, board row, task
+revision, scoring-method version, model call, site rebuild, or deployment. H2
+remains open for independently authorized, genuinely graded cohorts. L4 planned
+grade reports remain grader-owned deferred outputs, not executor-produced
+evidence.
 
 ## v0.12 — 2026-08-28
 

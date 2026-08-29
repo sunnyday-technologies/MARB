@@ -40,9 +40,12 @@ site, or deployment action.
 - Every authorization and limit applies to exactly one logical slot and its one retained attempt;
   it is not a cohort or campaign budget. This includes
   `max_cost_usd`, which current local-no-charge policy requires to be null.
-  Before any N=3 or N=9 cohort can call a provider, an operator must separately
-  approve an aggregate campaign ledger with concurrency control. H2b does not
-  implement that campaign ledger.
+  An N=3 or N=9 cohort requires a separately approved aggregate Nightwatch
+  campaign authorization plus reviewed per-slot H2b authorizations. H2b does
+  not implement aggregate authority or coordination;
+  [`nightwatch.py`](nightwatch.py) implements the separate serial local ledger
+  and concurrency controller under the additional contract in
+  [`NIGHTWATCH.md`](NIGHTWATCH.md).
 - Qualified cells have a limited, negative `execution_modality` attestation:
   provider input is text, no native image-view tool is exposed, staged image
   bytes may be inspected only through model-authored Python, and
@@ -102,6 +105,54 @@ and the verified SHA-256.
 The authorization records a credential key name and presence status only. It
 must never contain the credential value. The executor scans retained artifacts
 for the configured credential and common secret patterns before finalization.
+
+## Nightwatch relationship
+
+Nightwatch does not replace or weaken this one-slot protocol. Its canonical
+`marb_nightwatch_campaign.v1` envelope binds a campaign UUID, approval and
+execution window, MARB source revision, exact LF-normalized controller source
+identity, explicit execution and safety policies, aggregate slot/failure
+limits, and an ordered set of repository-relative plan and authorization files.
+Each slot binds its ordinal, plan and authorization digests, planned run ID,
+and exact H2b literal
+`EXECUTE_MARB_MODEL_CALLS:<plan-sha256>:<planned-run-id>`. Before every
+dispatch, all normal H2b plan, authorization, implementation, input, runtime,
+endpoint, expiry, and exact confirmation checks still apply.
+
+Normal cohort slots may reuse one plan path only when every reuse binds the
+same plan digest. Authorization paths remain unique, a conflicting digest for a
+reused plan path is rejected, and plan and authorization path identities may
+not alias each other.
+
+The automated Nightwatch policy is narrower than H2b: the `status` command and
+`run_campaign(..., execute=False)` API path are read-only, execution is serial
+with `max_concurrency: 1`, and only a loopback, `local-no-charge`
+authorization with `credential_env: null` and spend exactly `currency: USD`,
+`max_cost_usd: null`, and `zero_cost_attested: true` is eligible. Nightwatch
+passes an empty environment to H2b. External, credentialed, metered, and
+otherwise potentially paid providers are manual-only and are rejected before
+the campaign writer lock or provider construction.
+
+The controller owns only a checkout-local `marb_nightwatch_ledger.v1` and
+`marb_nightwatch_event.v1` journal under
+`runs/.nightwatch/<campaign-uuid>/`. One OS-backed writer lock guards serial
+reconciliation and dispatch. Ledger snapshots use a unique temporary file,
+`fsync`, and atomic replacement; events are appended and `fsync`ed first.
+Reconciliation treats H2b's permanent slot claim and sealed `run_log.json` plus
+digest as authoritative. Any claimed, failed, partial, timed-out, cancelled,
+or otherwise retained attempt consumes the logical slot and is never retried
+automatically. A claim with missing or contradictory sealed evidence requires
+manual review.
+
+Nightwatch's strongest success state is still `completed_ungraded`. It never
+runs graders, mutates `results/marb_runs.json` or board data, rebuilds site
+source, publishes, or deploys. See [`NIGHTWATCH.md`](NIGHTWATCH.md) for the full
+schema, `status` and `run` commands, required aggregate confirmation literal
+`EXECUTE_MARB_NIGHTWATCH:<campaign-sha256>`, and recovery rules. Dedicated
+fake/local Nightwatch tests exist and are included in board-policy CI. They do
+not invoke a real provider, model, Docker runtime, or network. No real
+provider/model/Docker campaign or runtime qualification has been performed,
+and no completed real campaign is claimed.
 
 ## No-call authorization workflow
 
@@ -323,10 +374,11 @@ MARB contract versioned before replacing this pin.
 ## CI and manual gates
 
 Board-policy CI runs `tests.test_cohort_runner`, `tests.test_cohort_executor`,
-`tests.test_provider_transport`, `tests.test_isolated_container`,
-`tests.test_run_limiter`, and the static `tests.test_container_recipe` contract
-checks with fake provider, HTTP, sandbox, and Docker command runners. Those
-tests make no provider, model, or Docker calls. CI does not qualify a real
-image. Before the first actual attempt, an operator must record the approved
-image RepoDigest and pass the manual no-provider/no-network runtime smoke
-described in the container build notes.
+`tests.test_nightwatch`, `tests.test_provider_transport`,
+`tests.test_isolated_container`, `tests.test_run_limiter`, and the static
+`tests.test_container_recipe` contract checks with fake/local provider, HTTP,
+sandbox, controller, and Docker command runners. Those tests make no real
+provider, model, Docker, or network calls. CI does not qualify a real image or
+Nightwatch runtime. Before the first actual attempt, an operator must record
+the approved image RepoDigest and pass the manual no-provider/no-network
+runtime smoke described in the container build notes.
