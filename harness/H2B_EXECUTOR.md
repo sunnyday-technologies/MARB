@@ -264,6 +264,15 @@ usage status, container attestation, events, and the final retained inventory.
 Failed or timed-out provider attempts are `attempted_not_reported`; they are
 never reported as `not_incurred`.
 
+Canonical STEP discovery and evidence capture are one identity-bound operation,
+even though the executor performs them in two calls. Discovery freezes the
+regular file's device, inode, mode, size, nanosecond mtime, byte count, and
+SHA-256 from one stable open handle. Capture then reopens that exact path,
+checks the open handle and pathname against the frozen identity before and
+after copying, and requires the copied digest and byte count to match. A
+same-path rewrite or atomic replacement after discovery therefore aborts with
+`artifact_failure` and removes any partial evidence target.
+
 In `run_log.json`, `output_contract` uses schema
 `marb_plan_output_binding.v2`. Its `executor_owned_outputs` map records the
 executor-reserved/bound output paths, not a claim that those files were

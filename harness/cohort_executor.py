@@ -169,6 +169,19 @@ class ArtifactError(RuntimeError):
     """A required run artifact was missing or unsafe."""
 
 
+@dataclasses.dataclass(frozen=True)
+class _DiscoveredStepOutput:
+    """Content and filesystem identity frozen when a canonical STEP is found."""
+
+    path: Path
+    device: int
+    inode: int
+    mode: int
+    bytes: int
+    mtime_ns: int
+    sha256: str
+
+
 class BudgetError(RuntimeError):
     """Provider billing evidence is missing, contradictory, or above authorization."""
 
@@ -2216,6 +2229,98 @@ def _copy_evidence(
     }
 
 
+def _step_identity(info: os.stat_result) -> tuple[int, int, int, int, int]:
+    return (
+        info.st_dev,
+        info.st_ino,
+        info.st_mode,
+        info.st_size,
+        info.st_mtime_ns,
+    )
+
+
+def _discovered_step_identity(
+    discovered: _DiscoveredStepOutput,
+) -> tuple[int, int, int, int, int]:
+    return (
+        discovered.device,
+        discovered.inode,
+        discovered.mode,
+        discovered.bytes,
+        discovered.mtime_ns,
+    )
+
+
+def _copy_discovered_step(
+    discovered: _DiscoveredStepOutput,
+    target: Path,
+    run_dir: Path,
+    deadline_check: Callable[[], None] | None = None,
+) -> dict[str, Any]:
+    """Copy exactly the STEP bytes and file identity accepted at discovery."""
+    source = discovered.path
+    expected_identity = _discovered_step_identity(discovered)
+    target_created = False
+    try:
+        before = source.lstat()
+        if (
+            _step_identity(before) != expected_identity
+            or not stat.S_ISREG(before.st_mode)
+            or _is_link_like(source)
+            or before.st_size < 1
+            or before.st_size > MAX_WORKSPACE_FILE_BYTES
+        ):
+            raise ArtifactError("required STEP output changed after validation")
+        digest = hashlib.sha256()
+        total = 0
+        with source.open("rb") as input_handle:
+            opened = os.fstat(input_handle.fileno())
+            if _step_identity(opened) != expected_identity:
+                raise ArtifactError("required STEP output changed after validation")
+            with target.open("xb") as output_handle:
+                target_created = True
+                while True:
+                    _deadline_tick(deadline_check)
+                    chunk = input_handle.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    total += len(chunk)
+                    if total > MAX_WORKSPACE_FILE_BYTES:
+                        raise ArtifactError("required STEP output changed after validation")
+                    digest.update(chunk)
+                    output_handle.write(chunk)
+                output_handle.flush()
+                os.fsync(output_handle.fileno())
+            after_handle = os.fstat(input_handle.fileno())
+        after_path = source.lstat()
+        if (
+            _step_identity(after_handle) != expected_identity
+            or _step_identity(after_path) != expected_identity
+            or total != discovered.bytes
+            or digest.hexdigest() != discovered.sha256
+        ):
+            raise ArtifactError("required STEP output changed after validation")
+    except BaseException as exc:
+        cleanup_failed = False
+        if target_created:
+            try:
+                target.unlink()
+            except FileNotFoundError:
+                pass
+            except OSError:
+                cleanup_failed = True
+        if cleanup_failed:
+            raise ArtifactError("required STEP output cleanup could not be verified") from None
+        if isinstance(exc, OSError):
+            raise ArtifactError("required STEP output cannot be copied safely") from None
+        raise
+    return {
+        "path": target.relative_to(run_dir.parent.parent).as_posix(),
+        "sha256": discovered.sha256,
+        "bytes": discovered.bytes,
+    }
+
+
 def _deterministic_source_zip(
     workspace: Path,
     staged_paths: set[str],
@@ -3222,7 +3327,7 @@ def _phase_loop(
 def _find_step_output(
     workspace: Path,
     deadline_check: Callable[[], None] | None = None,
-) -> Path:
+) -> _DiscoveredStepOutput:
     allowed = {"export.step", "cadquery_native_export.step"}
     allowed_identities = {_windows_identity(name) for name in allowed}
     matches = [
@@ -3235,13 +3340,49 @@ def _find_step_output(
     if matches[0] not in allowed:
         raise ArtifactError("canonical STEP output must use its exact published spelling")
     path = _workspace_path(workspace, matches[0], "canonical STEP output")
-    _stream_file_digest(
-        path,
-        "STEP output",
-        MAX_WORKSPACE_FILE_BYTES,
-        deadline_check=deadline_check,
+    try:
+        before = path.lstat()
+        if (
+            not stat.S_ISREG(before.st_mode)
+            or _is_link_like(path)
+            or before.st_size < 1
+            or before.st_size > MAX_WORKSPACE_FILE_BYTES
+        ):
+            raise OSError
+        digest = hashlib.sha256()
+        total = 0
+        with path.open("rb") as handle:
+            opened = os.fstat(handle.fileno())
+            if _step_identity(opened) != _step_identity(before):
+                raise ArtifactError("STEP output changed while it was being validated")
+            while True:
+                _deadline_tick(deadline_check)
+                chunk = handle.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > MAX_WORKSPACE_FILE_BYTES:
+                    raise OSError
+                digest.update(chunk)
+            after_handle = os.fstat(handle.fileno())
+        after_path = path.lstat()
+    except OSError:
+        raise ArtifactError("STEP output cannot be validated safely") from None
+    if (
+        _step_identity(after_handle) != _step_identity(before)
+        or _step_identity(after_path) != _step_identity(before)
+        or total != before.st_size
+    ):
+        raise ArtifactError("STEP output changed while it was being validated")
+    return _DiscoveredStepOutput(
+        path=path,
+        device=before.st_dev,
+        inode=before.st_ino,
+        mode=before.st_mode,
+        bytes=total,
+        mtime_ns=before.st_mtime_ns,
+        sha256=digest.hexdigest(),
     )
-    return path
 
 
 def _usage_summary(calls: list[dict[str, Any]], billing: str, zero_cost: bool) -> dict[str, Any]:
@@ -4053,7 +4194,7 @@ def execute_plan(
         baseline_step = _find_step_output(
             workspace, deadline_check=enforce_deadline
         )
-        baseline_step_record = _copy_evidence(
+        baseline_step_record = _copy_discovered_step(
             baseline_step,
             output_paths["baseline_step"],
             run_dir,
@@ -4100,7 +4241,7 @@ def execute_plan(
 
         task_id = plan["task"]["id"]
         if task_id in {"L2-RESOLVE", "L4-ECO"}:
-            baseline_step.unlink()
+            baseline_step.path.unlink()
             phase = "change"
             request = _public_text(
                 repo_root,
@@ -4149,7 +4290,7 @@ def execute_plan(
             changed_step = _find_step_output(
                 workspace, deadline_check=enforce_deadline
             )
-            changed_step_record = _copy_evidence(
+            changed_step_record = _copy_discovered_step(
                 changed_step,
                 output_paths["changed_step"],
                 run_dir,
