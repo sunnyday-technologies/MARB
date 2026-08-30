@@ -24,3 +24,4 @@ scripts/hooks/* text eol=lf
 /harness/container/runtime-contract.v0.13.json text eol=lf
 /harness/container/cadclaw-calibration.fad0dd55.json text eol=lf
 /scripts/calibrate_h2b_cadclaw.py text eol=lf
+/scripts/canonical_manifest.py text eol=lf

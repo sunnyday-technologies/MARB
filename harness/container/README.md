@@ -32,10 +32,10 @@ copied from an unverified build is not authorization.
 - CPython 3.11 at `/usr/local/bin/python3`
 - exact package resolution in `requirements.lock`
 - exact aggregate-storage limiter source at `/opt/marb/run_limited.py`
-- all wheel bytes bound by an operator-created `wheelhouse.sha256`
+- all wheel bytes bound by a tracked-generator-created `wheelhouse.sha256`
 - the signed-metadata-derived 39-package Debian native closure in
   `native-debs.lock.json`, plus exact package bytes bound by an
-  operator-created `native-debs.sha256`
+  tracked-generator-created `native-debs.sha256`
 - pre-install archive hash/size/control-field verification and post-install
   exact-package, exact-clean-benchmark-environment `ldd`, and fresh
   OCP/CadQuery/VTK import verification through `verify_native_bundle.py`
@@ -59,10 +59,11 @@ contract or its evidence.
 `requirements.lock` records the exact Python resolution observed for this
 contract. `native-debs.lock.json` records the exact Debian 13 `trixie`
 `linux/amd64` native closure derived for the immutable base. The retained Linux
-wheelhouse exists outside Git, but the native package payloads and repaired
-image have not been downloaded, built, or qualified by this source change.
+wheelhouse exists outside Git. R4 transiently acquired and individually
+verified the exact native package payloads, then removed them after a
+pre-Docker manifest-order failure. No repaired image was built or qualified.
 Missing bytes, incompatible libraries, or a different dependency resolution
-are blockers; do not relax a pin to make the build pass.
+remain blockers; do not relax a pin to make the build pass.
 
 ## Prepare byte-pinned build inputs
 
@@ -83,12 +84,17 @@ not put provider credentials in the build context or Docker configuration.
    the reviewed temporary context. Their hashes must match the active executor
    constants and the contract's calibration binding; a regenerated,
    reformatted, stale, or substituted file is a blocker.
-4. From the `harness/container/` directory, create a byte-sorted manifest whose
-   entries are relative paths such as
+4. From the `harness/container/` directory, use the tracked host-side generator
+   to plan, write without clobbering, and read back the wheel manifest. Preview
+   writes nothing; write requires the reviewed preview digest and publishes the
+   identical planned bytes. Entries are relative paths such as
    `wheelhouse/cadquery-2.7.0-...whl`:
 
    ```bash
-   find wheelhouse -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > wheelhouse.sha256
+   python3 ../../scripts/canonical_manifest.py preview wheelhouse --root .
+   python3 ../../scripts/canonical_manifest.py write wheelhouse --root . \
+     --expected-sha256 63211cd2d2df66b9005fcff1fdf618b8c14bb12a6a5aaa183106c03abd221eca
+   python3 ../../scripts/canonical_manifest.py readback wheelhouse --root .
    sha256sum requirements.lock run_limited.py runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json wheelhouse.sha256 wheelhouse/cadclaw-0.10.0-py3-none-any.whl
    ```
 
@@ -107,11 +113,15 @@ not put provider credentials in the build context or Docker configuration.
    39 `packages[].filename` payloads from the HTTPS base URL for their recorded
    suite into `native-debs/`. Do not run `apt-get`, resolve again, accept a
    mirror substitute, or add another package. Verify every recorded size,
-   SHA-256, package name, version, and architecture, then write the path-sorted
-   LF manifest:
+   SHA-256, package name, version, and architecture, then use the same tracked
+   generator to write the path-sorted LF manifest. Its native profile also
+   reconciles every payload with `native-debs.lock.json`:
 
    ```bash
-   find native-debs -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > native-debs.sha256
+   python3 ../../scripts/canonical_manifest.py preview native-debs --root .
+   python3 ../../scripts/canonical_manifest.py write native-debs --root . \
+     --expected-sha256 0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1
+   python3 ../../scripts/canonical_manifest.py readback native-debs --root .
    python3 verify_native_bundle.py archives \
      --lock native-debs.lock.json \
      --bundle native-debs \
@@ -132,7 +142,8 @@ source-directory `.dockerignore` denies the entire source directory as a direct
 build context, including transient inputs and the private build record. It is
 not the effective allowlist used for a build. This prevents an ambient file
 from silently entering an image. Assemble the exact temporary allowlisted
-context below only after review.
+context below only after review. `scripts/canonical_manifest.py` is a host-side
+tool and must never be copied into that temporary context or image.
 
 The Dockerfile rejects nested/extra wheel and Debian inputs and alternate
 CADCLAW candidates; validates the complete context, exact package archives,
@@ -184,20 +195,37 @@ bytes using these exact allowlist entries and no broader negation:
 !native-debs/*.deb
 ```
 
-From inside that reviewed temporary context, create and verify the complete
-non-self-referential context manifest. It lists every other allowed context
-file, including the exact Dockerfile and effective `.dockerignore`; the
-separately recorded digest of `build-context.sha256` binds the manifest itself.
+Use the tracked host-side generator against that reviewed temporary context to
+create and verify the complete non-self-referential context manifest. It lists
+every other allowed context file, including the exact Dockerfile and effective
+`.dockerignore`; reconciles both child manifests and the native lock with their
+payload files; and rejects any extra, nested, linked, special, or unstable
+entry. The separately recorded digest of `build-context.sha256` binds the
+manifest itself. The generator remains outside the context.
 
 ```bash
-{
-  sha256sum Dockerfile .dockerignore requirements.lock run_limited.py runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json wheelhouse.sha256 native-debs.lock.json verify_native_bundle.py native-debs.sha256
-  find wheelhouse -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
-  find native-debs -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
-} | LC_ALL=C sort -k2 > build-context.sha256
-sha256sum -c build-context.sha256
+manifest_tool='<reviewed-MARB-checkout>/scripts/canonical_manifest.py'
+python3 "$manifest_tool" preview build-context --root .
+python3 "$manifest_tool" write build-context --root . \
+  --expected-sha256 b06fe7d32efbf26eb8e9de51cd24e79001e43e2fd81c8c688a8a71e1eaabc2bb
+python3 "$manifest_tool" readback build-context --root .
 sha256sum Dockerfile .dockerignore runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json build-context.sha256
 ```
+
+For the unchanged R4 payload identities and tracked build inputs, the canonical
+native vector is 39 entries and 4,351 bytes at the `0ad2f18d...fa1e1` digest
+above. The canonical non-self-referential context vector is 95 entries and
+11,219 bytes at the `b06fe7d3...abc2bb` digest above; 96 files including the
+manifest total 346,354,716 bytes, while the 95 manifest entries total
+346,343,497 payload bytes. A different preview is a stop condition, not
+authority to substitute a new expected digest.
+
+The generator rejects observable file, inventory, root, and ancestor identity
+changes across planning, publication, and readback. This is a fail-closed
+staging integrity check, not an operating-system atomic snapshot against a
+privileged concurrent writer able to rewrite bytes while preserving all
+observed filesystem metadata. Use an access-controlled temporary staging tree,
+stop other writers, and treat any mutation error as a stop condition.
 
 Do not copy `private-build-record.json`, repository configuration, credentials,
 or any other source file into that context. Build from the temporary directory
