@@ -33,6 +33,12 @@ copied from an unverified build is not authorization.
 - exact package resolution in `requirements.lock`
 - exact aggregate-storage limiter source at `/opt/marb/run_limited.py`
 - all wheel bytes bound by an operator-created `wheelhouse.sha256`
+- the signed-metadata-derived 39-package Debian native closure in
+  `native-debs.lock.json`, plus exact package bytes bound by an
+  operator-created `native-debs.sha256`
+- pre-install archive hash/size/control-field verification and post-install
+  exact-package, exact-clean-benchmark-environment `ldd`, and fresh
+  OCP/CadQuery/VTK import verification through `verify_native_bundle.py`
 - exact Dockerfile, effective context-control `.dockerignore`, runtime contract,
   calibration evidence, and complete non-self-referential build-context
   manifest digests
@@ -50,11 +56,13 @@ The L4 grader remains frozen separately at
 the calibrated compatibility relation without modifying that historical grade
 contract or its evidence.
 
-`requirements.lock` records the exact resolution observed for this contract.
-The Linux wheelhouse and final image have not been built or qualified in this
-source change. Missing Linux wheels, incompatible native libraries, or a
-different dependency resolution are blockers; do not relax a pin to make the
-build pass.
+`requirements.lock` records the exact Python resolution observed for this
+contract. `native-debs.lock.json` records the exact Debian 13 `trixie`
+`linux/amd64` native closure derived for the immutable base. The retained Linux
+wheelhouse exists outside Git, but the native package payloads and repaired
+image have not been downloaded, built, or qualified by this source change.
+Missing bytes, incompatible libraries, or a different dependency resolution
+are blockers; do not relax a pin to make the build pass.
 
 ## Prepare byte-pinned build inputs
 
@@ -89,38 +97,72 @@ not put provider credentials in the build context or Docker configuration.
    by Git and must remain local; it contains public artifact identities and
    approval metadata only, never credentials. The digests are reviewed build
    inputs, not values to guess or commit as placeholders.
-6. Select a base that provides CPython 3.11, `/bin/sh`, `sha256sum`, and the
-   native libraries required by CadQuery/OCP. Resolve it to a verified
-   `repository@sha256:...` value and record that exact value. The Dockerfile
-   rejects a non-digest base reference.
+6. Use the base image already bound by `native-debs.lock.json`. It provides
+   CPython 3.11, `/bin/sh`, `sha256sum`, `dpkg`, `dpkg-deb`, and `ldd`; the
+   Dockerfile rejects a different or non-digest base reference. The lock records
+   four root packages (`libexpat1`, `libgl1`, `libx11-6`, and `libxrender1`),
+   their complete 39-package Debian dependency closure, 118 satisfied
+   dependency groups, and 48,570,480 compressed package bytes.
+7. Only under a separately approved qualification packet, download the exact
+   39 `packages[].filename` payloads from the HTTPS base URL for their recorded
+   suite into `native-debs/`. Do not run `apt-get`, resolve again, accept a
+   mirror substitute, or add another package. Verify every recorded size,
+   SHA-256, package name, version, and architecture, then write the path-sorted
+   LF manifest:
 
-The transient `wheelhouse/`, `wheelhouse.sha256`, and `build-context.sha256`
-are build inputs. Review their inventory for unexpected packages and secrets
-before building. The tracked source-directory `.dockerignore` denies the entire
-source directory as a direct build context, including transient inputs and the
-private build record. It is not the effective allowlist used for a build. This
-prevents an ambient file from silently entering an image. Assemble the exact
-temporary allowlisted context below only after review.
+   ```bash
+   find native-debs -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > native-debs.sha256
+   python3 verify_native_bundle.py archives \
+     --lock native-debs.lock.json \
+     --bundle native-debs \
+     --manifest native-debs.sha256 \
+     --expected-base-image '<approved-base>@sha256:<digest>'
+   ```
 
-The Dockerfile rejects nested/non-wheel inputs and alternate CADCLAW
-candidates; validates the complete context, exact CADCLAW wheel, run-limiter,
-lock, runtime-contract, and calibration-evidence digests; and installs the
-CADCLAW wheel by its verified path before resolving the remaining offline lock.
-It then imports CADCLAW, CadQuery, and OCP, checks the exact distribution and
-gate/registry versions, installed-wheel integrity, and calibrated source
-identity. It writes the exact `/opt/marb/runtime.json` consumed by preflight and
-persists the runtime contract, CADCLAW commit/pin/source/calibration identities,
-base, lock, limiter, wheelhouse, Dockerfile, effective `.dockerignore`, and
+   The metadata resolution itself downloaded no package payloads. Its three
+   Debian `InRelease` signatures were verified offline with the `sqv` binary and
+   Debian archive keyring already in the immutable base, and the three index
+   hashes were matched to the signed release metadata. Those exact identities
+   are recorded in the tracked lock.
+
+The transient `wheelhouse/`, `wheelhouse.sha256`, `native-debs/`,
+`native-debs.sha256`, and `build-context.sha256` are build inputs. Review their
+inventory for unexpected packages and secrets before building. The tracked
+source-directory `.dockerignore` denies the entire source directory as a direct
+build context, including transient inputs and the private build record. It is
+not the effective allowlist used for a build. This prevents an ambient file
+from silently entering an image. Assemble the exact temporary allowlisted
+context below only after review.
+
+The Dockerfile rejects nested/extra wheel and Debian inputs and alternate
+CADCLAW candidates; validates the complete context, exact package archives,
+CADCLAW wheel, run-limiter, locks, runtime-contract, and calibration-evidence
+digests; installs the native bundle with `dpkg --unpack` and
+`dpkg --configure --pending` without an online package-manager step; then
+installs the verified Python wheels. It requires the exact 39 installed Debian
+package identities, zero unresolved OCP/VTK `ldd` entries under the exact clean
+nine-key benchmark environment, and successful fresh isolated
+OCP/CadQuery/VTK imports. It also checks the exact Python
+distribution and gate/registry versions, installed-wheel integrity, and
+calibrated source identity. It writes the exact `/opt/marb/runtime.json`
+consumed by preflight and persists the runtime contract,
+CADCLAW commit/pin/source/calibration identities, base, Python/native locks and
+manifests, native verifier, limiter, Dockerfile, effective `.dockerignore`, and
 context-manifest identities in image labels and
 `/opt/marb/build-provenance.json` (`marb_h2b_image_build_provenance.v3`).
+The 420-object gate establishes loader resolution for those recorded objects;
+it is not a claim that every application-specific later `dlopen()` path has
+executed. The mandatory runtime smoke remains the actual behavior gate.
 
 ## Offline build
 
 Preload the separately approved base digest. Then assemble a fresh temporary
 context whose build payload contains exactly `Dockerfile`, `requirements.lock`,
 `run_limited.py`, `runtime-contract.v0.13.json`,
-`cadclaw-calibration.fad0dd55.json`, `wheelhouse.sha256`, and the reviewed
-top-level `wheelhouse/*.whl` files, plus `build-context.sha256` and the effective
+`cadclaw-calibration.fad0dd55.json`, `wheelhouse.sha256`,
+`native-debs.lock.json`, `verify_native_bundle.py`, `native-debs.sha256`, the
+reviewed top-level `wheelhouse/*.whl` files, and the reviewed top-level
+`native-debs/*.deb` files, plus `build-context.sha256` and the effective
 context-control `.dockerignore`. Write that `.dockerignore` with exact UTF-8/LF
 bytes using these exact allowlist entries and no broader negation:
 
@@ -132,9 +174,14 @@ bytes using these exact allowlist entries and no broader negation:
 !runtime-contract.v0.13.json
 !cadclaw-calibration.fad0dd55.json
 !wheelhouse.sha256
+!native-debs.lock.json
+!verify_native_bundle.py
+!native-debs.sha256
 !build-context.sha256
 !wheelhouse/
 !wheelhouse/*.whl
+!native-debs/
+!native-debs/*.deb
 ```
 
 From inside that reviewed temporary context, create and verify the complete
@@ -144,8 +191,9 @@ separately recorded digest of `build-context.sha256` binds the manifest itself.
 
 ```bash
 {
-  sha256sum Dockerfile .dockerignore requirements.lock run_limited.py runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json wheelhouse.sha256
+  sha256sum Dockerfile .dockerignore requirements.lock run_limited.py runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json wheelhouse.sha256 native-debs.lock.json verify_native_bundle.py native-debs.sha256
   find wheelhouse -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
+  find native-debs -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
 } | LC_ALL=C sort -k2 > build-context.sha256
 sha256sum -c build-context.sha256
 sha256sum Dockerfile .dockerignore runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json build-context.sha256
@@ -166,6 +214,9 @@ $runtimeContractSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "runtim
 $calibrationEvidenceSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "cadclaw-calibration.fad0dd55.json") -Algorithm SHA256).Hash.ToLowerInvariant()
 $wheelhouseManifestSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "wheelhouse.sha256") -Algorithm SHA256).Hash.ToLowerInvariant()
 $cadclawWheelSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "wheelhouse/cadclaw-0.10.0-py3-none-any.whl") -Algorithm SHA256).Hash.ToLowerInvariant()
+$nativeDebLockSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "native-debs.lock.json") -Algorithm SHA256).Hash.ToLowerInvariant()
+$nativeDebManifestSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "native-debs.sha256") -Algorithm SHA256).Hash.ToLowerInvariant()
+$nativeBundleVerifierSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "verify_native_bundle.py") -Algorithm SHA256).Hash.ToLowerInvariant()
 $dockerfileSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "Dockerfile") -Algorithm SHA256).Hash.ToLowerInvariant()
 $contextDockerignoreSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot ".dockerignore") -Algorithm SHA256).Hash.ToLowerInvariant()
 $buildContextManifestSha = (Get-FileHash -LiteralPath (Join-Path $contextRoot "build-context.sha256") -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -182,6 +233,9 @@ $dockerExeSha = (Get-FileHash -LiteralPath $dockerExe -Algorithm SHA256).Hash.To
   --build-arg "RUN_LIMITER_SHA256=$runLimiterSha" `
   --build-arg "WHEELHOUSE_MANIFEST_SHA256=$wheelhouseManifestSha" `
   --build-arg "CADCLAW_WHEEL_SHA256=$cadclawWheelSha" `
+  --build-arg "NATIVE_DEB_LOCK_SHA256=$nativeDebLockSha" `
+  --build-arg "NATIVE_DEB_MANIFEST_SHA256=$nativeDebManifestSha" `
+  --build-arg "NATIVE_BUNDLE_VERIFIER_SHA256=$nativeBundleVerifierSha" `
   --build-arg "DOCKERFILE_SHA256=$dockerfileSha" `
   --build-arg "CONTEXT_DOCKERIGNORE_SHA256=$contextDockerignoreSha" `
   --build-arg "BUILD_CONTEXT_MANIFEST_SHA256=$buildContextManifestSha" `
@@ -197,9 +251,10 @@ approval-gated operator actions. After that readback, use the exact RepoDigest
 in the execution authorization and retain the image ID, base digest, lock
 digest, run-limiter digest, runtime-contract digest, calibration-evidence and
 CADCLAW source-manifest digests, wheelhouse-manifest digest, CADCLAW-wheel
-digest, Dockerfile digest, effective context-control `.dockerignore` digest,
-build-context-manifest digest, exact lowercase Docker executable digest, build
-tool/version, and build timestamp in
+digest, native-lock, native-manifest and native-verifier digests, native package
+count and byte total, Dockerfile digest, effective context-control
+`.dockerignore` digest, build-context-manifest digest, exact lowercase Docker
+executable digest, build tool/version, and build timestamp in
 `harness/container/private-build-record.json`.
 
 ## Mandatory no-provider runtime smoke
@@ -237,8 +292,10 @@ probe and a separate non-secret staged input root containing its required
   `/opt/marb/cadclaw-calibration.json`, `/opt/marb/build-provenance.json`, the
   retained `build-context.sha256`, and the image labels match each other and the
   reviewed runtime-contract, calibration, base, lock, wheelhouse-manifest,
-  CADCLAW wheel, run-limiter, Dockerfile, effective `.dockerignore`, and
-  context-manifest identities in the private build record;
+  CADCLAW wheel, native lock, native archive manifest, native verifier,
+  39-package/48,570,480-byte native inventory, run-limiter, Dockerfile,
+  effective `.dockerignore`, and context-manifest identities in the private
+  build record;
 - stdout/stderr, process, memory, CPU, tmpfs, entry/path/depth, per-file, and
   aggregate-byte limits fail closed; the bounded export is written only to the
   exact precreated file, and its archive members are not extracted or allowed

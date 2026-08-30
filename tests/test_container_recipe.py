@@ -43,6 +43,8 @@ REPO = Path(__file__).resolve().parents[1]
 CONTAINER = REPO / "harness" / "container"
 DOCKERFILE = CONTAINER / "Dockerfile"
 LOCK = CONTAINER / "requirements.lock"
+NATIVE_LOCK = CONTAINER / "native-debs.lock.json"
+NATIVE_VERIFIER = CONTAINER / "verify_native_bundle.py"
 LIMITER = CONTAINER / "run_limited.py"
 NOTES = CONTAINER / "README.md"
 HARNESS_NOTES = REPO / "harness" / "README.md"
@@ -60,6 +62,8 @@ LF_PINNED_INPUTS = (
     "harness/container/run_limited.py",
     "harness/container/Dockerfile",
     "harness/container/requirements.lock",
+    "harness/container/native-debs.lock.json",
+    "harness/container/verify_native_bundle.py",
     "harness/container/runtime-contract.v0.12.json",
     "harness/container/runtime-contract.v0.13.json",
     "harness/container/cadclaw-calibration.fad0dd55.json",
@@ -171,6 +175,26 @@ class ContainerRecipeTests(unittest.TestCase):
             versions["cadquery-ocp"],
             cohort_executor.EXPECTED_RUNTIME["cadquery_ocp_version"],
         )
+        self.assertEqual(
+            hashlib.sha256(NATIVE_LOCK.read_bytes()).hexdigest(),
+            cohort_executor.NATIVE_DEB_LOCK_SHA256,
+        )
+        self.assertEqual(
+            hashlib.sha256(NATIVE_VERIFIER.read_bytes()).hexdigest(),
+            cohort_executor.NATIVE_BUNDLE_VERIFIER_SHA256,
+        )
+
+        native_lock = json.loads(NATIVE_LOCK.read_text(encoding="utf-8"))
+        native_manifest = "".join(
+            f"{item['sha256']}  native-debs/{Path(item['filename']).name}\n"
+            for item in sorted(
+                native_lock["packages"], key=lambda item: Path(item["filename"]).name
+            )
+        ).encode("ascii")
+        self.assertEqual(
+            hashlib.sha256(native_manifest).hexdigest(),
+            cohort_executor.NATIVE_DEB_MANIFEST_SHA256,
+        )
 
     def test_recipe_binds_exact_audited_wheel_and_offline_inputs(self) -> None:
         text = DOCKERFILE.read_text(encoding="utf-8")
@@ -180,7 +204,7 @@ class ContainerRecipeTests(unittest.TestCase):
         self.assertIn(f"--no-deps --only-binary=:all: {wheel}", text)
         self.assertIn("re.fullmatch(r'([0-9a-f]{64})  (wheelhouse/", text)
         self.assertIn("not p.is_symlink()", text)
-        self.assertIn("len(wheel_entries) == len(lines)", text)
+        self.assertIn("len(wheel_entries) == len(wheel_lines)", text)
         self.assertIn("sorted(wheel_entries) == sorted(wheel_paths)", text)
         self.assertLess(
             text.index("sorted(wheel_entries) == sorted(wheel_paths)"),
@@ -190,6 +214,22 @@ class ContainerRecipeTests(unittest.TestCase):
         self.assertIn("dist.read_text('RECORD')", text)
         self.assertIn("base64.urlsafe_b64decode", text)
         self.assertIn("--no-index --only-binary=:all:", text)
+        self.assertIn("ARG NATIVE_DEB_LOCK_SHA256", text)
+        self.assertIn("ARG NATIVE_DEB_MANIFEST_SHA256", text)
+        self.assertIn("ARG NATIVE_BUNDLE_VERIFIER_SHA256", text)
+        self.assertIn("COPY native-debs.lock.json /opt/marb/native-debs.lock.json", text)
+        self.assertIn("COPY verify_native_bundle.py /opt/marb/verify_native_bundle.py", text)
+        self.assertIn("COPY native-debs.sha256 /opt/marb/native-debs.sha256", text)
+        self.assertIn("COPY native-debs/ /opt/marb/native-debs/", text)
+        self.assertIn("verify_native_bundle.py archives", text)
+        self.assertIn("dpkg --unpack /opt/marb/native-debs/*.deb", text)
+        self.assertIn("dpkg --configure --pending", text)
+        self.assertIn("verify_native_bundle.py runtime", text)
+        self.assertIn('["dpkg", "--audit"]', NATIVE_VERIFIER.read_text(encoding="utf-8"))
+        self.assertLess(text.index("verify_native_bundle.py archives"), text.index("dpkg --unpack"))
+        self.assertLess(text.index("dpkg --configure --pending"), text.index("verify_native_bundle.py runtime"))
+        self.assertNotIn("apt-get", text)
+        self.assertNotIn("apt ", text)
         self.assertIn("/opt/marb/build-provenance.json", text)
         self.assertIn("ARG DOCKERFILE_SHA256", text)
         self.assertIn("ARG CONTEXT_DOCKERIGNORE_SHA256", text)
@@ -205,6 +245,13 @@ class ContainerRecipeTests(unittest.TestCase):
         )
         self.assertIn("COPY build-context.sha256 /opt/marb/build-context.sha256", text)
         self.assertIn("marb_h2b_image_build_provenance.v3", text)
+        preflight_source = inspect.getsource(cohort_executor._default_sandbox_factory)
+        for digest in (
+            cohort_executor.NATIVE_DEB_LOCK_SHA256,
+            cohort_executor.NATIVE_DEB_MANIFEST_SHA256,
+            cohort_executor.NATIVE_BUNDLE_VERIFIER_SHA256,
+        ):
+            self.assertIn(digest, preflight_source)
         self.assertIn(
             "COPY runtime-contract.v0.13.json /opt/marb/runtime-contract.json",
             text,
@@ -226,6 +273,9 @@ class ContainerRecipeTests(unittest.TestCase):
         self.assertNotIn("marb-v0.12-h2b", text)
         self.assertNotIn("marb_v0.12_frozen_functional_core", text)
         for field in (
+            "native_deb_lock_sha256",
+            "native_deb_manifest_sha256",
+            "native_bundle_verifier_sha256",
             "dockerfile_sha256",
             "context_dockerignore_sha256",
             "build_context_manifest_sha256",
@@ -248,6 +298,12 @@ class ContainerRecipeTests(unittest.TestCase):
         self.assertIn("sha256sum Dockerfile .dockerignore requirements.lock", notes)
         self.assertIn("sha256sum -c build-context.sha256", notes)
         self.assertIn("--build-arg \"DOCKERFILE_SHA256=$dockerfileSha\"", notes)
+        self.assertIn("--build-arg \"NATIVE_DEB_LOCK_SHA256=$nativeDebLockSha\"", notes)
+        self.assertIn("--build-arg \"NATIVE_DEB_MANIFEST_SHA256=$nativeDebManifestSha\"", notes)
+        self.assertIn(
+            "--build-arg \"NATIVE_BUNDLE_VERIFIER_SHA256=$nativeBundleVerifierSha\"",
+            notes,
+        )
         self.assertIn(
             "--build-arg \"CONTEXT_DOCKERIGNORE_SHA256=$contextDockerignoreSha\"",
             notes,
@@ -275,6 +331,8 @@ class ContainerRecipeTests(unittest.TestCase):
             {
                 "/harness/container/wheelhouse/",
                 "/harness/container/wheelhouse.sha256",
+                "/harness/container/native-debs/",
+                "/harness/container/native-debs.sha256",
                 "/harness/container/build-context.sha256",
                 "/harness/container/private-build-record.json",
             }.issubset(ignored)
@@ -290,6 +348,8 @@ class ContainerRecipeTests(unittest.TestCase):
                 "private-build-record.json",
                 "wheelhouse/",
                 "wheelhouse.sha256",
+                "native-debs/",
+                "native-debs.sha256",
                 ".env",
                 "*secret*",
                 "*credential*",

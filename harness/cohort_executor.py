@@ -60,6 +60,15 @@ CADCLAW_CALIBRATION_SHA256 = (
 HISTORICAL_RUNTIME_CONTRACT_SHA256 = (
     "fdca4e6e46f71b8fe00ed02ac0d867c882166f534039a77eb60f432fa2f32dee"
 )
+NATIVE_DEB_LOCK_SHA256 = (
+    "4b12f84d010651166dd4067ede60689215c174d1d2926d4b1d07befff05232f1"
+)
+NATIVE_DEB_MANIFEST_SHA256 = (
+    "0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1"
+)
+NATIVE_BUNDLE_VERIFIER_SHA256 = (
+    "37c8f9a3014fca98dfad646b4dbe569ee4921a5afaa47c800a8a93e4570336cb"
+)
 EXPECTED_RUNTIME = {
     "runtime_contract": RUNTIME_CONTRACT_ID,
     "runtime_contract_sha256": RUNTIME_CONTRACT_SHA256,
@@ -4053,6 +4062,17 @@ for key in (
 ):
     assert provenance[key] == measured_runtime[key]
 assert provenance["cadclaw_pin_basis"] == contract["pin_basis"]
+expected_native_provenance = {
+    "native_deb_lock_sha256": "4b12f84d010651166dd4067ede60689215c174d1d2926d4b1d07befff05232f1",
+    "native_deb_manifest_sha256": "0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1",
+    "native_bundle_verifier_sha256": "37c8f9a3014fca98dfad646b4dbe569ee4921a5afaa47c800a8a93e4570336cb",
+    "native_deb_package_count": 39,
+    "native_deb_total_bytes": 48570480,
+}
+assert all(provenance.get(key) == value for key, value in expected_native_provenance.items())
+assert hashlib.sha256(Path("/opt/marb/native-debs.lock.json").read_bytes()).hexdigest() == expected_native_provenance["native_deb_lock_sha256"]
+assert hashlib.sha256(Path("/opt/marb/native-debs.sha256").read_bytes()).hexdigest() == expected_native_provenance["native_deb_manifest_sha256"]
+assert hashlib.sha256(Path("/opt/marb/verify_native_bundle.py").read_bytes()).hexdigest() == expected_native_provenance["native_bundle_verifier_sha256"]
 runtime.update(measured_runtime)
 probe = Path("/workspace/.marb-write-probe")
 probe.write_text("ok", encoding="ascii")

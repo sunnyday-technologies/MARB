@@ -23,6 +23,8 @@ Thumbs.db
 # public build instructions are tracked.
 /harness/container/wheelhouse/
 /harness/container/wheelhouse.sha256
+/harness/container/native-debs/
+/harness/container/native-debs.sha256
 /harness/container/build-context.sha256
 /harness/container/private-build-record.json
 

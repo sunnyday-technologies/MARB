@@ -7,6 +7,8 @@
 private-build-record.json
 wheelhouse/
 wheelhouse.sha256
+native-debs/
+native-debs.sha256
 .env
 .env.*
 *secret*

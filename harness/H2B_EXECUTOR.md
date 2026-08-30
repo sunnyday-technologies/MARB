@@ -58,7 +58,11 @@ site, or deployment action.
 - No real runtime image digest is shipped or implied by this repository. An
   operator must build or obtain the versioned image, record its registry
   `RepoDigest`, and complete the no-provider/no-network manual smoke in
-  [`container/README.md`](container/README.md) before any real run.
+  [`container/README.md`](container/README.md) before any real run. The v0.13
+  recipe additionally binds the exact offline Debian native closure and
+  requires archive, installed-package, exact-clean-environment `ldd`, and fresh
+  OCP/CadQuery/VTK import gates; see the public-safe
+  [`native runtime repair ledger`](container/NATIVE_RUNTIME_REPAIR_LEDGER.md).
 
 ## Required authorization boundary
 
