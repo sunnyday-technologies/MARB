@@ -7,9 +7,11 @@ archives and Python wheels are installed.  Neither gate performs network I/O.
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import hashlib
 import importlib.metadata
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import stat
@@ -26,6 +28,13 @@ EXPECTED_CODENAME = "trixie"
 EXPECTED_PACKAGE_COUNT = 39
 EXPECTED_TOTAL_BYTES = 48_570_480
 EXPECTED_NATIVE_FILE_COUNT = 420
+EXPECTED_RUNTIME_ROOT_COUNT = 142
+EXPECTED_REACHABLE_NATIVE_FILE_COUNT = 412
+EXPECTED_VENDORED_NATIVE_FILE_COUNT = 70
+EXPECTED_NATIVE_PATH_VECTOR_BYTES = 19_579
+EXPECTED_NATIVE_PATH_VECTOR_SHA256 = (
+    "258feec8ba330fcc5a168f1d1b0efae8158bf8b92ce1c091aff9473672971a0f"
+)
 EXPECTED_ROOT_PACKAGES = ("libexpat1", "libgl1", "libx11-6", "libxrender1")
 EXPECTED_MISSING_SONAMES = {
     "libGL.so.1": 48,
@@ -35,9 +44,33 @@ EXPECTED_MISSING_SONAMES = {
 }
 BOUNDARIES = {
     "cadquery-ocp": ("OCP/", "cadquery_ocp.libs/"),
-    "vtk": ("vtk.libs/", "vtkmodules/"),
+    "vtk": ("vtkmodules/", "vtk.libs/"),
 }
 IMPORTS = ("OCP", "cadquery", "vtk")
+EXPECTED_EXTENSION_SUFFIX = ".cpython-311-x86_64-linux-gnu.so"
+EXPECTED_VTK_EXTENSION_ROOT = (
+    f"vtkmodules/vtkRenderingOpenGL2{EXPECTED_EXTENSION_SUFFIX}"
+)
+EXPECTED_VTK_RENDERING_LIBRARY = "vtkmodules/libvtkRenderingOpenGL2-9.3.so"
+EXPECTED_VTK_XCURSOR = "vtk.libs/libXcursor-1a09904e.so.1.0.2"
+EXPECTED_VTK_XFIXES = "vtk.libs/libXfixes-d274cb03.so.3.1.0"
+EXPECTED_VTK_XFIXES_SONAME = "libXfixes-d274cb03.so.3.1.0"
+EXPECTED_NON_RUNTIME_MEMBERS = (
+    "vtkmodules/libvtkTestingDataModel-9.3.so",
+    "vtkmodules/libvtkTestingGenericBridge-9.3.so",
+    "vtkmodules/libvtkTestingIOSQL-9.3.so",
+    "vtkmodules/libvtkUtilitiesBenchmarks-9.3.so",
+    "vtkmodules/libvtkWrappingTools-9.3.so",
+    "vtkmodules/libvtkm_io-9.3.so",
+    "vtkmodules/libvtkm_source-9.3.so",
+    "vtkmodules/libvtkzfp-9.3.so",
+)
+EXPECTED_BOUNDARY_COUNTS = {
+    "OCP/": 1,
+    "cadquery_ocp.libs/": 68,
+    "vtk.libs/": 2,
+    "vtkmodules/": 349,
+}
 EXPECTED_RUNTIME_ENV = (
     "HOME=/tmp",
     "TMPDIR=/tmp",
@@ -56,16 +89,63 @@ MANIFEST_LINE = re.compile(
     r"([0-9a-f]{64})  (native-debs/[A-Za-z0-9][A-Za-z0-9.+~_-]*\.deb)"
 )
 MISSING_LIBRARY = re.compile(r"\s*(\S+)\s+=>\s+not found\s*")
-NATIVE_LIBRARY = re.compile(r".+\.so(?:\.[0-9]+)*")
+RESOLVED_LIBRARY = re.compile(
+    r"\s*(\S+)\s+=>\s+(\S+)\s+\(0x[0-9A-Fa-f]+\)\s*"
+)
+SONAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
+NATIVE_LIBRARY = re.compile(
+    r"[A-Za-z0-9][A-Za-z0-9._+-]*\.so(?:\.[0-9]+)*"
+)
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
 class NativeBundleError(RuntimeError):
     """A deterministic native-bundle verification failure."""
 
+    def __init__(
+        self,
+        reason: str,
+        diagnostics: dict[str, list[str]] | None = None,
+    ) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.diagnostics = diagnostics
 
-def _fail(reason: str) -> None:
-    raise NativeBundleError(reason)
+
+def _fail(reason: str, diagnostics: dict[str, list[str]] | None = None) -> None:
+    raise NativeBundleError(reason, diagnostics)
+
+
+@dataclass(frozen=True)
+class NativeObject:
+    """One normalized native member from an exact installed wheel."""
+
+    relative_path: str
+    path: Path
+    distribution: str
+    runtime_root: bool
+    vendored: bool
+
+
+@dataclass(frozen=True)
+class NativeInventory:
+    """Exact native members plus the isolated analysis lookup boundary."""
+
+    objects: tuple[NativeObject, ...]
+    analysis_search_path: tuple[Path, ...]
+    native_directories: tuple[Path, ...]
+
+
+@dataclass(frozen=True)
+class LddObservation:
+    """Safe loader facts retained without command output or host paths."""
+
+    missing_sonames: tuple[str, ...]
+    resolved_libraries: tuple[tuple[str, Path], ...]
+
+    @property
+    def resolved_paths(self) -> tuple[Path, ...]:
+        return tuple(path for _soname, path in self.resolved_libraries)
 
 
 def _exact_keys(value: Any, expected: set[str], reason: str) -> dict[str, Any]:
@@ -404,19 +484,326 @@ def verify_archives(
     }
 
 
-def _native_distribution_files() -> list[Path]:
-    native: dict[str, Path] = {}
-    for distribution_name, prefixes in BOUNDARIES.items():
-        distribution = importlib.metadata.distribution(distribution_name)
-        for item in distribution.files or []:
-            relative = str(item).replace("\\", "/")
-            if not relative.startswith(prefixes) or not NATIVE_LIBRARY.fullmatch(
-                PurePosixPath(relative).name
-            ):
+def _normalize_member_path(item: object) -> str:
+    raw = str(item)
+    path = PurePosixPath(raw)
+    if (
+        not raw
+        or "\x00" in raw
+        or any(ord(character) < 32 or ord(character) == 127 for character in raw)
+        or "\\" in raw
+        or path.is_absolute()
+        or any(part in {"", ".", ".."} for part in path.parts)
+        or path.as_posix() != raw
+    ):
+        _fail("native_runtime_member_path_malformed")
+    return raw
+
+
+def _is_within(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    return True
+
+
+def _path_identity(path: Path) -> str:
+    return os.path.normcase(str(path.resolve(strict=False)))
+
+
+def _plain_directory(path: Path) -> Path:
+    try:
+        metadata = path.lstat()
+        resolved = path.resolve(strict=True)
+    except OSError:
+        _fail("native_runtime_directory_unreadable")
+    if path.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+        _fail("native_runtime_directory_not_plain")
+    return resolved
+
+
+def _validate_native_path_vector(paths: Sequence[str]) -> None:
+    ordered = tuple(sorted(paths))
+    try:
+        raw = "".join(f"{path}\n" for path in ordered).encode("ascii")
+    except UnicodeEncodeError:
+        _fail("native_runtime_path_inventory_mismatch")
+    if (
+        len(raw) != EXPECTED_NATIVE_PATH_VECTOR_BYTES
+        or hashlib.sha256(raw).hexdigest() != EXPECTED_NATIVE_PATH_VECTOR_SHA256
+    ):
+        _fail("native_runtime_path_inventory_mismatch")
+
+
+def _verify_physical_native_directory(
+    directory: Path,
+    prefix: str,
+    distribution_root: Path,
+    expected: dict[str, Path],
+    identities: set[tuple[int, int]],
+) -> None:
+    observed: dict[str, Path] = {}
+    pending = [directory]
+    while pending:
+        current = pending.pop()
+        try:
+            children = sorted(current.iterdir(), key=lambda item: item.name)
+        except OSError:
+            _fail("native_runtime_directory_unreadable")
+        for child in children:
+            try:
+                metadata = child.lstat()
+            except OSError:
+                _fail("native_runtime_member_unreadable")
+            native_name = NATIVE_LIBRARY.fullmatch(child.name) is not None
+            if stat.S_ISLNK(metadata.st_mode):
+                _fail("native_runtime_directory_entry_linked")
+            if stat.S_ISDIR(metadata.st_mode):
+                if native_name:
+                    _fail("native_runtime_member_not_plain_file")
+                try:
+                    resolved_directory = child.resolve(strict=True)
+                except OSError:
+                    _fail("native_runtime_directory_unreadable")
+                if not _is_within(resolved_directory, distribution_root):
+                    _fail("native_runtime_directory_escape")
+                pending.append(resolved_directory)
                 continue
+            if not stat.S_ISREG(metadata.st_mode):
+                _fail("native_runtime_directory_entry_not_plain")
+            if not native_name:
+                continue
+            if metadata.st_nlink != 1:
+                _fail("native_runtime_member_link_count_mismatch")
+            try:
+                resolved = child.resolve(strict=True)
+                nested = resolved.relative_to(directory).as_posix()
+            except (OSError, ValueError):
+                _fail("native_runtime_member_escape")
+            if not _is_within(resolved, distribution_root):
+                _fail("native_runtime_member_escape")
+            relative = _normalize_member_path(f"{prefix}{nested}")
+            identity = (metadata.st_dev, metadata.st_ino)
+            if relative in observed or identity in identities:
+                _fail("native_runtime_member_duplicate")
+            observed[relative] = resolved
+            identities.add(identity)
+    if set(observed) != set(expected) or any(
+        _path_identity(observed[path]) != _path_identity(expected[path])
+        for path in observed
+    ):
+        _fail("native_runtime_physical_inventory_mismatch")
+
+
+def _native_distribution_files() -> NativeInventory:
+    native: dict[str, NativeObject] = {}
+    targets: set[str] = set()
+    directories: dict[str, Path] = {}
+    distribution_roots: dict[str, Path] = {}
+    boundary_counts = {prefix: 0 for prefix in EXPECTED_BOUNDARY_COUNTS}
+
+    for distribution_name, (root_prefix, vendored_prefix) in BOUNDARIES.items():
+        distribution = importlib.metadata.distribution(distribution_name)
+        try:
+            distribution_root = Path(distribution.locate_file("")).resolve(strict=True)
+        except OSError:
+            _fail("native_runtime_distribution_unreadable")
+        for prefix in (root_prefix, vendored_prefix):
+            directory = _plain_directory(
+                Path(distribution.locate_file(prefix.rstrip("/")))
+            )
+            if not _is_within(directory, distribution_root):
+                _fail("native_runtime_directory_escape")
+            directories[prefix] = directory
+            distribution_roots[prefix] = distribution_root
+
+        for item in distribution.files or []:
+            relative = _normalize_member_path(item)
+            name = PurePosixPath(relative).name
+            if not NATIVE_LIBRARY.fullmatch(name):
+                continue
+            prefixes = tuple(
+                prefix
+                for prefix in (root_prefix, vendored_prefix)
+                if relative.startswith(prefix)
+            )
+            if len(prefixes) != 1:
+                _fail("native_runtime_member_outside_boundary")
+            prefix = prefixes[0]
+            if PurePosixPath(relative).parent.as_posix() != prefix.rstrip("/"):
+                _fail("native_runtime_member_nested")
             path = Path(distribution.locate_file(item))
-            native[str(path)] = path
-    return [native[key] for key in sorted(native)]
+            try:
+                metadata = path.lstat()
+                resolved = path.resolve(strict=True)
+            except OSError:
+                _fail("native_runtime_member_unreadable")
+            if path.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+                _fail("native_runtime_member_not_plain_file")
+            if resolved.parent != directories[prefix] or not _is_within(
+                resolved, distribution_root
+            ):
+                _fail("native_runtime_member_escape")
+            target = os.path.normcase(str(resolved))
+            if relative in native or target in targets:
+                _fail("native_runtime_member_duplicate")
+            runtime_root = (
+                relative == f"OCP/OCP{EXPECTED_EXTENSION_SUFFIX}"
+                if distribution_name == "cadquery-ocp"
+                else bool(
+                    re.fullmatch(
+                        rf"vtkmodules/vtk[A-Za-z0-9_]+{re.escape(EXPECTED_EXTENSION_SUFFIX)}",
+                        relative,
+                    )
+                )
+            )
+            native[relative] = NativeObject(
+                relative_path=relative,
+                path=resolved,
+                distribution=distribution_name,
+                runtime_root=runtime_root,
+                vendored=prefix == vendored_prefix,
+            )
+            targets.add(target)
+            boundary_counts[prefix] += 1
+
+    if boundary_counts != EXPECTED_BOUNDARY_COUNTS:
+        _fail("native_runtime_boundary_inventory_mismatch")
+    objects = tuple(native[path] for path in sorted(native))
+    if len(objects) != EXPECTED_NATIVE_FILE_COUNT:
+        _fail("native_runtime_file_count_mismatch")
+    if sum(item.runtime_root for item in objects) != EXPECTED_RUNTIME_ROOT_COUNT:
+        _fail("native_runtime_root_count_mismatch")
+    if sum(item.vendored for item in objects) != EXPECTED_VENDORED_NATIVE_FILE_COUNT:
+        _fail("native_runtime_vendored_count_mismatch")
+    _validate_native_path_vector(tuple(native))
+    physical_identities: set[tuple[int, int]] = set()
+    for prefix, directory in directories.items():
+        _verify_physical_native_directory(
+            directory,
+            prefix,
+            distribution_roots[prefix],
+            {
+                item.relative_path: item.path
+                for item in objects
+                if item.relative_path.startswith(prefix)
+            },
+            physical_identities,
+        )
+    return NativeInventory(
+        objects=objects,
+        analysis_search_path=(
+            directories["cadquery_ocp.libs/"],
+            directories["vtk.libs/"],
+        ),
+        native_directories=tuple(
+            directories[prefix]
+            for prefix in ("OCP/", "cadquery_ocp.libs/", "vtk.libs/", "vtkmodules/")
+        ),
+    )
+
+
+def _run_ldd(
+    native_object: NativeObject,
+    environment: dict[str, str],
+    runner: Runner,
+) -> LddObservation:
+    result = runner(
+        ["/usr/bin/ldd", str(native_object.path)],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        text=True,
+        timeout=30,
+        env=environment,
+    )
+    missing: set[str] = set()
+    resolved: set[tuple[str, Path]] = set()
+    for line in (result.stdout + "\n" + result.stderr).splitlines():
+        missing_match = MISSING_LIBRARY.fullmatch(line)
+        if missing_match:
+            soname = missing_match.group(1)
+            if not SONAME.fullmatch(soname):
+                _fail("native_runtime_ldd_output_malformed")
+            missing.add(soname)
+            continue
+        resolved_match = RESOLVED_LIBRARY.fullmatch(line)
+        if resolved_match:
+            soname = resolved_match.group(1)
+            path = Path(resolved_match.group(2))
+            if not SONAME.fullmatch(soname) or not path.is_absolute():
+                _fail("native_runtime_ldd_output_malformed")
+            resolved.add((soname, path))
+    if result.returncode != 0 and not missing:
+        _fail("native_runtime_ldd_failed")
+    return LddObservation(tuple(sorted(missing)), tuple(sorted(resolved)))
+
+
+def _missing_diagnostics(
+    observations: Sequence[tuple[NativeObject, LddObservation]],
+) -> dict[str, list[str]]:
+    return {
+        item.relative_path: list(observation.missing_sonames)
+        for item, observation in sorted(
+            observations, key=lambda pair: pair[0].relative_path
+        )
+        if observation.missing_sonames
+    }
+
+
+def _verify_bound_vtk_topology(
+    inventory: NativeInventory,
+    root_observations: Sequence[tuple[NativeObject, LddObservation]],
+    analysis_observations: Sequence[tuple[NativeObject, LddObservation]],
+) -> None:
+    by_relative = {item.relative_path: item for item in inventory.objects}
+    required = {
+        EXPECTED_VTK_EXTENSION_ROOT,
+        EXPECTED_VTK_RENDERING_LIBRARY,
+        EXPECTED_VTK_XCURSOR,
+        EXPECTED_VTK_XFIXES,
+    }
+    if not required.issubset(by_relative):
+        _fail("native_runtime_vtk_topology_mismatch")
+    root_observation = next(
+        (
+            observation
+            for item, observation in root_observations
+            if item.relative_path == EXPECTED_VTK_EXTENSION_ROOT
+        ),
+        None,
+    )
+    if root_observation is None:
+        _fail("native_runtime_vtk_topology_mismatch")
+    root_targets = {_path_identity(path) for path in root_observation.resolved_paths}
+    if {
+        _path_identity(by_relative[path].path)
+        for path in (
+            EXPECTED_VTK_RENDERING_LIBRARY,
+            EXPECTED_VTK_XCURSOR,
+            EXPECTED_VTK_XFIXES,
+        )
+    } - root_targets:
+        _fail("native_runtime_vtk_topology_mismatch")
+    xcursor_observation = next(
+        (
+            observation
+            for item, observation in analysis_observations
+            if item.relative_path == EXPECTED_VTK_XCURSOR
+        ),
+        None,
+    )
+    if xcursor_observation is None:
+        _fail("native_runtime_vtk_topology_mismatch")
+    providers = {
+        _path_identity(path)
+        for soname, path in xcursor_observation.resolved_libraries
+        if soname == EXPECTED_VTK_XFIXES_SONAME
+    }
+    if providers != {_path_identity(by_relative[EXPECTED_VTK_XFIXES].path)}:
+        _fail("native_runtime_vtk_topology_mismatch")
 
 
 def verify_runtime(
@@ -441,30 +828,77 @@ def verify_runtime(
         if observed != ["ii ", package["version"], package["architecture"]]:
             _fail("native_installed_package_mismatch")
 
-    native_files = _native_distribution_files()
-    if len(native_files) != EXPECTED_NATIVE_FILE_COUNT:
+    inventory = _native_distribution_files()
+    if len(inventory.objects) != EXPECTED_NATIVE_FILE_COUNT:
         _fail("native_runtime_file_count_mismatch")
     environment = dict(item.split("=", 1) for item in EXPECTED_RUNTIME_ENV)
-    unresolved: set[str] = set()
-    for path in native_files:
-        result = runner(
-            ["/usr/bin/ldd", str(path)],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-            text=True,
-            timeout=30,
-            env=environment,
+    objects_by_target = {
+        _path_identity(item.path): item for item in inventory.objects
+    }
+    runtime_roots = tuple(item for item in inventory.objects if item.runtime_root)
+    if len(runtime_roots) != EXPECTED_RUNTIME_ROOT_COUNT:
+        _fail("native_runtime_root_count_mismatch")
+    root_observations = tuple(
+        (item, _run_ldd(item, dict(environment), runner)) for item in runtime_roots
+    )
+    root_unresolved = _missing_diagnostics(root_observations)
+
+    analysis_environment = dict(environment)
+    analysis_environment["LD_LIBRARY_PATH"] = ":".join(
+        str(path) for path in inventory.analysis_search_path
+    )
+    vendored = tuple(item for item in inventory.objects if item.vendored)
+    if (
+        len(inventory.analysis_search_path) != 2
+        or len(set(inventory.analysis_search_path)) != 2
+    ):
+        _fail("native_runtime_analysis_path_mismatch")
+    if len(vendored) != EXPECTED_VENDORED_NATIVE_FILE_COUNT:
+        _fail("native_runtime_vendored_count_mismatch")
+    analysis_observations = tuple(
+        (item, _run_ldd(item, dict(analysis_environment), runner))
+        for item in vendored
+    )
+    analysis_unresolved = _missing_diagnostics(analysis_observations)
+    unresolved = {
+        path: diagnostics
+        for path, diagnostics in sorted(
+            {**root_unresolved, **analysis_unresolved}.items()
         )
-        if result.returncode != 0:
-            _fail("native_runtime_ldd_failed")
-        for line in (result.stdout + "\n" + result.stderr).splitlines():
-            match = MISSING_LIBRARY.fullmatch(line)
-            if match:
-                unresolved.add(match.group(1))
+    }
     if unresolved:
-        _fail("native_runtime_unresolved_libraries")
+        _fail("native_runtime_unresolved_libraries", unresolved)
+    _verify_bound_vtk_topology(
+        inventory,
+        root_observations,
+        analysis_observations,
+    )
+
+    reachable = {item.relative_path for item in runtime_roots}
+    for _root, observation in root_observations:
+        for resolved_path in observation.resolved_paths:
+            target = _path_identity(resolved_path)
+            member = objects_by_target.get(target)
+            if member is not None:
+                reachable.add(member.relative_path)
+                continue
+            canonical = resolved_path.resolve(strict=False)
+            if NATIVE_LIBRARY.fullmatch(canonical.name) and any(
+                _is_within(canonical, directory)
+                for directory in inventory.native_directories
+            ):
+                _fail("native_runtime_unknown_resolved_member")
+
+    unreachable = tuple(
+        item.relative_path
+        for item in inventory.objects
+        if item.relative_path not in reachable
+    )
+    if (
+        len(reachable) != EXPECTED_REACHABLE_NATIVE_FILE_COUNT
+        or unreachable != EXPECTED_NON_RUNTIME_MEMBERS
+    ):
+        _fail("native_runtime_reachability_mismatch")
     import_result = runner(
         [
             sys.executable,
@@ -486,7 +920,11 @@ def verify_runtime(
     return {
         "schema": "marb_native_runtime_verification.v1",
         "package_count": len(lock["packages"]),
-        "native_file_count": len(native_files),
+        "native_file_count": len(inventory.objects),
+        "runtime_root_count": len(runtime_roots),
+        "reachable_native_file_count": len(reachable),
+        "classified_non_runtime_file_count": len(unreachable),
+        "analyzed_vendored_file_count": len(vendored),
         "unresolved_library_count": 0,
         "import_count": len(IMPORTS),
     }
@@ -520,6 +958,17 @@ def main(arguments: Sequence[str] | None = None) -> int:
             result = verify_runtime(options.lock, options.expected_base_image)
     except NativeBundleError as exc:
         print(f"native_bundle_verification_failed:{exc}", file=sys.stderr)
+        if exc.diagnostics is not None:
+            print(
+                "native_bundle_verification_diagnostics:"
+                + json.dumps(
+                    exc.diagnostics,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=True,
+                ),
+                file=sys.stderr,
+            )
         return 2
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     return 0

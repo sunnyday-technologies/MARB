@@ -60,8 +60,9 @@ site, or deployment action.
   `RepoDigest`, and complete the no-provider/no-network manual smoke in
   [`container/README.md`](container/README.md) before any real run. The v0.13
   recipe additionally binds the exact offline Debian native closure and
-  requires archive, installed-package, exact-clean-environment `ldd`, and fresh
-  OCP/CadQuery/VTK import gates; see the public-safe
+  requires archive and installed-package checks, clean-environment `ldd` on
+  actual CPython load roots, 412-of-420 member reachability, a separate
+  analysis-only `.libs` check, and fresh clean OCP/CadQuery/VTK imports; see the public-safe
   [`native runtime repair ledger`](container/NATIVE_RUNTIME_REPAIR_LEDGER.md).
 
 ## Required authorization boundary

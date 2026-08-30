@@ -113,11 +113,14 @@ release never relabels an older result.
   metadata-derived Debian 13 `trixie` `linux/amd64` closure as 39 exact packages
   and 48,570,480 compressed bytes; verify archive inventory, hashes, sizes and
   control metadata before offline `dpkg`; and require exact installed package
-  identities, zero unresolved dependencies across 420 pinned OCP/VTK native
-  objects under the exact clean benchmark environment, and successful fresh
-  OCP/CadQuery/VTK imports afterward. No package payload, repaired image,
-  registry artifact, RepoDigest, or passing qualification is claimed by this
-  source repair; those remain R4 approval-gated.
+  identities. R5 passed those gates but its single build failed closed because
+  the verifier treated every wheel ELF as an independent clean-environment
+  load root. The verifier now keeps the exact clean environment for 142 real
+  CPython roots and fresh imports, proves 412-of-420 member reachability,
+  narrowly binds eight test/tool-only members, and checks 70 `.libs` members
+  with an analysis-only ordered wheel-local path. No repaired image, registry
+  artifact, RepoDigest, or passing qualification is claimed by this source
+  repair; a later R6 packet requires separate approval.
 - Repair the v0.13 runtime's nested source quoting at both preflight boundaries:
   the Dockerfile source-integrity command now survives POSIX shell dequoting,
   and the executor's generated preflight source preserves manifest newlines and

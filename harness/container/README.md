@@ -37,8 +37,10 @@ copied from an unverified build is not authorization.
   `native-debs.lock.json`, plus exact package bytes bound by an
   tracked-generator-created `native-debs.sha256`
 - pre-install archive hash/size/control-field verification and post-install
-  exact-package, exact-clean-benchmark-environment `ldd`, and fresh
-  OCP/CadQuery/VTK import verification through `verify_native_bundle.py`
+  exact-package verification; clean-environment `ldd` of the 142 actual
+  CPython load roots; analysis-only `ldd` of the 70 `.libs` members with the
+  exact ordered wheel-local search path; 412-of-420 reachability accounting;
+  and fresh clean OCP/CadQuery/VTK imports through `verify_native_bundle.py`
 - exact Dockerfile, effective context-control `.dockerignore`, runtime contract,
   calibration evidence, and complete non-self-referential build-context
   manifest digests
@@ -61,9 +63,19 @@ contract. `native-debs.lock.json` records the exact Debian 13 `trixie`
 `linux/amd64` native closure derived for the immutable base. The retained Linux
 wheelhouse exists outside Git. R4 transiently acquired and individually
 verified the exact native package payloads, then removed them after a
-pre-Docker manifest-order failure. No repaired image was built or qualified.
-Missing bytes, incompatible libraries, or a different dependency resolution
-remain blockers; do not relax a pin to make the build pass.
+pre-Docker manifest-order failure. R5 passed the exact package, manifest, and
+control-field gates, but its single Docker build failed closed when the old
+verifier treated every wheel ELF as an independent clean-environment load
+root. No image or downstream qualification artifact resulted. Missing bytes,
+incompatible libraries, or a different dependency resolution remain blockers;
+do not relax a pin to make the build pass.
+
+The bound VTK wheel contains
+`vtk.libs/libXcursor-1a09904e.so.1.0.2` and its exact hashed provider
+`vtk.libs/libXfixes-d274cb03.so.3.1.0`. The real rendering load root supplies
+the transitive `$ORIGIN:$ORIGIN/../vtk.libs` RPATH. Do not add Debian
+`libxfixes3`: its unmodified SONAME cannot satisfy that hashed wheel SONAME.
+Do not add any `LD_*` key to the runtime or import environment.
 
 ## Prepare byte-pinned build inputs
 
@@ -151,9 +163,16 @@ CADCLAW wheel, run-limiter, locks, runtime-contract, and calibration-evidence
 digests; installs the native bundle with `dpkg --unpack` and
 `dpkg --configure --pending` without an online package-manager step; then
 installs the verified Python wheels. It requires the exact 39 installed Debian
-package identities, zero unresolved OCP/VTK `ldd` entries under the exact clean
-nine-key benchmark environment, and successful fresh isolated
-OCP/CadQuery/VTK imports. It also checks the exact Python
+package identities and runs `ldd` on the 142 actual CPython extension roots
+under the exact clean nine-key benchmark environment. Root loader output must
+prove that exactly 412 of the 420 pinned native members are reachable. The
+remaining eight members are bound by exact normalized test/tool paths, not a
+filename pattern. The sorted 420-member path vector and the four physical
+native directories are also checked, rejecting unlisted, nested, linked,
+aliased, or special native members. The 70 `.libs` members receive a separate
+analysis-only check whose only additional variable is an exact, ordered
+wheel-local `LD_LIBRARY_PATH`; that variable is never used for runtime roots or
+imports. Fresh isolated OCP/CadQuery/VTK imports must then succeed. It also checks the exact Python
 distribution and gate/registry versions, installed-wheel integrity, and
 calibrated source identity. It writes the exact `/opt/marb/runtime.json`
 consumed by preflight and persists the runtime contract,
@@ -161,8 +180,8 @@ CADCLAW commit/pin/source/calibration identities, base, Python/native locks and
 manifests, native verifier, limiter, Dockerfile, effective `.dockerignore`, and
 context-manifest identities in image labels and
 `/opt/marb/build-provenance.json` (`marb_h2b_image_build_provenance.v3`).
-The 420-object gate establishes loader resolution for those recorded objects;
-it is not a claim that every application-specific later `dlopen()` path has
+The reachability and analysis gates establish the bounded loader topology; they
+are not a claim that every application-specific later `dlopen()` path has
 executed. The mandatory runtime smoke remains the actual behavior gate.
 
 ## Offline build
@@ -207,17 +226,18 @@ manifest itself. The generator remains outside the context.
 manifest_tool='<reviewed-MARB-checkout>/scripts/canonical_manifest.py'
 python3 "$manifest_tool" preview build-context --root .
 python3 "$manifest_tool" write build-context --root . \
-  --expected-sha256 b06fe7d32efbf26eb8e9de51cd24e79001e43e2fd81c8c688a8a71e1eaabc2bb
+  --expected-sha256 fd52aeee64309e26891542454bc02e4aad8ece49b01d3b6da44297ca4192ecb2
 python3 "$manifest_tool" readback build-context --root .
 sha256sum Dockerfile .dockerignore runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json build-context.sha256
 ```
 
-For the unchanged R4 payload identities and tracked build inputs, the canonical
+For the unchanged R4/R5 payload identities and the R6 verifier prerequisite,
+the canonical
 native vector is 39 entries and 4,351 bytes at the `0ad2f18d...fa1e1` digest
 above. The canonical non-self-referential context vector is 95 entries and
-11,219 bytes at the `b06fe7d3...abc2bb` digest above; 96 files including the
-manifest total 346,354,716 bytes, while the 95 manifest entries total
-346,343,497 payload bytes. A different preview is a stop condition, not
+11,219 bytes at the `fd52aeee...192ecb2` digest above; 96 files including the
+manifest total 346,371,248 bytes, while the 95 manifest entries total
+346,360,029 payload bytes. A different preview is a stop condition, not
 authority to substitute a new expected digest.
 
 The generator rejects observable file, inventory, root, and ancestor identity

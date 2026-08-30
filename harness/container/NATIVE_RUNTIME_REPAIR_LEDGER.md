@@ -54,15 +54,19 @@ versions, architectures, sizes, and SHA-256 values.
   `dpkg --configure --pending` on the verified local bundle. It contains no
   `apt-get`, repository update, or online dependency-resolution step.
 - `verify_native_bundle.py runtime` requires all 39 exact dpkg identities,
-  checks all 420 pinned CadQuery/OCP/VTK native objects with `ldd` under the
-  exact clean nine-key benchmark environment, requires zero unresolved
-  libraries, and imports OCP, CadQuery, and VTK in a fresh isolated subprocess.
+  checks the 142 actual CPython load roots with `ldd` under the exact clean
+  nine-key benchmark environment, proves 412-of-420 native-member
+  reachability, checks the 70 `.libs` members with a separate exact ordered
+  analysis-only wheel-local search path, and imports OCP, CadQuery, and VTK in
+  a fresh clean subprocess.
 - The native lock, bundle manifest, verifier, package count, and byte total are
   included in image labels and `marb_h2b_image_build_provenance.v3`.
 - Static and mocked-boundary regressions cover exact inventory acceptance and
-  rejection, changed-resolution rejection, dpkg identity checks, the 420-object
-  exact-environment `ldd` boundary, fresh import checks, ambient-loader-variable
-  rejection, and unresolved-SONAME failure.
+  rejection, changed-resolution rejection, dpkg identity checks, root and
+  analysis environment separation, 420-member reachability accounting, exact
+  non-runtime classification, fresh imports, ambient-loader-variable
+  rejection, deterministic relative-path diagnostics, and unresolved-SONAME
+  failure.
 
 ## R4 failed-closed result
 
@@ -86,22 +90,79 @@ versions, architectures, sizes, and SHA-256 values.
   its 95 entries total 346,343,497 payload bytes, and the same 96 files
   including the manifest total 346,354,716 bytes.
 
-## R5 prerequisite
+## R5 source prerequisite
 
 `scripts/canonical_manifest.py` is the tracked, dependency-free host-side
 implementation for preview, no-clobber write, and readback of wheelhouse,
 native, and build-context manifests. It validates the filesystem inventory and
 child bindings, sorts paths by ordinal UTF-8 bytes, and uses one serializer for
 preview and write. It remains outside the temporary Docker context, so it does
-not alter the corrected 95-entry context vector. R5 must use this tool and bind
-the reviewed preview digest before any separately authorized execution.
+not alter the corrected 95-entry context vector. R5 used this tool and bound
+the reviewed preview digest before its separately authorized execution.
+
+## R5 failed-closed result
+
+- R5 consumed its one approved attempt. All 39 exact Debian packages, the
+  native and context manifests, and all archive control fields passed their
+  bound checks.
+- Its single Docker build stopped at `native_runtime_unresolved_libraries`.
+  The old verifier independently ran clean-environment `ldd` on every wheel
+  ELF, including a VTK vendored library that relies on its real load root's
+  transitive RPATH.
+- No candidate image, registry operation, RepoDigest, runtime smoke, provider
+  or model activity, benchmark allocation, grading, result/board/task/grader
+  mutation, publication, or deployment followed. R5 cannot be replayed.
+
+## R6 verifier-only prerequisite
+
+The R6 source repair keeps the exact nine-key clean environment for all 142
+actual CPython load roots and for fresh OCP/CadQuery/VTK imports. It separately
+checks the 70 `.libs` members with an analysis-only `LD_LIBRARY_PATH` whose two
+wheel-local directories have one exact order; that variable cannot reach the
+runtime-root or import subprocesses. Clean-root loader output must prove 412
+reachable members. The only narrowly classified non-runtime members are:
+
+- `vtkmodules/libvtkTestingDataModel-9.3.so`
+- `vtkmodules/libvtkTestingGenericBridge-9.3.so`
+- `vtkmodules/libvtkTestingIOSQL-9.3.so`
+- `vtkmodules/libvtkUtilitiesBenchmarks-9.3.so`
+- `vtkmodules/libvtkWrappingTools-9.3.so`
+- `vtkmodules/libvtkm_io-9.3.so`
+- `vtkmodules/libvtkm_source-9.3.so`
+- `vtkmodules/libvtkzfp-9.3.so`
+
+Unknown or unreachable production members and missing or renamed sibling
+providers fail closed. Diagnostics retain the stable failure code and map only
+normalized relative object paths to sorted missing SONAMEs. The bound edge is
+`vtk.libs/libXcursor-1a09904e.so.1.0.2` to the exact sibling SONAME
+`libXfixes-d274cb03.so.3.1.0`; the real rendering root carries transitive RPATH
+`$ORIGIN:$ORIGIN/../vtk.libs`. Debian `libxfixes3` is not added because its
+unmodified SONAME cannot satisfy the hashed wheel SONAME. The runtime
+environment, native lock, 39-package vector, native manifest, wheelhouse,
+requirements, CADCLAW identities, runtime contract, run limiter, Dockerfile,
+and effective `.dockerignore` remain unchanged.
+
+The verifier also binds the sorted normalized 420-member path vector: 19,579
+LF-terminated ASCII bytes at SHA-256
+`258feec8ba330fcc5a168f1d1b0efae8158bf8b92ce1c091aff9473672971a0f`.
+It walks the four physical native directories and rejects unlisted, nested,
+linked, aliased, or special native members instead of trusting wheel metadata
+alone.
+
+The R6 verifier is 34,693 bytes at SHA-256
+`f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179`.
+Its path-sorted context vector remains 95 entries and 11,219 manifest bytes at
+SHA-256
+`fd52aeee64309e26891542454bc02e4aad8ece49b01d3b6da44297ca4192ecb2`;
+the entries total 346,360,029 payload bytes, and the 96 files including the
+manifest total 346,371,248 bytes.
 
 ## Qualification boundary
 
 This repair and prerequisite do not claim a repaired image or passing runtime
-qualification. R4's transient payloads were removed and its attempt cannot be
+qualification. R4 and R5 remain consumed failed-closed attempts and cannot be
 replayed. A future payload acquisition, Docker build, registry work, RepoDigest
-capture, or no-provider/no-network qualification suite requires a new exact
+capture, or no-provider/no-network qualification suite requires a new exact R6
 authorization after this prerequisite is merged and read back.
 
 Rollback is source-only: revert the focused repair commit to restore the prior
