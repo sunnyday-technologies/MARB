@@ -22,4 +22,4 @@ jobs:
         # Executor/transport/isolation tests inject provider, sandbox, HTTP, and
         # Docker command runners; limiter/recipe tests are local/static. CI must
         # not make provider, model, or Docker calls.
-        run: python -m unittest tests.test_frontier_publication tests.test_task_registry tests.test_eco_invariant tests.test_answer_key_guard tests.test_secret_guard tests.test_cohort_runner tests.test_cohort_executor tests.test_nightwatch tests.test_provider_transport tests.test_isolated_container tests.test_run_limiter tests.test_container_recipe -v
+        run: python -m unittest tests.test_frontier_publication tests.test_task_registry tests.test_eco_invariant tests.test_answer_key_guard tests.test_secret_guard tests.test_cohort_runner tests.test_cohort_executor tests.test_nightwatch tests.test_provider_transport tests.test_isolated_container tests.test_run_limiter tests.test_container_recipe tests.test_native_bundle -v

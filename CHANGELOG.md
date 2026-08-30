@@ -108,6 +108,16 @@ release never relabels an older result.
   `marb_h2b_image_build_provenance.v3`. No real image RepoDigest or passing
   no-provider/no-network runtime smoke is claimed by this source release; the
   image remains unqualified.
+- Repair the fail-closed v0.13 native-runtime recipe after its first approved
+  offline build stopped on missing `libGL.so.1`. Freeze the complete signed-
+  metadata-derived Debian 13 `trixie` `linux/amd64` closure as 39 exact packages
+  and 48,570,480 compressed bytes; verify archive inventory, hashes, sizes and
+  control metadata before offline `dpkg`; and require exact installed package
+  identities, zero unresolved dependencies across 420 pinned OCP/VTK native
+  objects under the exact clean benchmark environment, and successful fresh
+  OCP/CadQuery/VTK imports afterward. No package payload, repaired image,
+  registry artifact, RepoDigest, or passing qualification is claimed by this
+  source repair; those remain R4 approval-gated.
 - Repair the v0.13 runtime's nested source quoting at both preflight boundaries:
   the Dockerfile source-integrity command now survives POSIX shell dequoting,
   and the executor's generated preflight source preserves manifest newlines and
