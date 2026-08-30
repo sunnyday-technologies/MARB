@@ -67,7 +67,7 @@ NATIVE_DEB_MANIFEST_SHA256 = (
     "0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1"
 )
 NATIVE_BUNDLE_VERIFIER_SHA256 = (
-    "37c8f9a3014fca98dfad646b4dbe569ee4921a5afaa47c800a8a93e4570336cb"
+    "f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179"
 )
 EXPECTED_RUNTIME = {
     "runtime_contract": RUNTIME_CONTRACT_ID,
@@ -4065,7 +4065,7 @@ assert provenance["cadclaw_pin_basis"] == contract["pin_basis"]
 expected_native_provenance = {
     "native_deb_lock_sha256": "4b12f84d010651166dd4067ede60689215c174d1d2926d4b1d07befff05232f1",
     "native_deb_manifest_sha256": "0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1",
-    "native_bundle_verifier_sha256": "37c8f9a3014fca98dfad646b4dbe569ee4921a5afaa47c800a8a93e4570336cb",
+    "native_bundle_verifier_sha256": "f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179",
     "native_deb_package_count": 39,
     "native_deb_total_bytes": 48570480,
 }
