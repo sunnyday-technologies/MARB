@@ -24,7 +24,12 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-from harness import cohort_executor, cohort_runner, isolated_container
+from harness import (
+    cohort_executor,
+    cohort_runner,
+    isolated_container,
+    runtime_smoke_probes,
+)
 from harness.container import verify_native_bundle as native_bundle
 from scripts import canonical_manifest
 from scripts.calibrate_h2b_cadclaw import (
@@ -61,6 +66,7 @@ GITIGNORE = REPO / ".gitignore"
 DOCKERIGNORE = CONTAINER / ".dockerignore"
 GITATTRIBUTES = REPO / ".gitattributes"
 MANIFEST_TOOL = REPO / "scripts" / "canonical_manifest.py"
+RUNTIME_SMOKE_PROBES = REPO / "harness" / "runtime_smoke_probes.py"
 
 R4_NATIVE_MANIFEST_SHA256 = (
     "0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1"
@@ -88,6 +94,14 @@ R4_CONTEXT_STATIC_DIGESTS = {
     "verify_native_bundle.py": "37c8f9a3014fca98dfad646b4dbe569ee4921a5afaa47c800a8a93e4570336cb",
     "wheelhouse.sha256": "63211cd2d2df66b9005fcff1fdf618b8c14bb12a6a5aaa183106c03abd221eca",
 }
+R4_CONTEXT_STATIC_BYTES = {
+    "Dockerfile": 16_420,
+    "cadclaw-calibration.fad0dd55.json": 52_011,
+    "native-debs.lock.json": 20_636,
+    "requirements.lock": 1_185,
+    "run_limited.py": 9_445,
+    "runtime-contract.v0.13.json": 1_839,
+}
 R6_BUILD_CONTEXT_MANIFEST_SHA256 = (
     "fd52aeee64309e26891542454bc02e4aad8ece49b01d3b6da44297ca4192ecb2"
 )
@@ -100,6 +114,14 @@ R6_CONTEXT_STATIC_DIGESTS = {
     **R4_CONTEXT_STATIC_DIGESTS,
     "verify_native_bundle.py": "f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179",
 }
+R6_CONTEXT_STATIC_BYTES = {
+    **R4_CONTEXT_STATIC_BYTES,
+    "verify_native_bundle.py": 34_693,
+}
+CURRENT_RUN_LIMITER_SHA256 = (
+    "f621fc46b49f53c21ed2ea44d21b65f6e8bb16bff4a61afcfb471c061e708188"
+)
+CURRENT_RUN_LIMITER_BYTES = 9_925
 R4_WHEEL_MANIFEST = b"""f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8  wheelhouse/aiohappyeyeballs-2.6.1-py3-none-any.whl
 3a807cabd5115fb55af198b98178997a5e0e57dead43eb74a93d9c07d6d4a7dc  wheelhouse/aiohttp-3.13.5-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
 053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e  wheelhouse/aiosignal-1.4.0-py3-none-any.whl
@@ -153,6 +175,8 @@ LF_PINNED_INPUTS = (
     "harness/cohort_executor.py",
     "harness/provider_transport.py",
     "harness/isolated_container.py",
+    "harness/runtime_smoke_probes.py",
+    "harness/runtime_smoke_runner.py",
     "harness/container/run_limited.py",
     "harness/container/Dockerfile",
     "harness/container/requirements.lock",
@@ -273,7 +297,7 @@ class CanonicalManifestTests(unittest.TestCase):
         ):
             (root / name).write_bytes((name + "\n").encode("ascii"))
 
-    def test_exact_r4_native_and_context_vectors_without_payload_bodies(self) -> None:
+    def test_exact_historical_r4_native_and_context_vectors_without_payload_bodies(self) -> None:
         native = canonical_manifest.build_manifest(_r4_native_entries())
         self.assertEqual(len(native.entries), 39)
         self.assertEqual(len(native.raw), 4_351)
@@ -310,12 +334,13 @@ class CanonicalManifestTests(unittest.TestCase):
         )
         for path in tracked:
             with self.subTest(path=path):
-                self.assertEqual(
-                    hashlib.sha256((CONTAINER / path).read_bytes()).hexdigest(),
-                    R4_CONTEXT_STATIC_DIGESTS[path],
-                )
+                if path != "run_limited.py":
+                    self.assertEqual(
+                        hashlib.sha256((CONTAINER / path).read_bytes()).hexdigest(),
+                        R4_CONTEXT_STATIC_DIGESTS[path],
+                    )
         reconstructed_payload = (
-            sum((CONTAINER / path).stat().st_size for path in tracked)
+            sum(R4_CONTEXT_STATIC_BYTES[path] for path in tracked)
             + R4_NATIVE_VERIFIER_BYTES
             + R4_EFFECTIVE_DOCKERIGNORE_BYTES
             + len(R4_WHEEL_MANIFEST)
@@ -328,7 +353,7 @@ class CanonicalManifestTests(unittest.TestCase):
             reconstructed_payload + len(context.raw), R4_CONTEXT_TOTAL_BYTES
         )
 
-    def test_exact_r6_active_context_vector_without_payload_bodies(self) -> None:
+    def test_exact_historical_r6_context_vector_without_payload_bodies(self) -> None:
         context = canonical_manifest.build_manifest(_r6_context_entries())
         self.assertEqual(len(context.entries), 95)
         self.assertEqual(len(context.raw), 11_219)
@@ -345,13 +370,14 @@ class CanonicalManifestTests(unittest.TestCase):
         )
         for path in tracked:
             with self.subTest(path=path):
-                self.assertEqual(
-                    hashlib.sha256((CONTAINER / path).read_bytes()).hexdigest(),
-                    R6_CONTEXT_STATIC_DIGESTS[path],
-                )
+                if path != "run_limited.py":
+                    self.assertEqual(
+                        hashlib.sha256((CONTAINER / path).read_bytes()).hexdigest(),
+                        R6_CONTEXT_STATIC_DIGESTS[path],
+                    )
         native = canonical_manifest.build_manifest(_r4_native_entries())
         reconstructed_payload = (
-            sum((CONTAINER / path).stat().st_size for path in tracked)
+            sum(R6_CONTEXT_STATIC_BYTES[path] for path in tracked)
             + R4_EFFECTIVE_DOCKERIGNORE_BYTES
             + len(R4_WHEEL_MANIFEST)
             + len(native.raw)
@@ -362,6 +388,17 @@ class CanonicalManifestTests(unittest.TestCase):
         self.assertEqual(
             reconstructed_payload + len(context.raw), R6_CONTEXT_TOTAL_BYTES
         )
+
+    def test_current_run_limiter_vector_is_distinct_from_historical_r4_r6(self) -> None:
+        raw = LIMITER.read_bytes()
+        self.assertEqual(len(raw), CURRENT_RUN_LIMITER_BYTES)
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), CURRENT_RUN_LIMITER_SHA256)
+        self.assertNotEqual(
+            CURRENT_RUN_LIMITER_SHA256,
+            R6_CONTEXT_STATIC_DIGESTS["run_limited.py"],
+        )
+        self.assertEqual(R4_CONTEXT_STATIC_BYTES["run_limited.py"], 9_445)
+        self.assertEqual(R6_CONTEXT_STATIC_BYTES["run_limited.py"], 9_445)
 
     def test_r4_hash_first_native_variant_is_rejected(self) -> None:
         entries = _r4_native_entries()
@@ -450,6 +487,35 @@ class CanonicalManifestTests(unittest.TestCase):
             self.assertEqual(
                 [entry.path for entry in document.entries],
                 ["wheelhouse/B-1.whl", "wheelhouse/a-1.whl", "wheelhouse/z-1.whl"],
+            )
+
+    def test_wheelhouse_profile_requires_parent_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            wheelhouse = root / "wheelhouse"
+            wheelhouse.mkdir()
+            (wheelhouse / "sample.whl").write_bytes(b"sample")
+
+            document = canonical_manifest.collect_profile(root, "wheelhouse")
+            self.assertEqual(
+                [entry.path for entry in document.entries],
+                ["wheelhouse/sample.whl"],
+            )
+
+            with self.assertRaisesRegex(
+                canonical_manifest.ManifestError,
+                "path component wheelhouse is unavailable",
+            ):
+                canonical_manifest.collect_profile(wheelhouse, "wheelhouse")
+
+            code, stdout, stderr = self._run_cli(
+                "preview", "wheelhouse", "--root", str(wheelhouse)
+            )
+            self.assertEqual(code, 2)
+            self.assertEqual(stdout, "")
+            self.assertEqual(
+                stderr,
+                "ERROR: path component wheelhouse is unavailable\n",
             )
 
     def test_strict_byte_format_and_portable_path_aliases_fail_closed(self) -> None:
@@ -914,6 +980,26 @@ class CanonicalManifestTests(unittest.TestCase):
 
 
 class ContainerRecipeTests(unittest.TestCase):
+    def test_shared_runtime_smoke_probe_is_exactly_bound_and_strong(self) -> None:
+        raw = RUNTIME_SMOKE_PROBES.read_bytes()
+        normalized = (
+            raw.decode("utf-8")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .encode("utf-8")
+        )
+        self.assertEqual(
+            hashlib.sha256(normalized).hexdigest(),
+            cohort_executor.RUNTIME_SMOKE_PROBES_SHA256,
+        )
+        self.assertIs(
+            cohort_executor.POSITIVE_PROVENANCE_AND_IMPORT_SOURCE,
+            runtime_smoke_probes.POSITIVE_PROVENANCE_AND_IMPORT_SOURCE,
+        )
+        for required in ("import OCP", "import cadclaw", "import cadquery", "import vtk"):
+            with self.subTest(required=required):
+                self.assertIn(required, runtime_smoke_probes.POSITIVE_PROVENANCE_AND_IMPORT_SOURCE)
+
     def test_generated_runtime_preflight_source_compiles(self) -> None:
         docker_identity = {
             "path": "C:/Program Files/Docker/Docker/resources/bin/docker.exe",

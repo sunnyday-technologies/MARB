@@ -25,9 +25,6 @@ from harness.isolated_container import (
     CONTAINER_WORKSPACE,
     CPU_LIMIT,
     EXPORT_TMPFS_SPEC,
-    MAX_EXPORT_TAR_BYTES,
-    MAX_STDERR_BYTES,
-    MAX_STDOUT_BYTES,
     MAX_WORKSPACE_FILE_BYTES,
     MEMORY_LIMIT,
     MEMORY_LIMIT_BYTES,
@@ -205,8 +202,8 @@ def container_metadata(
                 {"Name": "nofile", "Soft": 1024, "Hard": 1024},
                 {
                     "Name": "fsize",
-                    "Soft": MAX_EXPORT_TAR_BYTES,
-                    "Hard": MAX_EXPORT_TAR_BYTES,
+                    "Soft": isolated.MAX_EXPORT_TAR_BYTES,
+                    "Hard": isolated.MAX_EXPORT_TAR_BYTES,
                 },
             ],
             "Binds": None,
@@ -395,6 +392,26 @@ class IsolatedContainerTests(unittest.TestCase):
                     self.sandbox(runner).inspect_local_image()
                 self.assertEqual(len(runner.calls), 1)
 
+    def test_post_inspect_preparation_failure_binds_live_image_identity(self) -> None:
+        runner = FakeRunner([completed(stdout=image_metadata())])
+        sandbox = IsolatedDockerPython(
+            IMAGE,
+            input_root=self.input_root,
+            docker_executable=DOCKER_EXE,
+            command_runner=runner,
+            uuid_factory=lambda: "not-a-uuid",  # type: ignore[arg-type]
+            host_environ=HOST_SOURCE,
+        )
+        with self.assertRaises(IsolationError) as caught:
+            sandbox.execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.stage, "post_image_preparation")
+        self.assertEqual(error.image, IMAGE)
+        self.assertEqual(error.image_id, IMAGE_ID)
+        self.assertFalse(error.cleanup_attempted)
+        self.assertIsNone(error.cleanup_verified)
+        self.assertEqual(runner.responses, [])
+
     def test_create_command_is_exactly_hardened_and_named(self) -> None:
         self.export_archive.touch()
         command = self.sandbox(FakeRunner([])).build_create_command(
@@ -452,7 +469,10 @@ class IsolatedContainerTests(unittest.TestCase):
                 f"target={CONTAINER_EXPORT}/workspace.tar,bind-propagation=rprivate",
             ],
         )
-        self.assertIn(f"fsize={MAX_EXPORT_TAR_BYTES}:{MAX_EXPORT_TAR_BYTES}", command)
+        self.assertIn(
+            f"fsize={isolated.MAX_EXPORT_TAR_BYTES}:{isolated.MAX_EXPORT_TAR_BYTES}",
+            command,
+        )
         self.assertNotIn("run", command)
         self.assertNotIn("--rm", command)
         self.assertNotIn("--volume", command)
@@ -518,6 +538,7 @@ class IsolatedContainerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 7)
         self.assertEqual(result.stdout, "partial output\n")
         self.assertEqual(result.stderr, "tool failed\n")
+        self.assertEqual(result.image_id, IMAGE_ID)
         self.assertEqual(result.container_name, CONTAINER_NAME)
         self.assertEqual(result.container_id, CONTAINER_ID)
         self.assertTrue(result.cleanup_verified)
@@ -527,6 +548,18 @@ class IsolatedContainerTests(unittest.TestCase):
             "print('exported')\n",
         )
         self.assertFalse(self.export_archive.exists())
+        self.assertEqual(
+            runner.calls[7][0],
+            [
+                DOCKER_EXE,
+                "container",
+                "inspect",
+                "--format",
+                "{{json .}}",
+                CONTAINER_ID,
+            ],
+        )
+        self.assertEqual(runner.responses, [])
 
     def test_one_absolute_deadline_is_consumed_across_preflight_and_start(self) -> None:
         class AdvancingClock:
@@ -679,15 +712,74 @@ class IsolatedContainerTests(unittest.TestCase):
         runner = FakeRunner(
             execution_responses(self.workspace, self.input_root, start=timeout)
         )
-        with self.assertRaises(subprocess.TimeoutExpired):
+        with self.assertRaises(IsolationError) as caught:
             self.sandbox(runner).execute(
                 self.workspace, "tool.py", execution_timeout=3.0
             )
+        error = caught.exception
+        self.assertEqual(error.code, "execution_timeout")
+        self.assertEqual(error.stage, "container_start")
+        self.assertEqual(error.image, IMAGE)
+        self.assertEqual(error.image_id, IMAGE_ID)
+        self.assertEqual(error.primary_error_type, "TimeoutExpired")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertIsInstance(error.__cause__, subprocess.TimeoutExpired)
         self.assertEqual(runner.calls[4][0], [DOCKER_EXE, "kill", CONTAINER_ID])
         self.assertEqual(runner.calls[5][0][1], "stop")
         self.assertEqual(runner.calls[6][0], [DOCKER_EXE, "rm", "--force", CONTAINER_ID])
-        self.assertEqual(runner.calls[7][0][-1], CONTAINER_ID)
+        self.assertEqual(
+            runner.calls[7][0],
+            [
+                DOCKER_EXE,
+                "container",
+                "inspect",
+                "--format",
+                "{{json .}}",
+                CONTAINER_ID,
+            ],
+        )
+        self.assertEqual(runner.responses, [])
         self.assertFalse(self.export_archive.exists())
+
+    def test_attached_run_timeout_is_separate_from_setup_deadline(self) -> None:
+        timeout = subprocess.TimeoutExpired([DOCKER_EXE, "start"], 1.0)
+        runner = FakeRunner(
+            execution_responses(self.workspace, self.input_root, start=timeout)
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).execute(
+                self.workspace,
+                "tool.py",
+                execution_timeout=60.0,
+                attached_run_timeout=1.0,
+            )
+        self.assertEqual(caught.exception.code, "execution_timeout")
+        self.assertEqual(caught.exception.stage, "container_start")
+        self.assertGreater(runner.calls[0][1], 1.0)
+        self.assertEqual(runner.calls[3][1], 1.0)
+        self.assertEqual(runner.responses, [])
+
+    def test_generic_runner_exception_message_is_not_serialized(self) -> None:
+        sentinel = "sensitive-runner-detail-must-not-be-serialized"
+        runner = FakeRunner(
+            execution_responses(
+                self.workspace,
+                self.input_root,
+                start=RuntimeError(sentinel),
+            )
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "execution_failed")
+        self.assertEqual(error.primary_error_type, "RuntimeError")
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertNotIn(sentinel, json.dumps(error.evidence, sort_keys=True))
+        self.assertEqual(runner.responses, [])
 
     def test_malformed_create_identity_cleans_up_only_owned_named_container(self) -> None:
         metadata = container_metadata(
@@ -754,34 +846,118 @@ class IsolatedContainerTests(unittest.TestCase):
         responses = execution_responses(self.workspace, self.input_root)
         responses[6] = completed(returncode=1, stderr="cannot remove")
         runner = FakeRunner(responses[:7])
-        with self.assertRaisesRegex(IsolationError, "cleanup failed"):
+        with self.assertRaises(IsolationError) as caught:
             self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "cleanup_verification_failed")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertFalse(error.cleanup_verified)
+        self.assertFalse(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(error.cleanup_error_type, "IsolationError")
+        self.assertEqual(runner.responses, [])
 
     def test_cleanup_requires_explicit_absence_readback(self) -> None:
         responses = execution_responses(self.workspace, self.input_root)
         responses[7] = completed(returncode=1, stderr="daemon unavailable")
         runner = FakeRunner(responses)
-        with self.assertRaisesRegex(IsolationError, "absence could not be verified"):
+        with self.assertRaises(IsolationError) as caught:
             self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "cleanup_verification_failed")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertFalse(error.cleanup_verified)
+        self.assertFalse(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(runner.responses, [])
 
-    def test_stdout_and_stderr_are_bounded_and_marked(self) -> None:
+    def test_primary_failure_is_preserved_when_cleanup_also_fails(self) -> None:
+        responses = execution_responses(
+            self.workspace,
+            self.input_root,
+            start=completed(
+                returncode=70,
+                stdout="bounded child output\n",
+                stderr="workspace limit reached\n",
+            ),
+        )
+        responses[6] = completed(returncode=1, stderr="cannot remove")
+        runner = FakeRunner(responses[:7])
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "container_limiter_rejected")
+        self.assertEqual(error.returncode, 70)
+        self.assertEqual(error.stdout, "bounded child output\n")
+        self.assertEqual(error.stderr, "workspace limit reached\n")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertFalse(error.cleanup_verified)
+        self.assertFalse(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(error.cleanup_error_type, "IsolationError")
+        self.assertEqual(runner.responses, [])
+
+    def test_stdout_and_stderr_overflow_is_byte_bounded_marked_and_rejected(self) -> None:
         runner = FakeRunner(
             execution_responses(
                 self.workspace,
                 self.input_root,
                 start=completed(
-                    stdout="x" * (MAX_STDOUT_BYTES + 100),
-                    stderr="y" * (MAX_STDERR_BYTES + 100),
+                    stdout="\u00e9" * (isolated.MAX_STDOUT_BYTES // 2 + 100),
+                    stderr="\u754c" * (isolated.MAX_STDERR_BYTES // 3 + 100),
                 ),
             )
         )
-        result = self.sandbox(runner).execute(self.workspace, "tool.py")
-        self.assertLessEqual(len(result.stdout), MAX_STDOUT_BYTES)
-        self.assertLessEqual(len(result.stderr), MAX_STDERR_BYTES)
-        self.assertTrue(result.stdout_truncated)
-        self.assertTrue(result.stderr_truncated)
-        self.assertIn("MARB output truncated", result.stdout)
-        self.assertIn("MARB output truncated", result.stderr)
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "output_limit_exceeded")
+        self.assertEqual(error.returncode, 0)
+        self.assertEqual(error.image, IMAGE)
+        self.assertEqual(error.image_id, IMAGE_ID)
+        self.assertLessEqual(error.stdout_bytes, isolated.MAX_STDOUT_BYTES)
+        self.assertLessEqual(error.stderr_bytes, isolated.MAX_STDERR_BYTES)
+        self.assertTrue(error.stdout_truncated)
+        self.assertTrue(error.stderr_truncated)
+        self.assertIn("MARB output truncated", error.stdout)
+        self.assertIn("MARB output truncated", error.stderr)
+        self.assertTrue(error.cleanup_attempted)
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        evidence = error.evidence
+        self.assertEqual(evidence["schema"], "marb_isolation_error.v1")
+        self.assertEqual(evidence["image"], IMAGE)
+        self.assertEqual(evidence["image_id"], IMAGE_ID)
+        self.assertEqual(evidence["stdout"]["bytes"], error.stdout_bytes)
+        self.assertEqual(evidence["stderr"]["bytes"], error.stderr_bytes)
+        self.assertEqual(len(evidence["stdout"]["sha256"]), 64)
+        self.assertEqual(len(evidence["stderr"]["sha256"]), 64)
+        self.assertTrue(evidence["stdout"]["truncated"])
+        self.assertTrue(evidence["stderr"]["truncated"])
+        self.assertNotIn("message", evidence)
+        serialized = json.dumps(
+            evidence, ensure_ascii=True, allow_nan=False, sort_keys=True
+        )
+        self.assertNotIn(error.stdout, serialized)
+        self.assertNotIn(error.stderr, serialized)
+        self.assertEqual(
+            runner.calls[7][0],
+            [
+                DOCKER_EXE,
+                "container",
+                "inspect",
+                "--format",
+                "{{json .}}",
+                CONTAINER_ID,
+            ],
+        )
+        self.assertEqual(runner.responses, [])
+        self.assertEqual(
+            (self.workspace / "tool.py").read_text(encoding="utf-8"),
+            "print('ok')\n",
+        )
+        self.assertFalse(self.export_archive.exists())
 
     def test_workspace_limits_reject_before_any_docker_call(self) -> None:
         cases = (
@@ -811,10 +987,80 @@ class IsolatedContainerTests(unittest.TestCase):
                     )
                 runner = FakeRunner([])
                 with mock.patch.object(isolated, constant, limit):
-                    with self.assertRaisesRegex(IsolationError, "limit"):
+                    with self.assertRaisesRegex(IsolationError, "limit") as caught:
                         self.sandbox(runner).execute(self.workspace, "tool.py")
+                error = caught.exception
+                self.assertEqual(error.code, "workspace_input_limit_exceeded")
+                self.assertIsNone(error.image)
+                self.assertIsNone(error.image_id)
+                self.assertFalse(error.cleanup_attempted)
+                self.assertIsNone(error.cleanup_verified)
+                self.assertIsNone(error.container_absence_verified)
                 self.assertEqual(runner.calls, [])
                 candidate.unlink()
+
+    def test_workspace_limiter_failure_preserves_prior_state_and_proves_absence(self) -> None:
+        runner = FakeRunner(
+            execution_responses(
+                self.workspace,
+                self.input_root,
+                start=completed(
+                    returncode=70,
+                    stdout="probe started\n",
+                    stderr="workspace aggregate limit exceeded\n",
+                ),
+            )
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "container_limiter_rejected")
+        self.assertEqual(error.returncode, 70)
+        self.assertEqual(error.stdout, "probe started\n")
+        self.assertEqual(error.stderr, "workspace aggregate limit exceeded\n")
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(
+            runner.calls[7][0],
+            [
+                DOCKER_EXE,
+                "container",
+                "inspect",
+                "--format",
+                "{{json .}}",
+                CONTAINER_ID,
+            ],
+        )
+        self.assertEqual(runner.responses, [])
+        self.assertEqual(
+            (self.workspace / "tool.py").read_text(encoding="utf-8"),
+            "print('ok')\n",
+        )
+        self.assertFalse(self.export_archive.exists())
+
+    def test_exact_workspace_entry_reason_gets_specific_safe_code(self) -> None:
+        runner = FakeRunner(
+            execution_responses(
+                self.workspace,
+                self.input_root,
+                start=completed(
+                    returncode=isolated.LIMITER_EXIT,
+                    stderr=isolated.WORKSPACE_ENTRY_LIMIT_REASON,
+                ),
+            )
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "workspace_entry_limit_exceeded")
+        self.assertEqual(error.stage, "workspace_limiter")
+        self.assertEqual(error.returncode, isolated.LIMITER_EXIT)
+        self.assertEqual(error.stderr, isolated.WORKSPACE_ENTRY_LIMIT_REASON)
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(runner.responses, [])
 
     def test_oversized_workspace_export_is_rejected_after_container_cleanup(self) -> None:
         runner = FakeRunner(
@@ -825,11 +1071,59 @@ class IsolatedContainerTests(unittest.TestCase):
             )
         )
         with mock.patch.object(isolated, "MAX_WORKSPACE_TOTAL_BYTES", 100):
-            with self.assertRaisesRegex(IsolationError, "total-size limit"):
+            with self.assertRaisesRegex(IsolationError, "total-size limit") as caught:
                 self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "workspace_export_limit_exceeded")
+        self.assertEqual(error.stage, "workspace_restore")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
         self.assertEqual(runner.calls[4][0], [DOCKER_EXE, "kill", CONTAINER_ID])
         self.assertEqual(runner.calls[6][0], [DOCKER_EXE, "rm", "--force", CONTAINER_ID])
+        self.assertEqual(
+            runner.calls[7][0],
+            [
+                DOCKER_EXE,
+                "container",
+                "inspect",
+                "--format",
+                "{{json .}}",
+                CONTAINER_ID,
+            ],
+        )
+        self.assertEqual(runner.responses, [])
         self.assertFalse((self.workspace / "generated.bin").exists())
+        self.assertEqual(
+            (self.workspace / "tool.py").read_text(encoding="utf-8"),
+            "print('ok')\n",
+        )
+        self.assertFalse(self.export_archive.exists())
+
+    def test_oversized_export_archive_is_rejected_before_restore_after_cleanup(self) -> None:
+        with mock.patch.object(isolated, "MAX_EXPORT_TAR_BYTES", 1024):
+            runner = FakeRunner(execution_responses(self.workspace, self.input_root))
+            with self.assertRaises(IsolationError) as caught:
+                self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "workspace_export_limit_exceeded")
+        self.assertEqual(error.stage, "export_validation")
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(
+            runner.calls[7][0],
+            [
+                DOCKER_EXE,
+                "container",
+                "inspect",
+                "--format",
+                "{{json .}}",
+                CONTAINER_ID,
+            ],
+        )
+        self.assertEqual(runner.responses, [])
         self.assertEqual(
             (self.workspace / "tool.py").read_text(encoding="utf-8"),
             "print('ok')\n",
@@ -993,7 +1287,11 @@ class IsolatedContainerTests(unittest.TestCase):
         self.assertFalse(invocation.kwargs["shell"])
 
     def test_nonpositive_timeouts_are_rejected_before_inspect(self) -> None:
-        for keyword in ({"execution_timeout": 0}, {"inspect_timeout": 0}):
+        for keyword in (
+            {"execution_timeout": 0},
+            {"inspect_timeout": 0},
+            {"attached_run_timeout": 0},
+        ):
             with self.subTest(keyword=keyword):
                 runner = FakeRunner([])
                 with self.assertRaises(IsolationError):

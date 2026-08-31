@@ -236,6 +236,10 @@ class CohortExecutorTests(unittest.TestCase):
             Path(EXECUTOR.__file__).resolve().with_name("provider_transport.py").read_bytes(),
         )
         self.fixture._write_bytes(
+            "harness/runtime_smoke_probes.py",
+            Path(EXECUTOR.__file__).resolve().with_name("runtime_smoke_probes.py").read_bytes(),
+        )
+        self.fixture._write_bytes(
             "harness/container/run_limited.py",
             (
                 Path(EXECUTOR.__file__).resolve().parent
@@ -276,6 +280,9 @@ class CohortExecutorTests(unittest.TestCase):
             "executor": self.fixture.path("harness/cohort_executor.py"),
             "isolated_container": self.fixture.path("harness/isolated_container.py"),
             "provider_transport": self.fixture.path("harness/provider_transport.py"),
+            "runtime_smoke_probes": self.fixture.path(
+                "harness/runtime_smoke_probes.py"
+            ),
             "run_limiter": self.fixture.path("harness/container/run_limited.py"),
             "runtime_contract": self.fixture.path(
                 "harness/container/runtime-contract.v0.13.json"
@@ -940,6 +947,27 @@ class CohortExecutorTests(unittest.TestCase):
             del repo_root, revision
             if public_path == "harness/container/cadclaw-calibration.fad0dd55.json":
                 return b'{"classification":"incompatible"}\n'
+            return self.fixture.path(public_path).read_bytes()
+
+        with mock.patch.object(
+            EXECUTOR, "_executing_module_paths", side_effect=self.executing_module_paths
+        ), self.assertRaisesRegex(EXECUTOR.ExecutorError, "exact committed blob"):
+            EXECUTOR._verify_committed_implementation(
+                self.repo,
+                plan["plan"],
+                authorization,
+                drifted_reader,
+            )
+
+    def test_committed_shared_runtime_probe_drift_fails_before_provider(self) -> None:
+        plan = self.ready_plan()
+        raw, digest, _literal = self.authorization(plan)
+        authorization = self.verify_authorization_for_plan(plan, raw, digest)
+
+        def drifted_reader(repo_root: Path, revision: str, public_path: str) -> bytes:
+            del repo_root, revision
+            if public_path == "harness/runtime_smoke_probes.py":
+                return b"POSITIVE_PROVENANCE_AND_IMPORT_SOURCE = 'weakened'\n"
             return self.fixture.path(public_path).read_bytes()
 
         with mock.patch.object(

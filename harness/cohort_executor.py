@@ -35,8 +35,12 @@ from typing import Any, Callable, Iterator, Mapping, NoReturn, Protocol, Sequenc
 
 try:  # package import in tests; script import for the CLI
     from . import cohort_runner
+    from .runtime_smoke_probes import POSITIVE_PROVENANCE_AND_IMPORT_SOURCE
 except ImportError:  # pragma: no cover - exercised by CLI smoke tests
     import cohort_runner  # type: ignore[no-redef]
+    from runtime_smoke_probes import (  # type: ignore[no-redef]
+        POSITIVE_PROVENANCE_AND_IMPORT_SOURCE,
+    )
 
 
 AUTH_SCHEMA = "marb_execution_authorization.v3"
@@ -68,6 +72,9 @@ NATIVE_DEB_MANIFEST_SHA256 = (
 )
 NATIVE_BUNDLE_VERIFIER_SHA256 = (
     "f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179"
+)
+RUNTIME_SMOKE_PROBES_SHA256 = (
+    "fd12683e44b374f94f95a098fa5667d55906ad74faecc8e42be97da988649812"
 )
 EXPECTED_RUNTIME = {
     "runtime_contract": RUNTIME_CONTRACT_ID,
@@ -2419,14 +2426,17 @@ def _executing_module_paths() -> dict[str, Path]:
     try:
         from . import isolated_container as executing_isolation
         from . import provider_transport as executing_transport
+        from . import runtime_smoke_probes as executing_smoke_probes
     except ImportError:  # pragma: no cover - script-mode CLI
         import isolated_container as executing_isolation  # type: ignore[no-redef]
         import provider_transport as executing_transport  # type: ignore[no-redef]
+        import runtime_smoke_probes as executing_smoke_probes  # type: ignore[no-redef]
     return {
         "planner": Path(cohort_runner.__file__).resolve(strict=True),
         "executor": Path(__file__).resolve(strict=True),
         "isolated_container": Path(executing_isolation.__file__).resolve(strict=True),
         "provider_transport": Path(executing_transport.__file__).resolve(strict=True),
+        "runtime_smoke_probes": Path(executing_smoke_probes.__file__).resolve(strict=True),
         "run_limiter": Path(__file__).resolve(strict=True).parent / "container" / "run_limited.py",
         "runtime_contract": RUNTIME_CONTRACT_PATH,
         "historical_runtime_contract": HISTORICAL_RUNTIME_CONTRACT_PATH,
@@ -2455,6 +2465,11 @@ def _verify_committed_implementation(
         "provider_transport": (
             "harness/provider_transport.py",
             approved["provider_transport_sha256"],
+            "utf8-lf",
+        ),
+        "runtime_smoke_probes": (
+            "harness/runtime_smoke_probes.py",
+            RUNTIME_SMOKE_PROBES_SHA256,
             "utf8-lf",
         ),
         "run_limiter": (
@@ -3977,144 +3992,16 @@ def _default_sandbox_factory(
     except ImportError:  # pragma: no cover - exercised by CLI smoke tests
         from isolated_container import IsolatedDockerPython  # type: ignore[no-redef]
 
+    required_probe_identities = (
+        "4b12f84d010651166dd4067ede60689215c174d1d2926d4b1d07befff05232f1",
+        "0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1",
+        "f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179",
+    )
+    if not all(item in POSITIVE_PROVENANCE_AND_IMPORT_SOURCE for item in required_probe_identities):
+        raise RuntimeError("shared runtime preflight provenance identities are incomplete")
+
     class DockerSandboxAdapter:
-        _PREFLIGHT = """\
-import hashlib
-import json
-import os
-from importlib.metadata import distribution, version
-from pathlib import Path
-
-from cadclaw.gate_registry import HARNESS_GATE_REGISTRY
-from cadclaw.gate_spec import GATE_SPEC_VERSION
-
-expected_env = {
-    "HOME", "TMPDIR", "XDG_CACHE_HOME", "PYTHONDONTWRITEBYTECODE",
-    "PYTHONHASHSEED", "TZ", "LANG", "LC_ALL", "PATH"
-}
-status = {}
-for line in Path("/proc/self/status").read_text(encoding="ascii").splitlines():
-    if line.startswith(("CapEff:", "NoNewPrivs:", "Seccomp:")):
-        key, value = line.split(":", 1)
-        status[key] = value.strip()
-root_options = None
-for line in Path("/proc/mounts").read_text(encoding="utf-8").splitlines():
-    fields = line.split()
-    if len(fields) >= 4 and fields[1] == "/":
-        root_options = fields[3].split(",")
-runtime = json.loads(Path("/opt/marb/runtime.json").read_text(encoding="utf-8"))
-contract_raw = Path("/opt/marb/runtime-contract.json").read_bytes()
-calibration_raw = Path("/opt/marb/cadclaw-calibration.json").read_bytes()
-contract = json.loads(contract_raw.decode("utf-8"))
-calibration = json.loads(calibration_raw.decode("utf-8"))
-provenance = json.loads(
-    Path("/opt/marb/build-provenance.json").read_text(encoding="utf-8")
-)
-measured_runtime = {
-    "runtime_contract": contract["contract_id"],
-    "runtime_contract_sha256": hashlib.sha256(contract_raw).hexdigest(),
-    "cadclaw_version": version("cadclaw"),
-    "cadclaw_commit": contract["cadclaw"]["commit"],
-    "cadclaw_gate_spec_version": GATE_SPEC_VERSION,
-    "cadclaw_gate_registry_version": HARNESS_GATE_REGISTRY.version,
-    "cadclaw_source_manifest_sha256": contract["cadclaw"]["package_source_manifest_sha256"],
-    "cadclaw_calibration_sha256": hashlib.sha256(calibration_raw).hexdigest(),
-    "cadquery_version": version("cadquery"),
-    "cadquery_ocp_version": version("cadquery-ocp"),
-}
-assert contract["cadclaw"]["calibration_evidence_sha256"] == measured_runtime["cadclaw_calibration_sha256"]
-assert runtime.get("cadclaw_pin_basis") == contract["pin_basis"]
-assert all(runtime.get(key) == value for key, value in measured_runtime.items())
-assert runtime.get("run_limiter_sha256") == hashlib.sha256(Path("/opt/marb/run_limited.py").read_bytes()).hexdigest()
-assert calibration["classification"] == "compatible" and calibration["failed_checks"] == []
-assert calibration["source_control"]["candidate_commit"] == measured_runtime["cadclaw_commit"]
-candidate_manifest = calibration["source_manifests"]["source_to_wheel_inputs"]["candidate"]
-manifest_bytes = b"".join(
-    (item["sha256"] + "  " + item["path"] + chr(10)).encode("utf-8")
-    for item in candidate_manifest["files"]
-)
-assert len(candidate_manifest["files"]) == candidate_manifest["file_count"] == 53
-assert hashlib.sha256(manifest_bytes).hexdigest() == candidate_manifest["manifest_sha256"] == measured_runtime["cadclaw_source_manifest_sha256"]
-package_roots = ("cadclaw/", "cadclaw_cli/", "cadclaw_mcp/", "cadharness/")
-expected_package_files = {
-    item["path"]: item["sha256"]
-    for item in candidate_manifest["files"]
-    if item["path"].startswith(package_roots) and item["path"].endswith(".py")
-}
-cadclaw_distribution = distribution("cadclaw")
-installed_package_files = sorted(
-    str(item).replace(chr(92), "/")
-    for item in (cadclaw_distribution.files or [])
-    if str(item).replace(chr(92), "/").startswith(package_roots)
-    and str(item).replace(chr(92), "/").endswith(".py")
-)
-assert installed_package_files == sorted(expected_package_files)
-assert all(
-    hashlib.sha256(Path(cadclaw_distribution.locate_file(path)).read_bytes()).hexdigest()
-    == digest
-    for path, digest in expected_package_files.items()
-)
-assert provenance["schema"] == "marb_h2b_image_build_provenance.v3"
-for key in (
-    "runtime_contract", "runtime_contract_sha256", "cadclaw_commit",
-    "cadclaw_gate_spec_version", "cadclaw_gate_registry_version",
-    "cadclaw_source_manifest_sha256", "cadclaw_calibration_sha256",
-):
-    assert provenance[key] == measured_runtime[key]
-assert provenance["cadclaw_pin_basis"] == contract["pin_basis"]
-expected_native_provenance = {
-    "native_deb_lock_sha256": "4b12f84d010651166dd4067ede60689215c174d1d2926d4b1d07befff05232f1",
-    "native_deb_manifest_sha256": "0ad2f18d336e070c5cbaab7204e3cc76f1ec112e9d8fbd6d69a42902b27fa1e1",
-    "native_bundle_verifier_sha256": "f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179",
-    "native_deb_package_count": 39,
-    "native_deb_total_bytes": 48570480,
-}
-assert all(provenance.get(key) == value for key, value in expected_native_provenance.items())
-assert hashlib.sha256(Path("/opt/marb/native-debs.lock.json").read_bytes()).hexdigest() == expected_native_provenance["native_deb_lock_sha256"]
-assert hashlib.sha256(Path("/opt/marb/native-debs.sha256").read_bytes()).hexdigest() == expected_native_provenance["native_deb_manifest_sha256"]
-assert hashlib.sha256(Path("/opt/marb/verify_native_bundle.py").read_bytes()).hexdigest() == expected_native_provenance["native_bundle_verifier_sha256"]
-runtime.update(measured_runtime)
-probe = Path("/workspace/.marb-write-probe")
-probe.write_text("ok", encoding="ascii")
-probe.unlink()
-tmp_probe = Path("/tmp/marb-write-probe")
-tmp_probe.write_text("ok", encoding="ascii")
-tmp_probe.unlink()
-kit_read_only = False
-try:
-    Path("/workspace/kit/.marb-write-probe").write_text("no", encoding="ascii")
-except OSError:
-    kit_read_only = True
-staged_inputs_read_only = False
-try:
-    Path("/marb-input/.marb-write-probe").write_text("no", encoding="ascii")
-except OSError:
-    staged_inputs_read_only = True
-result = {
-    **runtime,
-    "uid": os.geteuid(),
-    "gid": os.getegid(),
-    "capabilities_zero": status.get("CapEff") == "0000000000000000",
-    "no_new_privileges": status.get("NoNewPrivs") == "1",
-    "seccomp_filtered": status.get("Seccomp") == "2",
-    "root_read_only": isinstance(root_options, list) and "ro" in root_options,
-    "network_interfaces": sorted(item.name for item in Path("/sys/class/net").iterdir()),
-    "docker_socket_absent": not Path("/var/run/docker.sock").exists(),
-    "environment_keys": sorted(os.environ),
-    "cwd": os.getcwd(),
-    "kit_read_only": kit_read_only,
-    "staged_inputs_read_only": staged_inputs_read_only,
-    "staged_input_root": "/marb-input",
-}
-assert result["uid"] == 65532 and result["gid"] == 65532
-assert result["capabilities_zero"] and result["no_new_privileges"]
-assert result["seccomp_filtered"] and result["root_read_only"]
-assert result["network_interfaces"] == ["lo"] and result["docker_socket_absent"]
-assert result["kit_read_only"]
-assert result["staged_inputs_read_only"] and result["staged_input_root"] == "/marb-input"
-assert set(result["environment_keys"]) == expected_env and result["cwd"] == "/workspace"
-print(json.dumps(result, sort_keys=True, separators=(",", ":")))
-"""
+        _PREFLIGHT = POSITIVE_PROVENANCE_AND_IMPORT_SOURCE
 
         def __init__(self) -> None:
             self._docker_identity = _verify_host_docker_executable(container)

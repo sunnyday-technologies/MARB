@@ -100,7 +100,9 @@ not put provider credentials in the build context or Docker configuration.
    to plan, write without clobbering, and read back the wheel manifest. Preview
    writes nothing; write requires the reviewed preview digest and publishes the
    identical planned bytes. Entries are relative paths such as
-   `wheelhouse/cadquery-2.7.0-...whl`:
+   `wheelhouse/cadquery-2.7.0-...whl`. Here `--root` is the parent directory
+   that contains `wheelhouse/`; the `wheelhouse/` child itself is not a valid
+   manifest root and fails closed:
 
    ```bash
    python3 ../../scripts/canonical_manifest.py preview wheelhouse --root .
@@ -307,10 +309,62 @@ executable digest, build tool/version, and build timestamp in
 
 ## Mandatory no-provider runtime smoke
 
-This gate is manual and pending until an approved RepoDigest exists. It must use
-the same absolute Docker executable and host configuration that will be named
-in execution authorization. It must not construct a provider session, load a
-credential, or permit network access.
+This gate is pending until an approved RepoDigest exists. Run the tracked
+`harness.runtime_smoke_runner` only under a separate exact qualification
+approval, using the same absolute Docker executable and host configuration that
+will be named in execution authorization. The runner does not construct a
+provider session, load a credential, or permit container network access. Its
+source/fake tests do not run Docker and do not qualify an image.
+
+The R4 and R6 context manifests and limiter digest remain historical evidence;
+this source change does not relabel either attempt. Any later approved build must
+generate and review a new current context manifest that binds the changed limiter
+bytes before consuming its own attempt.
+
+The exact ordered cases are:
+
+1. `positive_provenance_and_import`
+2. `expected_nonzero_exit`
+3. `network_denial`
+4. `protected_write_denial`
+5. `exact_clean_environment`
+6. `stdout_overflow_rejection`
+7. `workspace_input_rejection_overflow`
+8. `export_workspace_overflow`
+9. `timeout`
+
+Case 6 emits exactly 1,048,577 stdout bytes and must be rejected after bounded
+capture. Case 7 materializes 4,096 empty entries in addition to its probe, must
+fail host workspace validation before the first Docker command, and records zero
+Docker commands. Case 8 creates the same deterministic entry overflow inside the
+container; only the limiter's exact entry-count reason and exit code are accepted,
+the prior workspace must remain unchanged, export staging must be removed, and
+the container must be explicitly absent. The ninth probe sleeps for 3,600 seconds
+and has a one-second attached-run timeout after a separate bounded setup window;
+a pre-start timeout cannot satisfy the case. A mismatch stops the suite
+without running later cases; canonical evidence lists their exact IDs in
+`not_run_case_ids`.
+
+From the reviewed repository root, supply the exact approved values and a fresh
+private work directory. The output path must use the repository's ignored
+private-evidence convention and must not already exist:
+
+```text
+python -m harness.runtime_smoke_runner --image <repository@sha256:digest> --docker-executable <absolute-normalized-docker.exe> --docker-executable-sha256 <sha256> --git-executable <absolute-normalized-git.exe> --git-executable-sha256 <sha256> --source-root <reviewed-clean-checkout> --source-revision <40-hex-commit> --source-tree <40-hex-tree> --work-root <fresh-private-directory> --output runs/private-qualification-packets/<packet>.runtime-smoke.json
+```
+
+Before the first Docker command, the runner proves that the executing source root
+is the exact clean HEAD/tree and that every measured source equals its committed
+blob through the independently authorized absolute Git executable. It hashes the
+Docker executable before and after every case and revalidates both source and
+Docker identities after the suite. Every case records its ordinal/ID, explicit
+pass boolean, exact pre/post probe and staged-input hashes, source revision/tree,
+RepoDigest, image ID, Docker executable SHA-256, UTC times and duration,
+expected outcome, safe observed return or exception category, bounded
+stdout/stderr sizes/hashes/truncation flags, pre/post manifests, exact container
+identity, cleanup/staging/absence readback, checks, and pass/fail status. It never
+serializes captured stdout/stderr bodies. The complete document is canonical
+ASCII JSON with a separate SHA-256 envelope binding.
 
 Use `IsolatedDockerPython` with a prior workspace containing only a non-secret
 probe and a separate non-secret staged input root containing its required

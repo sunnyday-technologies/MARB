@@ -52,12 +52,12 @@ site, or deployment action.
   `vision_attested` is `false`. These runs must not be labeled or compared as
   sighted/vision cells.
 - The implementation is currently restricted to Windows Docker Desktop host
-  semantics. No image/host pair is qualified until the mandatory manual smoke
-  succeeds. Linux and rootless-host bind/file ownership behavior for container
-  UID/GID `65532:65532` remains unqualified.
+  semantics. No image/host pair is qualified until the tracked mandatory
+  nine-case runtime smoke succeeds. Linux and rootless-host bind/file ownership
+  behavior for container UID/GID `65532:65532` remains unqualified.
 - No real runtime image digest is shipped or implied by this repository. An
   operator must build or obtain the versioned image, record its registry
-  `RepoDigest`, and complete the no-provider/no-network manual smoke in
+  `RepoDigest`, and complete the no-provider/no-network runtime smoke in
   [`container/README.md`](container/README.md) before any real run. The v0.13
   recipe additionally binds the exact offline Debian native closure and
   requires archive and installed-package checks, clean-environment `ldd` on
@@ -86,8 +86,9 @@ the executor requires all of the following to agree exactly:
    exact run-limiter SHA-256;
 7. the exact MARB source commit and SHA-256 identities of
    `harness/cohort_runner.py`, `harness/cohort_executor.py`,
-   `harness/provider_transport.py`, `harness/isolated_container.py`, and
-   `harness/container/run_limited.py`; and
+   `harness/provider_transport.py`, `harness/isolated_container.py`, the fixed
+   committed `harness/runtime_smoke_probes.py` identity used by executor
+   preflight, and `harness/container/run_limited.py`; and
 8. commit-blob readback of every frozen plan input and implementation file.
 
 The v3 authorization and schema validation bind the normalized absolute Git
@@ -405,8 +406,10 @@ Board-policy CI runs `tests.test_cohort_runner`, `tests.test_cohort_executor`,
 `tests.test_nightwatch`, `tests.test_provider_transport`,
 `tests.test_isolated_container`, `tests.test_run_limiter`, and the static
 `tests.test_container_recipe` contract checks with fake/local provider, HTTP,
-sandbox, controller, and Docker command runners. Those tests make no real
-provider, model, Docker, or network calls. CI does not qualify a real image or
-Nightwatch runtime. Before the first actual attempt, an operator must record
-the approved image RepoDigest and pass the manual no-provider/no-network
-runtime smoke described in the container build notes.
+sandbox, controller, and Docker command runners. The separately runnable
+`tests.test_runtime_smoke_runner` module exercises the tracked nine-case runner
+with local fakes. These source tests make no real provider, model, Docker, or
+network calls and do not qualify a real image or Nightwatch runtime. Before the
+first actual attempt, an operator must record the approved image RepoDigest and
+pass the real tracked no-provider/no-network runtime smoke described in the
+container build notes.

@@ -31,10 +31,18 @@ QUIESCENCE_EMPTY_READBACKS = 3
 LIMIT_EXIT = 125
 SAFE_PATH = re.compile(r"[A-Za-z0-9][A-Za-z0-9._ /+-]{0,1023}\Z")
 STATUS_MEMBER = "MARB_EXECUTION_STATUS.json"
+WORKSPACE_ENTRY_LIMIT_REASON = "MARB_LIMIT_REASON=workspace_entry_count_exceeded\n"
 
 
 class LimitViolation(RuntimeError):
     pass
+
+
+def _emit_limit_reason(error: BaseException) -> None:
+    """Expose only the one fixed reason consumed by the qualification runner."""
+    if isinstance(error, LimitViolation) and str(error) == "workspace entry-count limit exceeded":
+        sys.stderr.write(WORKSPACE_ENTRY_LIMIT_REASON)
+        sys.stderr.flush()
 
 
 def _relative(root: Path, candidate: Path) -> str:
@@ -219,7 +227,8 @@ def run(relative_script: str) -> int:
         script = WORKSPACE.joinpath(*PurePosixPath(script_rel).parts)
         if not script.is_file() or script.suffix != ".py":
             raise LimitViolation("unsafe invocation")
-    except (OSError, LimitViolation):
+    except (OSError, LimitViolation) as exc:
+        _emit_limit_reason(exc)
         return LIMIT_EXIT
 
     def child_limits() -> None:
@@ -241,11 +250,12 @@ def run(relative_script: str) -> int:
         inventory(WORKSPACE, exclude_kit=True)
         _export_workspace(returncode)
         return 0
-    except (OSError, LimitViolation):
+    except (OSError, LimitViolation) as exc:
         try:
             _kill_processes(process)
         except (OSError, LimitViolation):
             pass
+        _emit_limit_reason(exc)
         return LIMIT_EXIT
     except BaseException:
         _kill_processes(process)
