@@ -353,18 +353,26 @@ private-evidence convention and must not already exist:
 python -m harness.runtime_smoke_runner --image <repository@sha256:digest> --docker-executable <absolute-normalized-docker.exe> --docker-executable-sha256 <sha256> --git-executable <absolute-normalized-git.exe> --git-executable-sha256 <sha256> --source-root <reviewed-clean-checkout> --source-revision <40-hex-commit> --source-tree <40-hex-tree> --work-root <fresh-private-directory> --output runs/private-qualification-packets/<packet>.runtime-smoke.json
 ```
 
-Before the first Docker command, the runner proves that the executing source root
-is the exact clean HEAD/tree and that every measured source equals its committed
-blob through the independently authorized absolute Git executable. It hashes the
-Docker executable before and after every case and revalidates both source and
-Docker identities after the suite. Every case records its ordinal/ID, explicit
-pass boolean, exact pre/post probe and staged-input hashes, source revision/tree,
-RepoDigest, image ID, Docker executable SHA-256, UTC times and duration,
-expected outcome, safe observed return or exception category, bounded
-stdout/stderr sizes/hashes/truncation flags, pre/post manifests, exact container
-identity, cleanup/staging/absence readback, checks, and pass/fail status. It never
-serializes captured stdout/stderr bodies. The complete document is canonical
-ASCII JSON with a separate SHA-256 envelope binding.
+Before the first Docker command, the runner proves that literal `HEAD`, peeled
+`HEAD^{commit}`, `HEAD^{tree}`, the clean checkout, and every raw measured
+source/build blob all match the reviewed authorization through the independently
+authorized absolute Git executable. The first case retains only the fixed public
+`org.sunnyday.marb.*` label allowlist and cross-binds those values to the exact
+RepoDigest, live image ID, tracked build-input hashes, and the SHA-256 of the
+canonical in-image `build-provenance.json` bytes. Missing, extra, or altered MARB
+labels fail closed; unrelated image labels are not retained.
+
+The runner hashes the Docker executable before and after every case and
+revalidates both source and Docker identities after the suite. Every case records
+its ordinal/ID, explicit pass boolean, exact pre/post probe and staged-input
+hashes, source revision/tree, RepoDigest, image ID, Docker executable SHA-256,
+UTC times and duration, expected outcome, safe observed return or exception
+category, bounded stdout/stderr sizes/hashes/truncation flags, pre/post manifests,
+exact container identity, and independent cleanup, named-container-absence, and
+export-staging-removal readbacks. Failure-output bodies are discarded after their
+bounded identities are recorded; a truncated exception retains only the public
+truncation marker. Captured bodies are never serialized. The complete document
+is canonical ASCII JSON with a separate SHA-256 envelope binding.
 
 Use `IsolatedDockerPython` with a prior workspace containing only a non-secret
 probe and a separate non-secret staged input root containing its required

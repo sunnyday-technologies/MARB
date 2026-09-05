@@ -179,6 +179,7 @@ LF_PINNED_INPUTS = (
     "harness/runtime_smoke_runner.py",
     "harness/container/run_limited.py",
     "harness/container/Dockerfile",
+    "harness/container/.dockerignore",
     "harness/container/requirements.lock",
     "harness/container/native-debs.lock.json",
     "harness/container/verify_native_bundle.py",

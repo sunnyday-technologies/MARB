@@ -74,7 +74,7 @@ NATIVE_BUNDLE_VERIFIER_SHA256 = (
     "f067b00c69c5c341d5dcd98a0d941cdf8c1bf0dbec4edc7aa1ceeb23df319179"
 )
 RUNTIME_SMOKE_PROBES_SHA256 = (
-    "fd12683e44b374f94f95a098fa5667d55906ad74faecc8e42be97da988649812"
+    "dc68c14c4bc79c843e4863f294576ee604a000f4ccc4d4f9d9ca186943745e63"
 )
 EXPECTED_RUNTIME = {
     "runtime_contract": RUNTIME_CONTRACT_ID,
@@ -3908,6 +3908,7 @@ def _validate_sandbox_attestation(value: Any) -> dict[str, Any]:
     required = {
         *EXPECTED_RUNTIME,
         "cadclaw_pin_basis",
+        "build_provenance_sha256",
         "run_limiter_sha256",
         "uid",
         "gid",
@@ -3963,6 +3964,7 @@ def _validate_sandbox_attestation(value: Any) -> dict[str, Any]:
     docker_executable = value.get("docker_executable")
     docker_digest = value.get("docker_executable_sha256")
     limiter_digest = value.get("run_limiter_sha256")
+    build_provenance_digest = value.get("build_provenance_sha256")
     if (
         not isinstance(docker_executable, str)
         or not WINDOWS_DOCKER_EXECUTABLE.fullmatch(docker_executable)
@@ -3970,6 +3972,8 @@ def _validate_sandbox_attestation(value: Any) -> dict[str, Any]:
         or not HEX64.fullmatch(docker_digest)
         or not isinstance(limiter_digest, str)
         or not HEX64.fullmatch(limiter_digest)
+        or not isinstance(build_provenance_digest, str)
+        or not HEX64.fullmatch(build_provenance_digest)
     ):
         raise RuntimeError("sandbox attestation Docker executable identity is malformed")
     return value
@@ -4040,6 +4044,7 @@ def _default_sandbox_factory(
             required = {
                 *EXPECTED_RUNTIME,
                 "cadclaw_pin_basis",
+                "build_provenance_sha256",
                 "run_limiter_sha256",
                 "uid",
                 "gid",
@@ -4057,6 +4062,12 @@ def _default_sandbox_factory(
             }
             if not isinstance(attestation, dict) or set(attestation) != required:
                 raise RuntimeError("isolated container preflight attestation is incomplete")
+            if (
+                result.cleanup_verified is not True
+                or result.container_absence_verified is not True
+                or result.export_staging_removed is not True
+            ):
+                raise RuntimeError("isolated container preflight cleanup was not verified")
             attestation.update(
                 {
                     "image": result.image,
@@ -4080,7 +4091,9 @@ def _default_sandbox_factory(
             if (
                 result.image != container["image"]
                 or result.docker_executable != self._docker_identity["path"]
-                or not result.cleanup_verified
+                or result.cleanup_verified is not True
+                or result.container_absence_verified is not True
+                or result.export_staging_removed is not True
             ):
                 raise RuntimeError("isolated container execution cleanup was not verified")
             output = result.stdout

@@ -93,9 +93,22 @@ contract_raw = Path("/opt/marb/runtime-contract.json").read_bytes()
 calibration_raw = Path("/opt/marb/cadclaw-calibration.json").read_bytes()
 contract = json.loads(contract_raw.decode("utf-8"))
 calibration = json.loads(calibration_raw.decode("utf-8"))
-provenance = json.loads(
-    Path("/opt/marb/build-provenance.json").read_text(encoding="utf-8")
-)
+provenance_raw = Path("/opt/marb/build-provenance.json").read_bytes()
+provenance = json.loads(provenance_raw.decode("utf-8"))
+assert provenance_raw == json.dumps(
+    provenance, sort_keys=True, separators=(",", ":")
+).encode("ascii") + b"\\n"
+assert set(provenance) == {
+    "schema", "runtime_contract", "runtime_contract_sha256", "cadclaw_commit",
+    "cadclaw_gate_spec_version", "cadclaw_gate_registry_version",
+    "cadclaw_pin_basis", "cadclaw_source_manifest_sha256",
+    "cadclaw_calibration_sha256", "native_deb_package_count",
+    "native_deb_total_bytes", "base_image", "requirements_lock_sha256",
+    "wheelhouse_manifest_sha256", "cadclaw_wheel_sha256", "run_limiter_sha256",
+    "native_deb_lock_sha256", "native_deb_manifest_sha256",
+    "native_bundle_verifier_sha256", "dockerfile_sha256",
+    "context_dockerignore_sha256", "build_context_manifest_sha256",
+}
 measured_runtime = {
     "runtime_contract": contract["contract_id"],
     "runtime_contract_sha256": hashlib.sha256(contract_raw).hexdigest(),
@@ -178,6 +191,7 @@ except OSError:
     staged_inputs_read_only = True
 result = {
     **runtime,
+    "build_provenance_sha256": hashlib.sha256(provenance_raw).hexdigest(),
     "uid": os.geteuid(),
     "gid": os.getegid(),
     "capabilities_zero": status.get("CapEff") == "0000000000000000",

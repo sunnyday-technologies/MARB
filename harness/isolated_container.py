@@ -38,6 +38,35 @@ DEFAULT_DOCKER_EXECUTABLE = "C:/Program Files/Docker/Docker/resources/bin/docker
 CONTAINER_UID_GID = "65532:65532"
 CONTAINER_NAME_PREFIX = "marb-isolated-"
 OWNERSHIP_LABEL = "org.sunnyday.marb.isolated-container"
+# Only these public build-provenance labels may cross the Docker inspection
+# boundary into smoke evidence. Arbitrary image labels are intentionally never
+# retained, because a local image can carry unrelated metadata.
+MARB_IMAGE_PROVENANCE_LABELS = (
+    "org.sunnyday.marb.runtime-contract",
+    "org.sunnyday.marb.runtime-contract-sha256",
+    "org.sunnyday.marb.cadclaw-version",
+    "org.sunnyday.marb.cadclaw-commit",
+    "org.sunnyday.marb.cadclaw-gate-spec-version",
+    "org.sunnyday.marb.cadclaw-gate-registry-version",
+    "org.sunnyday.marb.cadclaw-pin-basis",
+    "org.sunnyday.marb.cadclaw-source-manifest-sha256",
+    "org.sunnyday.marb.cadclaw-calibration-sha256",
+    "org.sunnyday.marb.cadquery-version",
+    "org.sunnyday.marb.cadquery-ocp-version",
+    "org.sunnyday.marb.base-image",
+    "org.sunnyday.marb.requirements-lock-sha256",
+    "org.sunnyday.marb.wheelhouse-manifest-sha256",
+    "org.sunnyday.marb.cadclaw-wheel-sha256",
+    "org.sunnyday.marb.run-limiter-sha256",
+    "org.sunnyday.marb.native-deb-lock-sha256",
+    "org.sunnyday.marb.native-deb-manifest-sha256",
+    "org.sunnyday.marb.native-bundle-verifier-sha256",
+    "org.sunnyday.marb.native-deb-package-count",
+    "org.sunnyday.marb.native-deb-total-bytes",
+    "org.sunnyday.marb.dockerfile-sha256",
+    "org.sunnyday.marb.context-dockerignore-sha256",
+    "org.sunnyday.marb.build-context-manifest-sha256",
+)
 PID_LIMIT = "256"
 MEMORY_LIMIT = "16g"
 MEMORY_LIMIT_BYTES = 16 * 1024 * 1024 * 1024
@@ -110,11 +139,11 @@ class IsolationError(RuntimeError):
     """A bounded, machine-readable failure of the isolation contract.
 
     ``str(error)`` intentionally remains a fixed, human-readable message.
-    Bounded child output is retained privately for immediate handling, while
-    serialized evidence contains only its byte counts, hashes, truncation
-    flags, stable status values, and non-secret container identities. Raw
-    command lines, environments, output bodies, and arbitrary exception
-    messages are never copied into the evidence.
+    Child output bodies are discarded as soon as their bounded byte counts and
+    hashes are recorded. A truncated stream retains only the public truncation
+    marker, so neither overflow bodies nor arbitrary exception text can flow
+    downstream. Serialized evidence contains only stable status values,
+    output identities, and non-secret container identities.
     """
 
     def __init__(
@@ -142,10 +171,9 @@ class IsolationError(RuntimeError):
         super().__init__(message)
         self.code = code
         self.stage = stage
-        self._stdout = stdout
-        self._stderr = stderr
         self.stdout_truncated = bool(stdout_truncated)
         self.stderr_truncated = bool(stderr_truncated)
+        self._record_output_identities(stdout, stderr)
         self.returncode = returncode
         self.cleanup_attempted = bool(cleanup_attempted)
         self.cleanup_verified = cleanup_verified
@@ -168,23 +196,30 @@ class IsolationError(RuntimeError):
 
     @property
     def stdout_bytes(self) -> int:
-        return len(self.stdout.encode("utf-8", errors="replace"))
+        return self._stdout_bytes
 
     @property
     def stderr_bytes(self) -> int:
-        return len(self.stderr.encode("utf-8", errors="replace"))
+        return self._stderr_bytes
 
     @property
     def stdout_sha256(self) -> str:
-        return hashlib.sha256(
-            self.stdout.encode("utf-8", errors="replace")
-        ).hexdigest()
+        return self._stdout_sha256
 
     @property
     def stderr_sha256(self) -> str:
-        return hashlib.sha256(
-            self.stderr.encode("utf-8", errors="replace")
-        ).hexdigest()
+        return self._stderr_sha256
+
+    def _record_output_identities(self, stdout: str, stderr: str) -> None:
+        stdout_raw = stdout.encode("utf-8", errors="replace")
+        stderr_raw = stderr.encode("utf-8", errors="replace")
+        self._stdout_bytes = len(stdout_raw)
+        self._stderr_bytes = len(stderr_raw)
+        self._stdout_sha256 = hashlib.sha256(stdout_raw).hexdigest()
+        self._stderr_sha256 = hashlib.sha256(stderr_raw).hexdigest()
+        marker = _OUTPUT_TRUNCATION_MARKER.decode("ascii")
+        self._stdout = marker if self.stdout_truncated else ""
+        self._stderr = marker if self.stderr_truncated else ""
 
     @property
     def evidence(self) -> dict[str, Any]:
@@ -206,10 +241,9 @@ class IsolationError(RuntimeError):
         primary_error_type: str | None = None,
     ) -> None:
         self.stage = stage
-        self._stdout = stdout
-        self._stderr = stderr
         self.stdout_truncated = bool(stdout_truncated)
         self.stderr_truncated = bool(stderr_truncated)
+        self._record_output_identities(stdout, stderr)
         self.returncode = returncode
         self.image = image
         self.image_id = image_id
@@ -307,6 +341,8 @@ class ExecutionResult:
     stdout_truncated: bool
     stderr_truncated: bool
     cleanup_verified: bool
+    container_absence_verified: bool
+    export_staging_removed: bool
 
 
 @dataclass(frozen=True)
@@ -453,6 +489,30 @@ def _bounded_text(value: str | bytes | None, limit: int) -> tuple[str, bool]:
     return prefix + marker.decode("ascii"), True
 
 
+def _detach_exception_graph(exc: BaseException) -> None:
+    """Release tracebacks and timeout bodies after safe evidence is recorded."""
+    pending = [exc]
+    seen: set[int] = set()
+    while pending:
+        current = pending.pop()
+        identity = id(current)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        cause = current.__cause__
+        context = current.__context__
+        if isinstance(current, subprocess.TimeoutExpired):
+            current.output = None
+            current.stderr = None
+        current.__traceback__ = None
+        current.__cause__ = None
+        current.__context__ = None
+        if cause is not None:
+            pending.append(cause)
+        if context is not None:
+            pending.append(context)
+
+
 def _structured_execution_error(
     exc: BaseException,
     *,
@@ -510,6 +570,7 @@ def _structured_execution_error(
         container_id=container_id,
         primary_error_type=primary_type,
     )
+    _detach_exception_graph(exc)
     return error
 
 
@@ -1034,8 +1095,11 @@ class IsolatedDockerPython:
         self._remaining_timeout(deadline, None, label="isolated execution")
 
     def _inspect_local_image_details(
-        self, *, timeout: float | None
-    ) -> tuple[tuple[str, ...], str]:
+        self,
+        *,
+        timeout: float | None,
+        retain_provenance_labels: bool = False,
+    ) -> tuple[tuple[str, ...], str, dict[str, str] | None]:
         command = [
             self.docker_executable,
             "image",
@@ -1068,12 +1132,48 @@ class IsolatedDockerPython:
         config = _require_mapping(metadata.get("Config"), "image configuration")
         if not _empty(config.get("Volumes")):
             _fail("container image declares volumes and is not eligible for isolation")
-        return tuple(repo_digests), image_id
+        provenance_labels: dict[str, str] | None = None
+        if retain_provenance_labels:
+            labels = config.get("Labels")
+            if not isinstance(labels, dict):
+                _fail("Docker image provenance labels are malformed")
+            allowed = set(MARB_IMAGE_PROVENANCE_LABELS)
+            if any(
+                isinstance(label, str)
+                and label.startswith("org.sunnyday.marb.")
+                and label not in allowed
+                for label in labels
+            ):
+                _fail("Docker image provenance labels are outside the allowlist")
+            selected: dict[str, str] = {}
+            for label in MARB_IMAGE_PROVENANCE_LABELS:
+                value = labels.get(label)
+                if not isinstance(value, str):
+                    _fail("Docker image provenance labels are incomplete")
+                selected[label] = value
+            provenance_labels = selected
+        return tuple(repo_digests), image_id, provenance_labels
 
     def inspect_local_image(self, *, timeout: float | None = 30.0) -> tuple[str, ...]:
         """Verify the exact immutable local image and reject declared volumes."""
-        repo_digests, _ = self._inspect_local_image_details(timeout=timeout)
+        repo_digests, _, _ = self._inspect_local_image_details(timeout=timeout)
         return repo_digests
+
+    def inspect_local_image_provenance(
+        self, *, timeout: float | None = 30.0
+    ) -> dict[str, Any]:
+        """Read the fixed public provenance-label allowlist for smoke evidence."""
+        repo_digests, image_id, labels = self._inspect_local_image_details(
+            timeout=timeout, retain_provenance_labels=True
+        )
+        if labels is None:  # defensive: requested labels must be returned above
+            _fail("Docker image provenance labels are unavailable")
+        return {
+            "image": self.image,
+            "image_id": image_id,
+            "repo_digests": list(repo_digests),
+            "labels": labels,
+        }
 
     def _new_container_name(self) -> str:
         candidate = self._uuid_factory()
@@ -1482,11 +1582,12 @@ class IsolatedDockerPython:
         self._deadline_check(deadline)
         input_root = validate_input_root(self.input_root, canonical)
         self._deadline_check(deadline)
-        _, image_id = self._inspect_local_image_details(
+        _, image_id, _ = self._inspect_local_image_details(
             timeout=self._remaining_timeout(
                 deadline, inspect_timeout, label="Docker image preflight"
             )
         )
+        preparation_error: IsolationError | None = None
         try:
             self._deadline_check(deadline)
             container_name = self._new_container_name()
@@ -1506,9 +1607,11 @@ class IsolatedDockerPython:
                 container_name=None,
                 container_id=None,
             )
-            if preparation_error is exc:
-                raise
-            raise preparation_error from exc
+        if preparation_error is not None:
+            preparation_error.__traceback__ = None
+            preparation_error.__cause__ = None
+            preparation_error.__context__ = None
+            raise preparation_error.with_traceback(None) from None
         export_archive = canonical.parent / f".marb-export-{container_name}.tar"
         create_command: list[str] | None = None
         container_id: str | None = None
@@ -1522,6 +1625,9 @@ class IsolatedDockerPython:
         stdout_truncated = False
         stderr_truncated = False
         failure_stage = "export_staging"
+        create_result: CommandResultLike | None = None
+        start_result: CommandResultLike | None = None
+        cleanup_failure: IsolationError | None = None
         try:
             try:
                 with export_archive.open("xb") as handle:
@@ -1674,9 +1780,10 @@ class IsolatedDockerPython:
                 container_name=container_name,
                 container_id=container_id,
             )
-            if primary_error is exc:
-                raise
-            raise primary_error from exc
+            create_result = None
+            start_result = None
+            stdout = ""
+            stderr = ""
         finally:
             cleanup_attempted = container_id is not None or creation_uncertain
             cleanup_verified: bool | None = None
@@ -1694,7 +1801,13 @@ class IsolatedDockerPython:
                         container_name, deadline=cleanup_deadline
                     )
                 if cleanup_attempted:
-                    cleanup_verified = True
+                    cleanup_verified = container_absence_verified is True
+                    if not cleanup_verified:
+                        _fail(
+                            "Docker container cleanup could not be verified",
+                            code="cleanup_verification_failed",
+                            stage="container_cleanup",
+                        )
             except BaseException as observed_cleanup_error:
                 cleanup_error = observed_cleanup_error
                 cleanup_verified = False
@@ -1742,7 +1855,27 @@ class IsolatedDockerPython:
                     export_staging_removed=export_staging_removed,
                     cleanup_error_type=type(cleanup_error).__name__,
                 )
-                raise cleanup_failure from cleanup_error
+            if primary_error is not None or cleanup_failure is not None:
+                if cleanup_error is not None:
+                    _detach_exception_graph(cleanup_error)
+                if staging_error is not None:
+                    _detach_exception_graph(staging_error)
+                cleanup_error = None
+                staging_error = None
+                create_result = None
+                start_result = None
+                stdout = ""
+                stderr = ""
+        if primary_error is not None:
+            primary_error.__traceback__ = None
+            primary_error.__cause__ = None
+            primary_error.__context__ = None
+            raise primary_error.with_traceback(None) from None
+        if cleanup_failure is not None:
+            cleanup_failure.__traceback__ = None
+            cleanup_failure.__cause__ = None
+            cleanup_failure.__context__ = None
+            raise cleanup_failure.with_traceback(None) from None
         if (
             not export_ready
             or container_id is None
@@ -1751,6 +1884,7 @@ class IsolatedDockerPython:
             or start_returncode is None
         ):
             _fail("isolated execution produced no workspace export")
+        restore_error: IsolationError | None = None
         try:
             child_returncode = _replace_workspace_from_export(
                 canonical,
@@ -1758,6 +1892,7 @@ class IsolatedDockerPython:
                 container_id[:16],
                 deadline_check=lambda: self._deadline_check(deadline),
             )
+            export_staging_removed = True
         except BaseException as exc:
             export_staging_removed = True
             try:
@@ -1785,9 +1920,15 @@ class IsolatedDockerPython:
                 container_absence_verified=True,
                 export_staging_removed=export_staging_removed,
             )
-            if restore_error is exc:
-                raise
-            raise restore_error from exc
+        if restore_error is not None:
+            create_result = None
+            start_result = None
+            stdout = ""
+            stderr = ""
+            restore_error.__traceback__ = None
+            restore_error.__cause__ = None
+            restore_error.__context__ = None
+            raise restore_error.with_traceback(None) from None
         return ExecutionResult(
             image=self.image,
             image_id=image_id,
@@ -1803,7 +1944,9 @@ class IsolatedDockerPython:
             stderr=stderr,
             stdout_truncated=stdout_truncated,
             stderr_truncated=stderr_truncated,
-            cleanup_verified=True,
+            cleanup_verified=cleanup_verified is True,
+            container_absence_verified=container_absence_verified is True,
+            export_staging_removed=export_staging_removed is True,
         )
 
 

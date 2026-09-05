@@ -50,6 +50,14 @@ class SmokeRunnerError(RuntimeError):
         super().__init__(message)
         self.code = code
         self.stage = stage
+        prior_evidence = getattr(prior, "evidence", None)
+        if isinstance(prior_evidence, Mapping):
+            # A post-case wrapper must preserve only the already-sanitized
+            # output identities. Child-output bodies were disposed by the
+            # isolation error and must not be reconstructed here.
+            self.evidence = {
+                key: prior_evidence.get(key) for key in ("stdout", "stderr")
+            }
         for field in (
             "cleanup_attempted",
             "cleanup_error_type",
@@ -84,11 +92,41 @@ class SmokeEngine(Protocol):
         attached_run_timeout: float | None = None,
     ) -> Any: ...
 
+    def inspect_image_provenance(self) -> Mapping[str, Any]: ...
+
 
 EngineFactory = Callable[[probes.ProbeCase, int, Path], SmokeEngine]
 SourceVerifier = Callable[
     [Path, str, str, str, str, Mapping[str, Any]], dict[str, Any]
 ]
+SOURCE_FILES = (
+    "harness/cohort_executor.py",
+    "harness/isolated_container.py",
+    "harness/runtime_smoke_probes.py",
+    "harness/runtime_smoke_runner.py",
+    "harness/container/Dockerfile",
+    "harness/container/.dockerignore",
+    "harness/container/cadclaw-calibration.fad0dd55.json",
+    "harness/container/native-debs.lock.json",
+    "harness/container/requirements.lock",
+    "harness/container/run_limited.py",
+    "harness/container/runtime-contract.v0.13.json",
+    "harness/container/verify_native_bundle.py",
+)
+_LABEL_PREFIX = "org.sunnyday.marb."
+_LABEL_TO_PROVENANCE_KEY = {
+    _LABEL_PREFIX + "base-image": "base_image",
+    _LABEL_PREFIX + "requirements-lock-sha256": "requirements_lock_sha256",
+    _LABEL_PREFIX + "wheelhouse-manifest-sha256": "wheelhouse_manifest_sha256",
+    _LABEL_PREFIX + "cadclaw-wheel-sha256": "cadclaw_wheel_sha256",
+    _LABEL_PREFIX + "run-limiter-sha256": "run_limiter_sha256",
+    _LABEL_PREFIX + "native-deb-lock-sha256": "native_deb_lock_sha256",
+    _LABEL_PREFIX + "native-deb-manifest-sha256": "native_deb_manifest_sha256",
+    _LABEL_PREFIX + "native-bundle-verifier-sha256": "native_bundle_verifier_sha256",
+    _LABEL_PREFIX + "dockerfile-sha256": "dockerfile_sha256",
+    _LABEL_PREFIX + "context-dockerignore-sha256": "context_dockerignore_sha256",
+    _LABEL_PREFIX + "build-context-manifest-sha256": "build_context_manifest_sha256",
+}
 
 
 def _canonical_json(value: Any, *, newline: bool = False) -> bytes:
@@ -276,6 +314,12 @@ def _container_id(value: Any) -> str | None:
     return value
 
 
+def _image_id(value: Any) -> str | None:
+    if not isinstance(value, str) or not isolation.IMAGE_ID_RE.fullmatch(value):
+        return None
+    return value
+
+
 def _engine_count(engine: SmokeEngine) -> int:
     value = getattr(engine, "docker_command_count", 0)
     return value if isinstance(value, int) and value >= 0 else 0
@@ -354,9 +398,14 @@ def _failure_summary(exc: BaseException) -> dict[str, Any]:
 def _result_summary(result: Any) -> dict[str, Any]:
     return {
         "cleanup_verified": bool(getattr(result, "cleanup_verified", False)),
-        "container_absence_verified": bool(getattr(result, "cleanup_verified", False)),
+        "container_absence_verified": bool(
+            getattr(result, "container_absence_verified", False)
+        ),
         "container_id": _container_id(getattr(result, "container_id", None)),
         "container_name": _container_name(getattr(result, "container_name", None)),
+        "export_staging_removed": bool(
+            getattr(result, "export_staging_removed", False)
+        ),
         "image": getattr(result, "image", None),
         "image_id": getattr(result, "image_id", None),
         "returncode": getattr(result, "returncode", None),
@@ -396,6 +445,7 @@ def _positive_attestation_ok(value: dict[str, Any] | None, limiter_sha256: str) 
         **probes.EXPECTED_RUNTIME,
         "cadclaw_pin_basis": probes.EXPECTED_PIN_BASIS,
         "capabilities_zero": True,
+        "build_provenance_sha256": value.get("build_provenance_sha256"),
         "cwd": "/workspace",
         "docker_socket_absent": True,
         "environment_keys": sorted(probes.EXPECTED_ENVIRONMENT),
@@ -410,7 +460,183 @@ def _positive_attestation_ok(value: dict[str, Any] | None, limiter_sha256: str) 
         "staged_inputs_read_only": True,
         "uid": 65532,
     }
-    return value == expected
+    return bool(
+        isinstance(value.get("build_provenance_sha256"), str)
+        and HEX64.fullmatch(value["build_provenance_sha256"])
+        and value == expected
+    )
+
+
+def _source_sha256s(source_manifest: Mapping[str, Any]) -> dict[str, str] | None:
+    entries = source_manifest.get("entries")
+    if not isinstance(entries, list):
+        return None
+    result: dict[str, str] = {}
+    for item in entries:
+        if (
+            not isinstance(item, Mapping)
+            or not isinstance(item.get("path"), str)
+            or not isinstance(item.get("sha256"), str)
+            or not HEX64.fullmatch(item["sha256"])
+        ):
+            return None
+        result[item["path"]] = item["sha256"]
+    return result
+
+
+def _build_provenance_from_labels(labels: Mapping[str, str]) -> dict[str, Any] | None:
+    if set(labels) != set(isolation.MARB_IMAGE_PROVENANCE_LABELS):
+        return None
+    if not all(isinstance(value, str) for value in labels.values()):
+        return None
+    try:
+        native_count = int(labels[_LABEL_PREFIX + "native-deb-package-count"])
+        native_bytes = int(labels[_LABEL_PREFIX + "native-deb-total-bytes"])
+    except (KeyError, ValueError):
+        return None
+    return {
+        "schema": "marb_h2b_image_build_provenance.v3",
+        "runtime_contract": labels[_LABEL_PREFIX + "runtime-contract"],
+        "runtime_contract_sha256": labels[_LABEL_PREFIX + "runtime-contract-sha256"],
+        "cadclaw_commit": labels[_LABEL_PREFIX + "cadclaw-commit"],
+        "cadclaw_gate_spec_version": labels[
+            _LABEL_PREFIX + "cadclaw-gate-spec-version"
+        ],
+        "cadclaw_gate_registry_version": labels[
+            _LABEL_PREFIX + "cadclaw-gate-registry-version"
+        ],
+        "cadclaw_pin_basis": labels[_LABEL_PREFIX + "cadclaw-pin-basis"],
+        "cadclaw_source_manifest_sha256": labels[
+            _LABEL_PREFIX + "cadclaw-source-manifest-sha256"
+        ],
+        "cadclaw_calibration_sha256": labels[
+            _LABEL_PREFIX + "cadclaw-calibration-sha256"
+        ],
+        "native_deb_package_count": native_count,
+        "native_deb_total_bytes": native_bytes,
+        **{key: labels[label] for label, key in _LABEL_TO_PROVENANCE_KEY.items()},
+    }
+
+
+def _image_provenance_ok(
+    value: Any,
+    *,
+    image: str,
+    source_manifest: Mapping[str, Any],
+    positive_attestation: Mapping[str, Any] | None,
+) -> tuple[bool, dict[str, Any] | None]:
+    """Cross-bind whitelisted Docker labels, tracked source, and in-image bytes."""
+    if not isinstance(value, Mapping) or set(value) != {
+        "image",
+        "image_id",
+        "labels",
+        "repo_digests",
+    }:
+        return False, None
+    labels = value.get("labels")
+    repo_digests = value.get("repo_digests")
+    if (
+        value.get("image") != image
+        or _image_id(value.get("image_id")) is None
+        or not isinstance(repo_digests, list)
+        or image not in repo_digests
+        or not isinstance(labels, Mapping)
+        or set(labels) != set(isolation.MARB_IMAGE_PROVENANCE_LABELS)
+        or not all(
+            isinstance(label, str) and isinstance(item, str)
+            for label, item in labels.items()
+        )
+    ):
+        return False, None
+    source_sha256s = _source_sha256s(source_manifest)
+    if source_sha256s is None:
+        return False, None
+    fixed = {
+        _LABEL_PREFIX + "runtime-contract": probes.EXPECTED_RUNTIME[
+            "runtime_contract"
+        ],
+        _LABEL_PREFIX + "runtime-contract-sha256": source_sha256s.get(
+            "harness/container/runtime-contract.v0.13.json"
+        ),
+        _LABEL_PREFIX + "cadclaw-version": probes.EXPECTED_RUNTIME[
+            "cadclaw_version"
+        ],
+        _LABEL_PREFIX + "cadclaw-commit": probes.EXPECTED_RUNTIME["cadclaw_commit"],
+        _LABEL_PREFIX + "cadclaw-gate-spec-version": probes.EXPECTED_RUNTIME[
+            "cadclaw_gate_spec_version"
+        ],
+        _LABEL_PREFIX + "cadclaw-gate-registry-version": probes.EXPECTED_RUNTIME[
+            "cadclaw_gate_registry_version"
+        ],
+        _LABEL_PREFIX + "cadclaw-pin-basis": probes.EXPECTED_PIN_BASIS,
+        _LABEL_PREFIX + "cadclaw-source-manifest-sha256": probes.EXPECTED_RUNTIME[
+            "cadclaw_source_manifest_sha256"
+        ],
+        _LABEL_PREFIX + "cadclaw-calibration-sha256": source_sha256s.get(
+            "harness/container/cadclaw-calibration.fad0dd55.json"
+        ),
+        _LABEL_PREFIX + "cadquery-version": probes.EXPECTED_RUNTIME[
+            "cadquery_version"
+        ],
+        _LABEL_PREFIX + "cadquery-ocp-version": probes.EXPECTED_RUNTIME[
+            "cadquery_ocp_version"
+        ],
+        _LABEL_PREFIX + "native-deb-package-count": "39",
+        _LABEL_PREFIX + "native-deb-total-bytes": "48570480",
+        _LABEL_PREFIX + "run-limiter-sha256": source_sha256s.get(
+            "harness/container/run_limited.py"
+        ),
+        _LABEL_PREFIX + "dockerfile-sha256": source_sha256s.get(
+            "harness/container/Dockerfile"
+        ),
+        _LABEL_PREFIX + "context-dockerignore-sha256": source_sha256s.get(
+            "harness/container/.dockerignore"
+        ),
+        _LABEL_PREFIX + "requirements-lock-sha256": source_sha256s.get(
+            "harness/container/requirements.lock"
+        ),
+        _LABEL_PREFIX + "native-deb-lock-sha256": source_sha256s.get(
+            "harness/container/native-debs.lock.json"
+        ),
+        _LABEL_PREFIX + "native-bundle-verifier-sha256": source_sha256s.get(
+            "harness/container/verify_native_bundle.py"
+        ),
+    }
+    if any(
+        expected is None or labels.get(label) != expected
+        for label, expected in fixed.items()
+    ):
+        return False, None
+    base_image = labels.get(_LABEL_PREFIX + "base-image")
+    try:
+        isolation.validate_image_reference(base_image)  # type: ignore[arg-type]
+    except isolation.IsolationError:
+        return False, None
+    dynamic_hashes = {
+        _LABEL_PREFIX + "wheelhouse-manifest-sha256",
+        _LABEL_PREFIX + "cadclaw-wheel-sha256",
+        _LABEL_PREFIX + "native-deb-manifest-sha256",
+        _LABEL_PREFIX + "build-context-manifest-sha256",
+    }
+    if not all(HEX64.fullmatch(labels[label]) for label in dynamic_hashes):
+        return False, None
+    provenance = _build_provenance_from_labels(labels)
+    expected_hash = (
+        _sha256(_canonical_json(provenance, newline=True))
+        if provenance is not None
+        else None
+    )
+    if (
+        positive_attestation is None
+        or positive_attestation.get("build_provenance_sha256") != expected_hash
+    ):
+        return False, None
+    return True, {
+        "build_provenance_sha256": expected_hash,
+        "image": image,
+        "image_id": value["image_id"],
+        "labels": dict(sorted(labels.items())),
+    }
 
 
 def _case_checks(
@@ -430,6 +656,11 @@ def _case_checks(
     staging_removed: bool,
 ) -> tuple[dict[str, bool], dict[str, Any] | None]:
     parsed = _parse_canonical_stdout(result) if result is not None else None
+    expected_docker_commands = (
+        0
+        if case.case_id == "workspace_input_rejection_overflow"
+        else 9 if case.case_id == "positive_provenance_and_import" else 8
+    )
     common_result = bool(
         result is not None
         and failure is None
@@ -441,6 +672,8 @@ def _case_checks(
             or getattr(result, "image_id", None) == expected_image_id
         )
         and getattr(result, "cleanup_verified", False) is True
+        and getattr(result, "container_absence_verified", False) is True
+        and getattr(result, "export_staging_removed", False) is True
         and getattr(result, "stderr", None) == ""
         and getattr(result, "stderr_truncated", None) is False
         and getattr(result, "stdout_truncated", None) is False
@@ -642,8 +875,7 @@ def _case_checks(
     checks.update(
         {
             "docker_executable_stable": docker_executable_stable,
-            "docker_command_count_exact": docker_commands
-            == (0 if case.case_id == "workspace_input_rejection_overflow" else 8),
+            "docker_command_count_exact": docker_commands == expected_docker_commands,
             "host_workspace_unchanged": workspace_unchanged,
             "probe_bytes_exact": probe_bytes_exact,
             "staged_inputs_exact_and_unchanged": input_contract_exact and inputs_unchanged,
@@ -690,16 +922,15 @@ class _DefaultSmokeEngine:
     def execute(self, workspace: Path, relative_script: str, **kwargs: Any) -> Any:
         return self._engine.execute(workspace, relative_script, **kwargs)
 
+    def inspect_image_provenance(self) -> Mapping[str, Any]:
+        return self._engine.inspect_local_image_provenance()
+
 
 def _source_manifest() -> dict[str, Any]:
-    harness_root = Path(__file__).resolve().parent
+    repository = Path(__file__).resolve().parents[1]
     identities = [
-        _text_identity(harness_root / "runtime_smoke_probes.py", "harness/runtime_smoke_probes.py"),
-        _text_identity(harness_root / "runtime_smoke_runner.py", "harness/runtime_smoke_runner.py"),
-        _text_identity(harness_root / "isolated_container.py", "harness/isolated_container.py"),
-        _text_identity(
-            harness_root / "container" / "run_limited.py", "harness/container/run_limited.py"
-        ),
+        _text_identity(repository.joinpath(*path.split("/")), path)
+        for path in SOURCE_FILES
     ]
     return {
         "entries": identities,
@@ -771,9 +1002,15 @@ def _verify_source_checkout(
             raise SmokeRunnerError("source checkout returned a malformed identity")
         return text
 
+    literal_head = capture(("rev-parse", "--verify", "HEAD"))
     head = capture(("rev-parse", "--verify", "HEAD^{commit}"))
     tree = capture(("rev-parse", "--verify", "HEAD^{tree}"))
-    if head != source_revision or tree != source_tree:
+    if (
+        not HEX40.fullmatch(literal_head)
+        or literal_head != source_revision
+        or head != source_revision
+        or tree != source_tree
+    ):
         raise SmokeRunnerError("source checkout HEAD or tree does not match authorization")
     capture(
         ("status", "--porcelain=v1", "--untracked-files=no", "--ignore-submodules=none"),
@@ -808,6 +1045,7 @@ def _verify_source_checkout(
             "path_sha256": _sha256(git_executable.encode("utf-8")),
             "sha256": git_identity["sha256"],
         },
+        "literal_head": literal_head,
         "revision": head,
         "tree": tree,
     }
@@ -824,6 +1062,7 @@ def _source_proof_matches(
     return bool(
         isinstance(proof, Mapping)
         and proof.get("clean_tracked_checkout") is True
+        and proof.get("literal_head") == revision
         and proof.get("revision") == revision
         and proof.get("tree") == tree
         and proof.get("committed_blob_manifest_sha256")
@@ -897,6 +1136,7 @@ def run_smoke(
     started_tick = monotonic()
     case_records: list[dict[str, Any]] = []
     positive_attestation: dict[str, Any] | None = None
+    image_provenance: dict[str, Any] | None = None
     observed_image_id: str | None = None
     not_run_case_ids: list[str] = []
     factory = engine_factory
@@ -937,12 +1177,15 @@ def run_smoke(
             command_before = _engine_count(engine)
             result: Any | None = None
             exception: BaseException | None = None
+            raw_provenance: Mapping[str, Any] | None = None
             docker_before_case: dict[str, Any] | None = None
             docker_after_case: dict[str, Any] | None = None
             try:
                 docker_before_case = _verify_docker_executable(
                     docker_executable, docker_executable_sha256
                 )
+                if ordinal == 1:
+                    raw_provenance = engine.inspect_image_provenance()
                 result = engine.execute(
                     workspace,
                     script_name,
@@ -999,11 +1242,6 @@ def run_smoke(
                 ),
                 staging_removed=before_staging == after_staging == [],
             )
-            status = "pass" if checks and all(checks.values()) else "fail"
-            if case.case_id == "positive_provenance_and_import" and status == "pass":
-                positive_attestation = parsed
-                image_id = getattr(result, "image_id", None)
-                observed_image_id = image_id if isinstance(image_id, str) else None
             bound_image_id = getattr(result, "image_id", None) if result is not None else None
             image_id_source = "execution_result" if isinstance(bound_image_id, str) else None
             if not isinstance(bound_image_id, str) and failure is not None:
@@ -1016,6 +1254,24 @@ def run_smoke(
                 image_id_source = (
                     "prior_positive_case" if isinstance(observed_image_id, str) else None
                 )
+            if ordinal == 1:
+                provenance_ok, safe_provenance = _image_provenance_ok(
+                    raw_provenance if exception is None else None,
+                    image=image,
+                    source_manifest=source_manifest,
+                    positive_attestation=parsed,
+                )
+                checks["image_provenance_exact"] = bool(
+                    provenance_ok
+                    and safe_provenance is not None
+                    and safe_provenance["image_id"] == bound_image_id
+                )
+                if checks["image_provenance_exact"]:
+                    image_provenance = safe_provenance
+            status = "pass" if checks and all(checks.values()) else "fail"
+            if case.case_id == "positive_provenance_and_import" and status == "pass":
+                positive_attestation = parsed
+                observed_image_id = _image_id(bound_image_id)
             record = {
                 "bindings": {
                     "docker_executable_after": docker_after_case,
@@ -1124,6 +1380,7 @@ def run_smoke(
         "container": {
             "image": image,
             "observed_image_id": observed_image_id,
+            "provenance": image_provenance,
         },
         "docker_executable": {
             "label": PureWindowsPath(docker_executable).name,

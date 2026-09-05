@@ -86,6 +86,7 @@ class FakeSandbox:
             "run_limiter_sha256": hashlib.sha256(
                 (Path(EXECUTOR.__file__).resolve().parent / "container" / "run_limited.py").read_bytes()
             ).hexdigest(),
+            "build_provenance_sha256": "d" * 64,
             "container_config_readback": True,
             "cleanup_verified": True,
         }

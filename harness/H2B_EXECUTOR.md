@@ -413,3 +413,13 @@ network calls and do not qualify a real image or Nightwatch runtime. Before the
 first actual attempt, an operator must record the approved image RepoDigest and
 pass the real tracked no-provider/no-network runtime smoke described in the
 container build notes.
+
+That smoke binds literal and peeled Git HEAD/tree readbacks, raw committed
+implementation and container-build inputs, the exact RepoDigest and observed
+image ID, a fixed public MARB image-label allowlist, and the hash of canonical
+in-image build-provenance bytes. Successful executions independently require
+cleanup, named-container absence, and export-staging removal. Failure-output
+bodies are disposed after bounded byte counts and hashes are recorded. These
+controls do not change the operator boundary: fake/local tests remain
+non-qualifying, and the smoke neither authorizes a provider/model call nor
+qualifies an image without a separate exact runtime approval and real pass.

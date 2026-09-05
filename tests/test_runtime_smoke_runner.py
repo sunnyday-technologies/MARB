@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import datetime as dt
 import ast
+from contextlib import contextmanager
 import hashlib
 import importlib
 import json
+import subprocess
 import tempfile
 import types
 import unittest
@@ -42,6 +44,70 @@ def canonical(value: object) -> str:
         sort_keys=True,
         separators=(",", ":"),
     ) + "\n"
+
+
+def provenance_labels() -> tuple[dict[str, str], str]:
+    source_sha256s = {
+        item["path"]: item["sha256"]
+        for item in runner._source_manifest()["entries"]
+    }
+    prefix = "org.sunnyday.marb."
+    labels = {
+        prefix + "runtime-contract": probes.EXPECTED_RUNTIME["runtime_contract"],
+        prefix + "runtime-contract-sha256": source_sha256s[
+            "harness/container/runtime-contract.v0.13.json"
+        ],
+        prefix + "cadclaw-version": probes.EXPECTED_RUNTIME["cadclaw_version"],
+        prefix + "cadclaw-commit": probes.EXPECTED_RUNTIME["cadclaw_commit"],
+        prefix + "cadclaw-gate-spec-version": probes.EXPECTED_RUNTIME[
+            "cadclaw_gate_spec_version"
+        ],
+        prefix + "cadclaw-gate-registry-version": probes.EXPECTED_RUNTIME[
+            "cadclaw_gate_registry_version"
+        ],
+        prefix + "cadclaw-pin-basis": probes.EXPECTED_PIN_BASIS,
+        prefix + "cadclaw-source-manifest-sha256": probes.EXPECTED_RUNTIME[
+            "cadclaw_source_manifest_sha256"
+        ],
+        prefix + "cadclaw-calibration-sha256": source_sha256s[
+            "harness/container/cadclaw-calibration.fad0dd55.json"
+        ],
+        prefix + "cadquery-version": probes.EXPECTED_RUNTIME["cadquery_version"],
+        prefix + "cadquery-ocp-version": probes.EXPECTED_RUNTIME[
+            "cadquery_ocp_version"
+        ],
+        prefix + "base-image": "docker.io/library/python@sha256:" + "9" * 64,
+        prefix + "requirements-lock-sha256": source_sha256s[
+            "harness/container/requirements.lock"
+        ],
+        prefix + "wheelhouse-manifest-sha256": "1" * 64,
+        prefix + "cadclaw-wheel-sha256": "2" * 64,
+        prefix + "run-limiter-sha256": source_sha256s[
+            "harness/container/run_limited.py"
+        ],
+        prefix + "native-deb-lock-sha256": source_sha256s[
+            "harness/container/native-debs.lock.json"
+        ],
+        prefix + "native-deb-manifest-sha256": "3" * 64,
+        prefix + "native-bundle-verifier-sha256": source_sha256s[
+            "harness/container/verify_native_bundle.py"
+        ],
+        prefix + "native-deb-package-count": "39",
+        prefix + "native-deb-total-bytes": "48570480",
+        prefix + "dockerfile-sha256": source_sha256s[
+            "harness/container/Dockerfile"
+        ],
+        prefix + "context-dockerignore-sha256": source_sha256s[
+            "harness/container/.dockerignore"
+        ],
+        prefix + "build-context-manifest-sha256": "4" * 64,
+    }
+    build_provenance = runner._build_provenance_from_labels(labels)
+    if build_provenance is None:
+        raise AssertionError("test provenance labels are incomplete")
+    return labels, hashlib.sha256(
+        runner._canonical_json(build_provenance, newline=True)
+    ).hexdigest()
 
 
 class FixedClock:
@@ -125,8 +191,10 @@ class FakeEngine:
     def _result(self, stdout: str = "", returncode: int = 0):
         return types.SimpleNamespace(
             cleanup_verified=True,
+            container_absence_verified=True,
             container_id=f"{self.ordinal:064x}",
             container_name=f"marb-isolated-{self.ordinal:032x}",
+            export_staging_removed=True,
             image=IMAGE,
             image_id=IMAGE_ID,
             returncode=returncode,
@@ -135,6 +203,16 @@ class FakeEngine:
             stdout=stdout,
             stdout_truncated=False,
         )
+
+    def inspect_image_provenance(self):
+        self.docker_command_count += 1
+        labels, _build_provenance_sha256 = provenance_labels()
+        return {
+            "image": IMAGE,
+            "image_id": IMAGE_ID,
+            "labels": labels,
+            "repo_digests": [IMAGE],
+        }
 
     def execute(self, workspace, relative_script, **_kwargs):
         self.execute_calls += 1
@@ -204,10 +282,12 @@ class FakeEngine:
                 staging_removed=True,
             )
         if case_id == "positive_provenance_and_import":
+            _labels, build_provenance_sha256 = provenance_labels()
             value = {
                 **probes.EXPECTED_RUNTIME,
                 "cadclaw_pin_basis": probes.EXPECTED_PIN_BASIS,
                 "capabilities_zero": True,
+                "build_provenance_sha256": build_provenance_sha256,
                 "cwd": "/workspace",
                 "docker_socket_absent": True,
                 "environment_keys": sorted(probes.EXPECTED_ENVIRONMENT),
@@ -315,6 +395,7 @@ class RuntimeSmokeRunnerTests(unittest.TestCase):
                 "path_sha256": hashlib.sha256(str(self.git).encode("utf-8")).hexdigest(),
                 "sha256": self.git_sha256,
             },
+            "literal_head": REVISION,
             "revision": REVISION,
             "tree": TREE,
         }
@@ -363,6 +444,18 @@ class RuntimeSmokeRunnerTests(unittest.TestCase):
             )
         )
         self.assertEqual(len(self.engines), 9)
+        self.assertEqual(
+            [item["docker_commands"] for item in evidence["cases"]],
+            [9, 8, 8, 8, 8, 8, 0, 8, 8],
+        )
+        self.assertEqual(
+            evidence["container"]["provenance"]["build_provenance_sha256"],
+            evidence["positive_attestation"]["build_provenance_sha256"],
+        )
+        self.assertEqual(
+            set(evidence["container"]["provenance"]["labels"]),
+            set(runner.isolation.MARB_IMAGE_PROVENANCE_LABELS),
+        )
         case6 = evidence["cases"][5]
         self.assertEqual(case6["exception_category"], "output_limit_exceeded")
         self.assertTrue(case6["checks"]["output_rejected"])
@@ -476,6 +569,30 @@ class RuntimeSmokeRunnerTests(unittest.TestCase):
         self.assertTrue(capture.truncated)
         self.assertEqual(capture.value(), expected)
 
+    def test_post_case_wrapper_preserves_output_identity_without_body(self) -> None:
+        bounded = "x" * 64 + runner.isolation._OUTPUT_TRUNCATION_MARKER.decode("ascii")
+        prior = runner.isolation.IsolationError(
+            "synthetic bounded failure",
+            code="output_limit_exceeded",
+            stage="container_start",
+            stdout=bounded,
+            stdout_truncated=True,
+        )
+        wrapped = runner.SmokeRunnerError(
+            "Docker executable changed during a smoke case",
+            code="docker_executable_drift",
+            stage="post_case_readback",
+            prior=prior,
+        )
+        summary = runner._failure_summary(wrapped)
+        self.assertEqual(summary["stdout"]["bytes"], len(bounded.encode("utf-8")))
+        self.assertEqual(
+            summary["stdout"]["sha256"],
+            hashlib.sha256(bounded.encode("utf-8")).hexdigest(),
+        )
+        self.assertEqual(wrapped.stdout, runner.isolation._OUTPUT_TRUNCATION_MARKER.decode("ascii"))
+        self.assertNotIn("x" * 16, runner._canonical_json(summary).decode("ascii"))
+
     def test_docker_replacement_after_case_fails_and_stops(self) -> None:
         class MutatingEngine(FakeEngine):
             def execute(inner_self, workspace, relative_script, **kwargs):
@@ -520,6 +637,281 @@ class RuntimeSmokeRunnerTests(unittest.TestCase):
                 monotonic=clock.monotonic,
             )
         self.assertEqual(self.engines, [])
+
+    def test_literal_head_mismatch_rejects_before_engine(self) -> None:
+        original = self.source_verifier
+
+        def mismatched(*args):
+            proof = original(*args)
+            proof["literal_head"] = "d" * 40
+            return proof
+
+        clock = FixedClock()
+        with self.assertRaisesRegex(runner.SmokeRunnerError, "source preflight proof"):
+            runner.run_smoke(
+                image=IMAGE,
+                docker_executable=str(self.docker),
+                docker_executable_sha256=self.docker_sha256,
+                git_executable=str(self.git),
+                git_executable_sha256=self.git_sha256,
+                source_revision=REVISION,
+                source_root=self.root,
+                source_tree=TREE,
+                work_root=self.root,
+                engine_factory=self.factory,
+                source_verifier=mismatched,
+                now=clock.now,
+                monotonic=clock.monotonic,
+            )
+        self.assertEqual(self.engines, [])
+
+    def test_default_source_verifier_binds_literal_head_and_raw_source_bytes(self) -> None:
+        source_root = Path(runner.__file__).resolve().parents[1]
+        manifest = runner._source_manifest()
+
+        @contextmanager
+        def locked_git(_authorization):
+            yield {"path": str(self.git), "sha256": self.git_sha256}
+
+        def completed(argv, **_kwargs):
+            if argv[-1] == "HEAD":
+                stdout = (REVISION + "\n").encode("ascii")
+            elif argv[-1] == "HEAD^{commit}":
+                stdout = (REVISION + "\n").encode("ascii")
+            elif argv[-1] == "HEAD^{tree}":
+                stdout = (TREE + "\n").encode("ascii")
+            else:
+                stdout = b""
+            return subprocess.CompletedProcess(argv, 0, stdout=stdout, stderr=b"")
+
+        def committed(_authorization, _root, _revision, public_path):
+            return source_root.joinpath(*public_path.split("/")).read_bytes()
+
+        with (
+            mock.patch.object(cohort_executor, "_locked_git_spawn_identity", locked_git),
+            mock.patch.object(runner.subprocess, "run", side_effect=completed),
+            mock.patch.object(
+                cohort_executor,
+                "_read_committed_blob_with_git",
+                side_effect=committed,
+            ),
+            mock.patch.object(
+                cohort_executor,
+                "_verify_host_git_executable",
+                return_value={"sha256": self.git_sha256},
+            ),
+        ):
+            proof = runner._verify_source_checkout(
+                source_root,
+                REVISION,
+                TREE,
+                str(self.git),
+                self.git_sha256,
+                manifest,
+            )
+        self.assertEqual(proof["literal_head"], REVISION)
+        self.assertEqual(proof["revision"], REVISION)
+        self.assertEqual(proof["tree"], TREE)
+        self.assertEqual(
+            {item["path"] for item in manifest["entries"]}, set(runner.SOURCE_FILES)
+        )
+        for item in manifest["entries"]:
+            with self.subTest(path=item["path"]):
+                path = source_root.joinpath(*item["path"].split("/"))
+                self.assertEqual(item["hash_mode"], "raw")
+                self.assertEqual(item["bytes"], len(path.read_bytes()))
+                self.assertEqual(item["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_default_source_verifier_rejects_raw_drift_for_every_bound_file(self) -> None:
+        source_root = Path(runner.__file__).resolve().parents[1]
+        manifest = runner._source_manifest()
+
+        @contextmanager
+        def locked_git(_authorization):
+            yield {"path": str(self.git), "sha256": self.git_sha256}
+
+        def completed(argv, **_kwargs):
+            values = {
+                "HEAD": REVISION,
+                "HEAD^{commit}": REVISION,
+                "HEAD^{tree}": TREE,
+            }
+            stdout = (
+                (values[argv[-1]] + "\n").encode("ascii")
+                if argv[-1] in values
+                else b""
+            )
+            return subprocess.CompletedProcess(argv, 0, stdout=stdout, stderr=b"")
+
+        for target in runner.SOURCE_FILES:
+            with self.subTest(path=target):
+                def committed(_authorization, _root, _revision, public_path):
+                    raw = source_root.joinpath(*public_path.split("/")).read_bytes()
+                    return raw + b"\x00" if public_path == target else raw
+
+                with (
+                    mock.patch.object(
+                        cohort_executor, "_locked_git_spawn_identity", locked_git
+                    ),
+                    mock.patch.object(runner.subprocess, "run", side_effect=completed),
+                    mock.patch.object(
+                        cohort_executor,
+                        "_read_committed_blob_with_git",
+                        side_effect=committed,
+                    ),
+                ):
+                    with self.assertRaisesRegex(
+                        runner.SmokeRunnerError,
+                        "executing smoke source differs from committed HEAD",
+                    ):
+                        runner._verify_source_checkout(
+                            source_root,
+                            REVISION,
+                            TREE,
+                            str(self.git),
+                            self.git_sha256,
+                            manifest,
+                        )
+
+    def test_success_requires_explicit_absence_and_staging_flags(self) -> None:
+        for field in ("container_absence_verified", "export_staging_removed"):
+            for mode in ("false", "missing"):
+                with self.subTest(field=field, mode=mode):
+                    self.engines.clear()
+
+                    class MissingSuccessEvidenceEngine(FakeEngine):
+                        def _result(inner_self, stdout="", returncode=0):
+                            result = super(MissingSuccessEvidenceEngine, inner_self)._result(
+                                stdout, returncode
+                            )
+                            if mode == "missing":
+                                delattr(result, field)
+                            else:
+                                setattr(result, field, False)
+                            return result
+
+                    def factory(case, ordinal, _input_root):
+                        return MissingSuccessEvidenceEngine(
+                            case, ordinal, self.limiter_sha256, self.engines
+                        )
+
+                    evidence = self.run_smoke_evidence(factory)["evidence"]
+                    self.assertEqual(evidence["status"], "fail")
+                    self.assertEqual(len(evidence["cases"]), 1)
+                    self.assertFalse(evidence["cases"][0]["pass"])
+
+    def test_image_provenance_tampering_fails_closed(self) -> None:
+        variants = (
+            "missing_label",
+            "extra_marb_label",
+            "altered_label",
+            "wrong_repo_digest",
+            "wrong_image_id",
+            "wrong_tracked_file_hash",
+            "wrong_in_image_hash",
+        )
+        for variant in variants:
+            with self.subTest(variant=variant):
+                self.engines.clear()
+
+                class TamperedProvenanceEngine(FakeEngine):
+                    def inspect_image_provenance(inner_self):
+                        value = dict(super(TamperedProvenanceEngine, inner_self).inspect_image_provenance())
+                        value["labels"] = dict(value["labels"])
+                        prefix = "org.sunnyday.marb."
+                        if variant == "missing_label":
+                            value["labels"].pop(prefix + "runtime-contract")
+                        elif variant == "extra_marb_label":
+                            value["labels"][prefix + "unexpected"] = "public-but-unbound"
+                        elif variant == "altered_label":
+                            value["labels"][prefix + "cadclaw-version"] = "0.10.1"
+                        elif variant == "wrong_repo_digest":
+                            value["repo_digests"] = [
+                                "ghcr.io/sunnyday-technologies/marb-worker@sha256:" + "f" * 64
+                            ]
+                        elif variant == "wrong_image_id":
+                            value["image_id"] = "sha256:" + "f" * 64
+                        elif variant == "wrong_tracked_file_hash":
+                            value["labels"][prefix + "dockerfile-sha256"] = "f" * 64
+                        return value
+
+                    def execute(inner_self, workspace, relative_script, **kwargs):
+                        result = super(TamperedProvenanceEngine, inner_self).execute(
+                            workspace, relative_script, **kwargs
+                        )
+                        if (
+                            variant == "wrong_in_image_hash"
+                            and inner_self.case.case_id == "positive_provenance_and_import"
+                        ):
+                            payload = json.loads(result.stdout)
+                            payload["build_provenance_sha256"] = "f" * 64
+                            result.stdout = canonical(payload)
+                        return result
+
+                def factory(case, ordinal, _input_root):
+                    return TamperedProvenanceEngine(
+                        case, ordinal, self.limiter_sha256, self.engines
+                    )
+
+                evidence = self.run_smoke_evidence(factory)["evidence"]
+                self.assertEqual(evidence["status"], "fail")
+                self.assertEqual([item["case_id"] for item in evidence["cases"]], [REQUIRED_IDS[0]])
+                self.assertEqual(evidence["not_run_case_ids"], list(REQUIRED_IDS[1:]))
+                self.assertFalse(evidence["cases"][0]["checks"]["image_provenance_exact"])
+
+    def test_embedded_provenance_validator_rejects_noncanonical_bytes_and_key_drift(self) -> None:
+        tree = ast.parse(probes.POSITIVE_PROVENANCE_AND_IMPORT_SOURCE)
+        selected: list[ast.stmt] = []
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name)
+                and target.id in {"provenance_raw", "provenance"}
+                for target in node.targets
+            ):
+                selected.append(node)
+            elif isinstance(node, ast.Assert):
+                rendered = ast.unparse(node.test)
+                if "provenance_raw ==" in rendered or "set(provenance) ==" in rendered:
+                    selected.append(node)
+        self.assertEqual(len(selected), 4)
+
+        provenance_path = self.root / "build-provenance.json"
+
+        class RewritePath(ast.NodeTransformer):
+            def visit_Constant(self, node):
+                if node.value == "/opt/marb/build-provenance.json":
+                    return ast.copy_location(ast.Constant(str(provenance_path)), node)
+                return node
+
+        validator = compile(
+            ast.fix_missing_locations(
+                RewritePath().visit(ast.Module(body=selected, type_ignores=[]))
+            ),
+            "<embedded-provenance-validator>",
+            "exec",
+        )
+        labels, _ = provenance_labels()
+        value = runner._build_provenance_from_labels(labels)
+        self.assertIsNotNone(value)
+        assert value is not None
+        canonical_raw = runner._canonical_json(value, newline=True)
+        provenance_path.write_bytes(canonical_raw)
+        exec(validator, {"Path": Path, "json": json})
+
+        missing = dict(value)
+        missing.pop("schema")
+        extra = {**value, "unexpected": "value"}
+        variants = (
+            json.dumps(value, indent=2, sort_keys=True).encode("ascii") + b"\n",
+            canonical_raw.replace(b"\n", b"\r\n"),
+            runner._canonical_json(missing, newline=True),
+            runner._canonical_json(extra, newline=True),
+        )
+        for raw in variants:
+            with self.subTest(raw_sha256=hashlib.sha256(raw).hexdigest()):
+                provenance_path.write_bytes(raw)
+                with self.assertRaises(AssertionError):
+                    exec(validator, {"Path": Path, "json": json})
 
     def test_protected_and_environment_cases_require_exact_zero_exit_payloads(self) -> None:
         mutations = (
