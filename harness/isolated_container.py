@@ -112,6 +112,83 @@ CONTAINER_ID_RE = re.compile(r"[0-9a-f]{64}\Z")
 CONTAINER_NAME_RE = re.compile(r"marb-isolated-[0-9a-f]{32}\Z")
 REPOSITORY_COMPONENT_RE = re.compile(r"[a-z0-9][a-z0-9._-]*[a-z0-9]|[a-z0-9]")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
+# These fixed tokens identify only which public isolation predicate rejected
+# Docker's readback. Observed values, host paths, inspect JSON, exception text,
+# and child output must never be used as predicate values or serialized here.
+CONTAINER_POLICY_PREDICATES = frozenset(
+    {
+        "auto_remove_mismatch",
+        "bind_destinations_mismatch",
+        "bind_mount_count_mismatch",
+        "binds_present",
+        "cap_add_present",
+        "cap_drop_mismatch",
+        "cgroupns_mode_mismatch",
+        "configured_image_mismatch",
+        "container_command_mismatch",
+        "container_config_malformed",
+        "container_identity_mismatch",
+        "container_image_id_mismatch",
+        "container_inspect_json_malformed",
+        "container_inspect_output_limit",
+        "container_metadata_malformed",
+        "container_missing_before_readback",
+        "container_not_inert",
+        "container_ownership_mismatch",
+        "container_state_malformed",
+        "container_user_mismatch",
+        "container_workdir_mismatch",
+        "cpu_limit_mismatch",
+        "declared_volume_present",
+        "device_cgroup_rules_present",
+        "device_requests_present",
+        "devices_present",
+        "docker_control_socket_present",
+        "effective_args_mismatch",
+        "effective_entrypoint_mismatch",
+        "export_bind_mismatch",
+        "exposed_port_present",
+        "extra_hosts_present",
+        "extra_mount_count_mismatch",
+        "healthcheck_not_disabled",
+        "host_config_malformed",
+        "immutable_input_bind_mismatch",
+        "ipc_mode_mismatch",
+        "kit_bind_mismatch",
+        "links_present",
+        "logging_policy_mismatch",
+        "memory_limit_mismatch",
+        "memory_swap_limit_mismatch",
+        "mounts_metadata_malformed",
+        "network_mode_mismatch",
+        "network_settings_malformed",
+        "ownership_label_mismatch",
+        "pid_mode_mismatch",
+        "pids_limit_mismatch",
+        "policy_readback_deadline",
+        "port_bindings_present",
+        "privileged_mode_mismatch",
+        "publish_all_ports_mismatch",
+        "published_ports_present",
+        "readonly_rootfs_mismatch",
+        "restart_policy_mismatch",
+        "security_option_mismatch",
+        "tmpfs_destinations_mismatch",
+        "tmpfs_export_options_mismatch",
+        "tmpfs_metadata_malformed",
+        "tmpfs_mount_destinations_mismatch",
+        "tmpfs_tmp_options_mismatch",
+        "tmpfs_workspace_options_mismatch",
+        "ulimit_entry_malformed",
+        "ulimit_fsize_mismatch",
+        "ulimit_names_mismatch",
+        "ulimit_nofile_mismatch",
+        "ulimits_metadata_malformed",
+        "uts_mode_mismatch",
+        "volumes_from_present",
+        "workspace_bind_mismatch",
+    }
+)
 PROTECTED_COMPONENT_RE = re.compile(
     r"(?:^|[._-])(?:answer[_-]?keys?|private|credentials?|secrets?|tokens?)(?:$|[._-])",
     re.IGNORECASE,
@@ -167,6 +244,7 @@ class IsolationError(RuntimeError):
         container_id: str | None = None,
         primary_error_type: str | None = None,
         cleanup_error_type: str | None = None,
+        policy_predicate: str | None = None,
     ) -> None:
         super().__init__(message)
         self.code = code
@@ -185,6 +263,12 @@ class IsolationError(RuntimeError):
         self.container_id = container_id
         self.primary_error_type = primary_error_type
         self.cleanup_error_type = cleanup_error_type
+        self.policy_predicate = (
+            policy_predicate
+            if isinstance(policy_predicate, str)
+            and policy_predicate in CONTAINER_POLICY_PREDICATES
+            else None
+        )
 
     @property
     def stdout(self) -> str:
@@ -269,7 +353,7 @@ class IsolationError(RuntimeError):
 
     def to_dict(self) -> dict[str, Any]:
         """Return the stable JSON-safe evidence schema for logs and smoke gates."""
-        return {
+        evidence = {
             "schema": "marb_isolation_error.v1",
             "code": self.code,
             "stage": self.stage,
@@ -295,6 +379,11 @@ class IsolationError(RuntimeError):
             "primary_error_type": self.primary_error_type,
             "cleanup_error_type": self.cleanup_error_type,
         }
+        if self.policy_predicate is not None:
+            # Optional additive v1 field. Historical/non-policy failures retain
+            # their original shape, and arbitrary strings never cross this gate.
+            evidence["policy_predicate"] = self.policy_predicate
+        return evidence
 
 
 class CommandResultLike(Protocol):
@@ -346,6 +435,24 @@ class ExecutionResult:
 
 
 @dataclass(frozen=True)
+class PolicyReadbackResult:
+    """Readback from one inert create/attest/remove policy probe."""
+
+    image: str
+    image_id: str
+    docker_executable: str
+    workspace: Path
+    script: str
+    container_name: str
+    container_id: str
+    create_command: tuple[str, ...]
+    policy_readback_verified: bool
+    cleanup_verified: bool
+    container_absence_verified: bool
+    export_staging_removed: bool
+
+
+@dataclass(frozen=True)
 class WorkspaceUsage:
     file_count: int
     total_bytes: int
@@ -386,6 +493,11 @@ def _fail(
     stage: str = "validation",
 ) -> NoReturn:
     raise IsolationError(message, code=code, stage=stage)
+
+
+def _policy_fail(policy_predicate: str, message: str) -> NoReturn:
+    """Reject a fixed policy predicate without retaining observed metadata."""
+    raise IsolationError(message, policy_predicate=policy_predicate)
 
 
 def _minimal_host_environment(source: Mapping[str, str]) -> dict[str, str]:
@@ -1083,16 +1195,32 @@ class IsolatedDockerPython:
         cap: float | None,
         *,
         label: str,
+        policy_predicate: str | None = None,
     ) -> float | None:
         if deadline is None:
             return cap
         remaining = deadline - self._monotonic()
         if remaining <= 0:
+            if policy_predicate is not None:
+                _policy_fail(
+                    policy_predicate,
+                    f"{label} exceeded the authorized wall-clock deadline",
+                )
             _fail(f"{label} exceeded the authorized wall-clock deadline")
         return remaining if cap is None else min(remaining, cap)
 
-    def _deadline_check(self, deadline: float | None) -> None:
-        self._remaining_timeout(deadline, None, label="isolated execution")
+    def _deadline_check(
+        self,
+        deadline: float | None,
+        *,
+        policy_predicate: str | None = None,
+    ) -> None:
+        self._remaining_timeout(
+            deadline,
+            None,
+            label="isolated execution",
+            policy_predicate=policy_predicate,
+        )
 
     def _inspect_local_image_details(
         self,
@@ -1299,8 +1427,17 @@ class IsolatedDockerPython:
         ]
 
     def _read_container_metadata(
-        self, reference: str, *, timeout: float | None
+        self,
+        reference: str,
+        *,
+        timeout: float | None,
+        policy_readback: bool = False,
     ) -> tuple[CommandResultLike, dict[str, Any] | None]:
+        def reject(policy_predicate: str, message: str) -> NoReturn:
+            if policy_readback:
+                _policy_fail(policy_predicate, message)
+            _fail(message)
+
         command = [
             self.docker_executable,
             "container",
@@ -1314,12 +1451,23 @@ class IsolatedDockerPython:
             return result, None
         raw, truncated = _bounded_text(result.stdout, MAX_STDOUT_BYTES)
         if truncated:
-            _fail("Docker container inspection output exceeded the limit")
+            reject(
+                "container_inspect_output_limit",
+                "Docker container inspection output exceeded the limit",
+            )
         try:
             parsed = json.loads(raw.strip())
         except (json.JSONDecodeError, TypeError):
-            _fail("Docker returned malformed container metadata")
-        return result, _require_mapping(parsed, "container")
+            reject(
+                "container_inspect_json_malformed",
+                "Docker returned malformed container metadata",
+            )
+        if not isinstance(parsed, dict):
+            reject(
+                "container_metadata_malformed",
+                "Docker returned malformed container metadata",
+            )
+        return result, parsed
 
     def _validate_container_metadata(
         self,
@@ -1333,119 +1481,244 @@ class IsolatedDockerPython:
         export_archive: Path,
         script: str,
     ) -> None:
-        if metadata.get("Id") != container_id or metadata.get("Name") != f"/{container_name}":
-            _fail("Docker container identity readback does not match the created container")
-        if metadata.get("Image") != image_id:
-            _fail("Docker container image readback does not match the inspected image")
-        state = _require_mapping(metadata.get("State"), "container state")
-        if state.get("Status") != "created" or state.get("Running") is not False:
-            _fail("Docker container was not inert at policy readback")
+        def require_mapping(
+            value: Any, policy_predicate: str, label: str
+        ) -> dict[str, Any]:
+            if not isinstance(value, dict):
+                _policy_fail(
+                    policy_predicate,
+                    f"Docker returned malformed {label} metadata",
+                )
+            return value
 
-        config = _require_mapping(metadata.get("Config"), "container configuration")
+        if metadata.get("Id") != container_id or metadata.get("Name") != f"/{container_name}":
+            _policy_fail(
+                "container_identity_mismatch",
+                "Docker container identity readback does not match the created container",
+            )
+        if metadata.get("Image") != image_id:
+            _policy_fail(
+                "container_image_id_mismatch",
+                "Docker container image readback does not match the inspected image",
+            )
+        state = require_mapping(
+            metadata.get("State"), "container_state_malformed", "container state"
+        )
+        if state.get("Status") != "created" or state.get("Running") is not False:
+            _policy_fail(
+                "container_not_inert",
+                "Docker container was not inert at policy readback",
+            )
+
+        config = require_mapping(
+            metadata.get("Config"),
+            "container_config_malformed",
+            "container configuration",
+        )
         expected_command = self._container_command(script)
         if config.get("Image") != self.image:
-            _fail("Docker container configuration does not retain the authorized image")
+            _policy_fail(
+                "configured_image_mismatch",
+                "Docker container configuration does not retain the authorized image",
+            )
         if config.get("User") != CONTAINER_UID_GID:
-            _fail("Docker container user policy readback failed")
+            _policy_fail(
+                "container_user_mismatch",
+                "Docker container user policy readback failed",
+            )
         if config.get("WorkingDir") != CONTAINER_WORKSPACE:
-            _fail("Docker container workdir policy readback failed")
+            _policy_fail(
+                "container_workdir_mismatch",
+                "Docker container workdir policy readback failed",
+            )
         if config.get("Entrypoint") != ["/usr/bin/env"] or config.get("Cmd") != expected_command:
-            _fail("Docker container clean-environment command readback failed")
+            _policy_fail(
+                "container_command_mismatch",
+                "Docker container clean-environment command readback failed",
+            )
         if not _empty(config.get("Volumes")):
-            _fail("Docker container has an unauthorized declared volume")
+            _policy_fail(
+                "declared_volume_present",
+                "Docker container has an unauthorized declared volume",
+            )
         if not _empty(config.get("ExposedPorts")):
-            _fail("Docker container has an unauthorized exposed port")
+            _policy_fail(
+                "exposed_port_present",
+                "Docker container has an unauthorized exposed port",
+            )
         healthcheck = config.get("Healthcheck")
         if not isinstance(healthcheck, dict) or healthcheck.get("Test") != ["NONE"]:
-            _fail("Docker container healthcheck was not disabled")
+            _policy_fail(
+                "healthcheck_not_disabled",
+                "Docker container healthcheck was not disabled",
+            )
         labels = config.get("Labels")
         if not isinstance(labels, dict) or labels.get(OWNERSHIP_LABEL) != container_name:
-            _fail("Docker container ownership label readback failed")
+            _policy_fail(
+                "ownership_label_mismatch",
+                "Docker container ownership label readback failed",
+            )
 
-        host = _require_mapping(metadata.get("HostConfig"), "container host configuration")
+        host = require_mapping(
+            metadata.get("HostConfig"),
+            "host_config_malformed",
+            "container host configuration",
+        )
         exact_values = {
-            "NetworkMode": "none",
-            "IpcMode": "none",
-            "CgroupnsMode": "private",
-            "PidMode": "",
-            "UTSMode": "",
-            "ReadonlyRootfs": True,
-            "Privileged": False,
-            "AutoRemove": False,
-            "PidsLimit": int(PID_LIMIT),
-            "Memory": MEMORY_LIMIT_BYTES,
-            "MemorySwap": MEMORY_LIMIT_BYTES,
-            "NanoCpus": NANO_CPU_LIMIT,
-            "PublishAllPorts": False,
+            "NetworkMode": ("none", "network_mode_mismatch"),
+            "IpcMode": ("none", "ipc_mode_mismatch"),
+            "CgroupnsMode": ("private", "cgroupns_mode_mismatch"),
+            "PidMode": ("", "pid_mode_mismatch"),
+            "UTSMode": ("", "uts_mode_mismatch"),
+            "ReadonlyRootfs": (True, "readonly_rootfs_mismatch"),
+            "Privileged": (False, "privileged_mode_mismatch"),
+            "AutoRemove": (False, "auto_remove_mismatch"),
+            "PidsLimit": (int(PID_LIMIT), "pids_limit_mismatch"),
+            "Memory": (MEMORY_LIMIT_BYTES, "memory_limit_mismatch"),
+            "MemorySwap": (MEMORY_LIMIT_BYTES, "memory_swap_limit_mismatch"),
+            "NanoCpus": (NANO_CPU_LIMIT, "cpu_limit_mismatch"),
+            "PublishAllPorts": (False, "publish_all_ports_mismatch"),
         }
-        if any(host.get(key) != value for key, value in exact_values.items()):
-            _fail("Docker container isolation policy readback failed")
-        if host.get("CapDrop") != ["ALL"] or not _empty(host.get("CapAdd")):
-            _fail("Docker container capability policy readback failed")
+        for key, (expected_value, policy_predicate) in exact_values.items():
+            if host.get(key) != expected_value:
+                _policy_fail(
+                    policy_predicate,
+                    "Docker container isolation policy readback failed",
+                )
+        if host.get("CapDrop") != ["ALL"]:
+            _policy_fail(
+                "cap_drop_mismatch",
+                "Docker container capability policy readback failed",
+            )
+        if not _empty(host.get("CapAdd")):
+            _policy_fail(
+                "cap_add_present",
+                "Docker container capability policy readback failed",
+            )
         if host.get("SecurityOpt") != ["no-new-privileges"]:
-            _fail("Docker container security option readback failed")
+            _policy_fail(
+                "security_option_mismatch",
+                "Docker container security option readback failed",
+            )
         restart_policy = host.get("RestartPolicy")
         if restart_policy != {"Name": "no", "MaximumRetryCount": 0}:
-            _fail("Docker container restart policy readback failed")
+            _policy_fail(
+                "restart_policy_mismatch",
+                "Docker container restart policy readback failed",
+            )
         log_config = host.get("LogConfig")
         if not isinstance(log_config, dict) or log_config.get("Type") != "none":
-            _fail("Docker container logging was not disabled")
+            _policy_fail(
+                "logging_policy_mismatch",
+                "Docker container logging was not disabled",
+            )
         tmpfs = host.get("Tmpfs")
         expected_tmpfs = {
             item.split(":", 1)[0]: item.split(":", 1)[1]
             for item in (TMPFS_SPEC, WORKSPACE_TMPFS_SPEC, EXPORT_TMPFS_SPEC)
         }
-        if not isinstance(tmpfs, dict) or set(tmpfs) != set(expected_tmpfs):
-            _fail("Docker container tmpfs policy readback failed")
+        if not isinstance(tmpfs, dict):
+            _policy_fail(
+                "tmpfs_metadata_malformed",
+                "Docker container tmpfs policy readback failed",
+            )
+        if set(tmpfs) != set(expected_tmpfs):
+            _policy_fail(
+                "tmpfs_destinations_mismatch",
+                "Docker container tmpfs policy readback failed",
+            )
+        tmpfs_option_predicates = {
+            "/tmp": "tmpfs_tmp_options_mismatch",
+            CONTAINER_WORKSPACE: "tmpfs_workspace_options_mismatch",
+            CONTAINER_EXPORT: "tmpfs_export_options_mismatch",
+        }
         for destination, expected_options in expected_tmpfs.items():
             actual_options = tmpfs[destination]
             if not isinstance(actual_options, str) or set(actual_options.split(",")) != set(
                 expected_options.split(",")
             ):
-                _fail("Docker container tmpfs policy readback failed")
+                _policy_fail(
+                    tmpfs_option_predicates[destination],
+                    "Docker container tmpfs policy readback failed",
+                )
 
         ulimits = host.get("Ulimits")
         if not isinstance(ulimits, list):
-            _fail("Docker container resource-limit readback failed")
+            _policy_fail(
+                "ulimits_metadata_malformed",
+                "Docker container resource-limit readback failed",
+            )
         parsed_ulimits: dict[str, tuple[Any, Any]] = {}
         for item in ulimits:
             if not isinstance(item, dict) or not isinstance(item.get("Name"), str):
-                _fail("Docker container resource-limit readback failed")
+                _policy_fail(
+                    "ulimit_entry_malformed",
+                    "Docker container resource-limit readback failed",
+                )
             parsed_ulimits[item["Name"]] = (item.get("Soft"), item.get("Hard"))
-        if parsed_ulimits != {
+        expected_ulimits = {
             "nofile": (int(NOFILE_LIMIT.split(":", 1)[0]), int(NOFILE_LIMIT.split(":", 1)[1])),
             "fsize": (MAX_EXPORT_TAR_BYTES, MAX_EXPORT_TAR_BYTES),
-        }:
-            _fail("Docker container resource-limit readback failed")
+        }
+        if set(parsed_ulimits) != set(expected_ulimits):
+            _policy_fail(
+                "ulimit_names_mismatch",
+                "Docker container resource-limit readback failed",
+            )
+        if parsed_ulimits["nofile"] != expected_ulimits["nofile"]:
+            _policy_fail(
+                "ulimit_nofile_mismatch",
+                "Docker container resource-limit readback failed",
+            )
+        if parsed_ulimits["fsize"] != expected_ulimits["fsize"]:
+            _policy_fail(
+                "ulimit_fsize_mismatch",
+                "Docker container resource-limit readback failed",
+            )
 
-        for key in (
-            "Binds",
-            "VolumesFrom",
-            "Devices",
-            "DeviceRequests",
-            "DeviceCgroupRules",
-            "PortBindings",
-            "Links",
-            "ExtraHosts",
-        ):
+        host_resource_predicates = {
+            "Binds": "binds_present",
+            "VolumesFrom": "volumes_from_present",
+            "Devices": "devices_present",
+            "DeviceRequests": "device_requests_present",
+            "DeviceCgroupRules": "device_cgroup_rules_present",
+            "PortBindings": "port_bindings_present",
+            "Links": "links_present",
+            "ExtraHosts": "extra_hosts_present",
+        }
+        for key, policy_predicate in host_resource_predicates.items():
             if not _empty(host.get(key)):
-                _fail("Docker container has an unauthorized host resource")
-        network_settings = _require_mapping(
-            metadata.get("NetworkSettings"), "container network configuration"
+                _policy_fail(
+                    policy_predicate,
+                    "Docker container has an unauthorized host resource",
+                )
+        network_settings = require_mapping(
+            metadata.get("NetworkSettings"),
+            "network_settings_malformed",
+            "container network configuration",
         )
         if not _empty(network_settings.get("Ports")):
-            _fail("Docker container has an unauthorized published port")
+            _policy_fail(
+                "published_ports_present",
+                "Docker container has an unauthorized published port",
+            )
 
         mounts = metadata.get("Mounts")
         if not isinstance(mounts, list):
-            _fail("Docker container mount readback is malformed")
+            _policy_fail(
+                "mounts_metadata_malformed",
+                "Docker container mount readback is malformed",
+            )
         bind_mounts = [
             item for item in mounts
             if isinstance(item, dict) and item.get("Type") == "bind"
         ]
         other_mounts = [item for item in mounts if item not in bind_mounts]
         if len(bind_mounts) != 4:
-            _fail("Docker container must have exactly three read-only inputs and one export bind")
+            _policy_fail(
+                "bind_mount_count_mismatch",
+                "Docker container must have exactly three read-only inputs and one export bind",
+            )
         by_destination = {
             item.get("Destination"): item for item in bind_mounts
         }
@@ -1455,7 +1728,10 @@ class IsolatedDockerPython:
             CONTAINER_INPUT,
             f"{CONTAINER_EXPORT}/workspace.tar",
         }:
-            _fail("Docker container bind destinations are unauthorized")
+            _policy_fail(
+                "bind_destinations_mismatch",
+                "Docker container bind destinations are unauthorized",
+            )
         bind = by_destination[CONTAINER_HOST_WORKSPACE]
         source = bind.get("Source")
         if (
@@ -1465,7 +1741,7 @@ class IsolatedDockerPython:
             or bind.get("RW") is not False
             or bind.get("Propagation") != "rprivate"
         ):
-            _fail("Docker workspace bind readback failed")
+            _policy_fail("workspace_bind_mismatch", "Docker workspace bind readback failed")
         input_bind = by_destination[CONTAINER_INPUT_ROOT]
         input_source = input_bind.get("Source")
         if (
@@ -1474,7 +1750,10 @@ class IsolatedDockerPython:
             or input_bind.get("RW") is not False
             or input_bind.get("Propagation") != "rprivate"
         ):
-            _fail("Docker immutable-input bind readback failed")
+            _policy_fail(
+                "immutable_input_bind_mismatch",
+                "Docker immutable-input bind readback failed",
+            )
         kit_bind = by_destination[CONTAINER_INPUT]
         kit_source = kit_bind.get("Source")
         if (
@@ -1483,7 +1762,7 @@ class IsolatedDockerPython:
             or kit_bind.get("RW") is not False
             or kit_bind.get("Propagation") != "rprivate"
         ):
-            _fail("Docker kit compatibility bind readback failed")
+            _policy_fail("kit_bind_mismatch", "Docker kit compatibility bind readback failed")
         export_bind = by_destination[f"{CONTAINER_EXPORT}/workspace.tar"]
         export_source = export_bind.get("Source")
         if (
@@ -1492,19 +1771,43 @@ class IsolatedDockerPython:
             or export_bind.get("RW") is not True
             or export_bind.get("Propagation") != "rprivate"
         ):
-            _fail("Docker exact-file export bind readback failed")
+            _policy_fail("export_bind_mismatch", "Docker exact-file export bind readback failed")
         tmpfs_mount_destinations = {
             mount.get("Destination")
             for mount in other_mounts
             if isinstance(mount, dict) and mount.get("Type") == "tmpfs"
         }
-        if len(other_mounts) != 3 or tmpfs_mount_destinations != set(expected_tmpfs):
-            _fail("Docker container has an unauthorized extra mount")
+        # Docker may omit configured tmpfs mounts from ``.Mounts`` while a
+        # container is still in the created (never-started) state. The exact
+        # destinations and options remain mandatory in ``HostConfig.Tmpfs``
+        # above. If ``.Mounts`` exposes any tmpfs entries, require the complete
+        # exact set; a partial set or foreign mount type remains forbidden.
+        if len(other_mounts) not in (0, len(expected_tmpfs)):
+            _policy_fail(
+                "extra_mount_count_mismatch",
+                "Docker container has an unauthorized extra mount",
+            )
+        if other_mounts and tmpfs_mount_destinations != set(expected_tmpfs):
+            _policy_fail(
+                "tmpfs_mount_destinations_mismatch",
+                "Docker container has an unauthorized extra mount",
+            )
         mount_text = json.dumps(mounts, sort_keys=True).casefold()
         if "docker.sock" in mount_text or "docker_engine" in mount_text:
-            _fail("Docker control socket mount is forbidden")
-        if metadata.get("Path") != "/usr/bin/env" or metadata.get("Args") != expected_command:
-            _fail("Docker effective process readback failed")
+            _policy_fail(
+                "docker_control_socket_present",
+                "Docker control socket mount is forbidden",
+            )
+        if metadata.get("Path") != "/usr/bin/env":
+            _policy_fail(
+                "effective_entrypoint_mismatch",
+                "Docker effective process readback failed",
+            )
+        if metadata.get("Args") != expected_command:
+            _policy_fail(
+                "effective_args_mismatch",
+                "Docker effective process readback failed",
+            )
 
     def _cleanup_container(self, container_id: str, *, deadline: float) -> bool:
         def cleanup_timeout() -> float:
@@ -1559,6 +1862,271 @@ class IsolatedDockerPython:
         if not isinstance(container_id, str) or not CONTAINER_ID_RE.fullmatch(container_id):
             _fail("owned Docker container has a malformed identity")
         return self._cleanup_container(container_id, deadline=deadline)
+
+    def probe_policy_readback(
+        self,
+        workspace: Path,
+        relative_script: str,
+        *,
+        inspect_timeout: float | None = 30.0,
+        execution_timeout: float | None = 60.0,
+    ) -> PolicyReadbackResult:
+        """Create, attest, and remove one inert container without starting it."""
+        if execution_timeout is not None and execution_timeout <= 0:
+            _fail("execution timeout must be positive")
+        if inspect_timeout is not None and inspect_timeout <= 0:
+            _fail("inspection timeout must be positive")
+        started = self._monotonic()
+        deadline = None if execution_timeout is None else started + execution_timeout
+        canonical, script = validate_workspace(workspace, relative_script)
+        self._deadline_check(deadline)
+        input_root = validate_input_root(self.input_root, canonical)
+        self._deadline_check(deadline)
+        _, image_id, _ = self._inspect_local_image_details(
+            timeout=self._remaining_timeout(
+                deadline, inspect_timeout, label="Docker image preflight"
+            )
+        )
+        preparation_error: IsolationError | None = None
+        try:
+            self._deadline_check(deadline)
+            container_name = self._new_container_name()
+        except BaseException as exc:
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            preparation_error = _structured_execution_error(
+                exc,
+                stage="post_image_preparation",
+                stdout="",
+                stderr="",
+                stdout_truncated=False,
+                stderr_truncated=False,
+                returncode=None,
+                image=self.image,
+                image_id=image_id,
+                container_name=None,
+                container_id=None,
+            )
+        if preparation_error is not None:
+            preparation_error.__traceback__ = None
+            preparation_error.__cause__ = None
+            preparation_error.__context__ = None
+            raise preparation_error.with_traceback(None) from None
+
+        export_archive = canonical.parent / f".marb-export-{container_name}.tar"
+        create_command: list[str] | None = None
+        container_id: str | None = None
+        creation_uncertain = False
+        primary_error: BaseException | None = None
+        policy_readback_verified = False
+        failure_stage = "export_staging"
+        cleanup_failure: IsolationError | None = None
+        create_result: CommandResultLike | None = None
+        metadata: dict[str, Any] | None = None
+        candidate_id = ""
+        raw_id = ""
+        staging_owned = False
+        try:
+            try:
+                with export_archive.open("xb") as handle:
+                    staging_owned = True
+                    handle.flush()
+                    os.fsync(handle.fileno())
+            except OSError:
+                _fail("workspace export staging file cannot be created")
+            self._deadline_check(deadline)
+            create_command = self.build_create_command(
+                canonical, script, container_name, export_archive
+            )
+            self._deadline_check(deadline)
+            failure_stage = "container_creation"
+            creation_uncertain = True
+            create_result = self._invoke(
+                create_command,
+                timeout=self._remaining_timeout(
+                    deadline, inspect_timeout, label="Docker container creation"
+                ),
+            )
+            if create_result.returncode != 0:
+                _fail("Docker container creation failed")
+            raw_id, truncated = _bounded_text(create_result.stdout, MAX_STDOUT_BYTES)
+            candidate_id = raw_id.strip()
+            create_result = None
+            raw_id = ""
+            invalid_candidate = truncated or not CONTAINER_ID_RE.fullmatch(candidate_id)
+            if invalid_candidate:
+                candidate_id = ""
+                _fail("Docker returned a malformed container identity")
+            failure_stage = "container_policy_readback"
+            _, metadata = self._read_container_metadata(
+                candidate_id,
+                timeout=self._remaining_timeout(
+                    deadline,
+                    inspect_timeout,
+                    label="Docker policy readback",
+                    policy_predicate="policy_readback_deadline",
+                ),
+                policy_readback=True,
+            )
+            if metadata is None:
+                _policy_fail(
+                    "container_missing_before_readback",
+                    "Docker container disappeared before policy readback",
+                )
+            if not _is_owned_container(metadata, container_name, candidate_id):
+                _policy_fail(
+                    "container_ownership_mismatch",
+                    "Docker container ownership readback failed",
+                )
+            container_id = candidate_id
+            creation_uncertain = False
+            self._validate_container_metadata(
+                metadata,
+                container_id=container_id,
+                container_name=container_name,
+                image_id=image_id,
+                workspace=canonical,
+                input_root=input_root,
+                export_archive=export_archive,
+                script=script,
+            )
+            self._deadline_check(
+                deadline, policy_predicate="policy_readback_deadline"
+            )
+            policy_readback_verified = True
+            metadata = None
+            candidate_id = ""
+        except BaseException as exc:
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                primary_error = exc
+                raise
+            primary_error = _structured_execution_error(
+                exc,
+                stage=failure_stage,
+                stdout="",
+                stderr="",
+                stdout_truncated=False,
+                stderr_truncated=False,
+                returncode=None,
+                image=self.image,
+                image_id=image_id,
+                container_name=container_name,
+                container_id=container_id,
+            )
+            create_result = None
+            metadata = None
+            candidate_id = ""
+            raw_id = ""
+        finally:
+            cleanup_attempted = container_id is not None or creation_uncertain
+            cleanup_verified: bool | None = None
+            container_absence_verified: bool | None = None
+            cleanup_error: BaseException | None = None
+            export_staging_removed: bool | None = None
+            try:
+                cleanup_deadline = self._monotonic() + CLEANUP_TIMEOUT_SECONDS
+                if container_id is not None:
+                    container_absence_verified = self._cleanup_container(
+                        container_id, deadline=cleanup_deadline
+                    )
+                elif creation_uncertain:
+                    container_absence_verified = self._cleanup_uncertain_creation(
+                        container_name, deadline=cleanup_deadline
+                    )
+                if cleanup_attempted:
+                    cleanup_verified = container_absence_verified is True
+                    if not cleanup_verified:
+                        _fail(
+                            "Docker container cleanup could not be verified",
+                            code="cleanup_verification_failed",
+                            stage="container_cleanup",
+                        )
+            except BaseException as observed_cleanup_error:
+                cleanup_error = observed_cleanup_error
+                cleanup_verified = False
+                container_absence_verified = False
+
+            staging_error: IsolationError | None = None
+            if staging_owned:
+                try:
+                    _unlink_export_staging(export_archive, canonical.parent)
+                except IsolationError as observed_staging_error:
+                    staging_error = observed_staging_error
+                    export_staging_removed = False
+                else:
+                    export_staging_removed = True
+
+            if isinstance(primary_error, IsolationError):
+                primary_error._record_cleanup_evidence(
+                    attempted=cleanup_attempted,
+                    verified=cleanup_verified,
+                    container_absence_verified=container_absence_verified,
+                    export_staging_removed=export_staging_removed,
+                    cleanup_error_type=(
+                        type(cleanup_error or staging_error).__name__
+                        if cleanup_error is not None or staging_error is not None
+                        else None
+                    ),
+                )
+            if primary_error is None and (
+                cleanup_error is not None or staging_error is not None
+            ):
+                cleanup_failure = IsolationError(
+                    "Docker policy probe cleanup could not be verified",
+                    code="cleanup_verification_failed",
+                    stage=(
+                        "container_cleanup"
+                        if cleanup_error is not None
+                        else "export_staging_cleanup"
+                    ),
+                    image=self.image,
+                    image_id=image_id,
+                    container_name=container_name,
+                    container_id=container_id,
+                    cleanup_attempted=cleanup_attempted,
+                    cleanup_verified=False,
+                    container_absence_verified=container_absence_verified,
+                    export_staging_removed=export_staging_removed,
+                    cleanup_error_type=type(cleanup_error or staging_error).__name__,
+                )
+            if primary_error is not None or cleanup_failure is not None:
+                if cleanup_error is not None:
+                    _detach_exception_graph(cleanup_error)
+                if staging_error is not None:
+                    _detach_exception_graph(staging_error)
+                cleanup_error = None
+                staging_error = None
+
+        if primary_error is not None:
+            primary_error.__traceback__ = None
+            primary_error.__cause__ = None
+            primary_error.__context__ = None
+            raise primary_error.with_traceback(None) from None
+        if cleanup_failure is not None:
+            cleanup_failure.__traceback__ = None
+            cleanup_failure.__cause__ = None
+            cleanup_failure.__context__ = None
+            raise cleanup_failure.with_traceback(None) from None
+        if (
+            not policy_readback_verified
+            or container_id is None
+            or create_command is None
+        ):
+            _fail("Docker policy probe produced no verified readback")
+        return PolicyReadbackResult(
+            image=self.image,
+            image_id=image_id,
+            docker_executable=self.docker_executable,
+            workspace=canonical,
+            script=script,
+            container_name=container_name,
+            container_id=container_id,
+            create_command=tuple(create_command),
+            policy_readback_verified=True,
+            cleanup_verified=cleanup_verified is True,
+            container_absence_verified=container_absence_verified is True,
+            export_staging_removed=export_staging_removed is True,
+        )
 
     def execute(
         self,
@@ -1658,13 +2226,23 @@ class IsolatedDockerPython:
             _, metadata = self._read_container_metadata(
                 candidate_id,
                 timeout=self._remaining_timeout(
-                    deadline, inspect_timeout, label="Docker policy readback"
+                    deadline,
+                    inspect_timeout,
+                    label="Docker policy readback",
+                    policy_predicate="policy_readback_deadline",
                 ),
+                policy_readback=True,
             )
             if metadata is None:
-                _fail("Docker container disappeared before policy readback")
+                _policy_fail(
+                    "container_missing_before_readback",
+                    "Docker container disappeared before policy readback",
+                )
             if not _is_owned_container(metadata, container_name, candidate_id):
-                _fail("Docker container ownership readback failed")
+                _policy_fail(
+                    "container_ownership_mismatch",
+                    "Docker container ownership readback failed",
+                )
             container_id = candidate_id
             creation_uncertain = False
             self._validate_container_metadata(
@@ -1677,7 +2255,9 @@ class IsolatedDockerPython:
                 export_archive=export_archive,
                 script=script,
             )
-            self._deadline_check(deadline)
+            self._deadline_check(
+                deadline, policy_predicate="policy_readback_deadline"
+            )
             # Close the create/readback race before admitting model-authored code.
             failure_stage = "pre_start_revalidation"
             validate_workspace(canonical, script)
@@ -1951,9 +2531,11 @@ class IsolatedDockerPython:
 
 
 __all__ = [
+    "CONTAINER_POLICY_PREDICATES",
     "ExecutionResult",
     "IsolatedDockerPython",
     "IsolationError",
+    "PolicyReadbackResult",
     "WorkspaceUsage",
     "validate_image_reference",
     "validate_workspace",

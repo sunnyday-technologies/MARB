@@ -18,11 +18,27 @@ release never relabels an older result.
   executable around every case, distinguish the exact entry-overflow limiter
   reason, and add focused fake/local adversarial regressions plus the
   canonical-manifest parent-root rule. These source tests do not run Docker or
-  qualify an image. Preserve the historical R4/R6 context vectors, bind the
-  current R7 effective build-context allowlist through a tracked canonical
+  qualify an image. Add an optional v1 `policy_predicate` failure field drawn
+  only from a fixed public allowlist, so a rejected Docker policy readback can
+  identify the failed invariant without retaining observed metadata, paths,
+  messages, arguments, environment data, or output bodies. Use the same
+  isolation validator in a separate host-only policy-readback diagnostic
+  that creates and removes an inert container but never starts it. The probe
+  emits one bounded, canonical, non-qualifying JSON line and has no evidence
+  output, packet, ledger, provider, model, or qualification interface. A probe
+  pass is diagnostic only and cannot qualify an image or consume/substitute for
+  the separately approved nine-case runtime smoke. Bind its canonical receipt
+  to the immutable image RepoDigest, exact clean source HEAD/tree and raw source
+  manifest, plus independently supplied Git/Docker executable hashes, without
+  emitting host paths or container metadata. Preserve the historical R4/R6
+  context vectors, bind the current R7 effective build-context allowlist
+  through a tracked canonical
   template, publish its reconstructed context vector, and cross-check the
   retained requirements, wheelhouse, native, and context manifests inside the
-  positive runtime probe.
+  positive runtime probe. Accept Docker's created-state readback when the
+  configured tmpfs mounts are absent from `.Mounts`, while continuing to
+  require their exact destinations and options in `HostConfig.Tmpfs` and to
+  reject partial or foreign runtime mount lists.
 - Add the standalone, deterministic H2a `L1-ASSEMBLE` / `L2-RESOLVE` /
   `L4-ECO` cohort planner that
   validates frozen public inputs and allocates at least three independent run

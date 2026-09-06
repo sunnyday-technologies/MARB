@@ -58,6 +58,11 @@ class SmokeRunnerError(RuntimeError):
             self.evidence = {
                 key: prior_evidence.get(key) for key in ("stdout", "stderr")
             }
+            prior_predicate = _safe_policy_predicate(
+                prior_evidence.get("policy_predicate")
+            )
+            if prior_predicate is not None:
+                self.evidence["policy_predicate"] = prior_predicate
         for field in (
             "cleanup_attempted",
             "cleanup_error_type",
@@ -69,6 +74,7 @@ class SmokeRunnerError(RuntimeError):
             "image",
             "image_id",
             "primary_error_type",
+            "policy_predicate",
             "returncode",
             "stderr",
             "stderr_truncated",
@@ -76,7 +82,12 @@ class SmokeRunnerError(RuntimeError):
             "stdout_truncated",
         ):
             if prior is not None and hasattr(prior, field):
-                setattr(self, field, getattr(prior, field))
+                value = getattr(prior, field)
+                if field == "policy_predicate":
+                    value = _safe_policy_predicate(value)
+                    if value is None:
+                        continue
+                setattr(self, field, value)
 
 
 class SmokeEngine(Protocol):
@@ -341,6 +352,16 @@ def _safe_type(value: Any) -> str | None:
     return value if isinstance(value, str) and SAFE_TYPE.fullmatch(value) else None
 
 
+def _safe_policy_predicate(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    return (
+        value
+        if value in isolation.CONTAINER_POLICY_PREDICATES
+        else None
+    )
+
+
 def _failure_output_summary(exc: BaseException, key: str, limit: int) -> dict[str, Any]:
     evidence = getattr(exc, "evidence", None)
     if isinstance(evidence, Mapping):
@@ -377,7 +398,7 @@ def _failure_summary(exc: BaseException) -> dict[str, Any]:
         code = "unstructured_failure"
     if not isinstance(stage, str) or not SAFE_TOKEN.fullmatch(stage):
         stage = "unknown"
-    return {
+    summary = {
         "cleanup_attempted": bool(_exception_field(exc, "cleanup_attempted")),
         "cleanup_error_type": _safe_type(_exception_field(exc, "cleanup_error_type")),
         "cleanup_verified": _exception_field(exc, "cleanup_verified"),
@@ -394,6 +415,13 @@ def _failure_summary(exc: BaseException) -> dict[str, Any]:
         "stderr": _failure_output_summary(exc, "stderr", isolation.MAX_STDERR_BYTES),
         "stdout": _failure_output_summary(exc, "stdout", isolation.MAX_STDOUT_BYTES),
     }
+    policy_predicate = _safe_policy_predicate(
+        _exception_field(exc, "policy_predicate")
+    )
+    if policy_predicate is not None:
+        # Optional additive v1 field; never retain dynamic predicate text.
+        summary["policy_predicate"] = policy_predicate
+    return summary
 
 
 def _result_summary(result: Any) -> dict[str, Any]:

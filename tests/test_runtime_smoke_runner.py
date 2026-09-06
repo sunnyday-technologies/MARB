@@ -577,6 +577,7 @@ class RuntimeSmokeRunnerTests(unittest.TestCase):
             stage="container_start",
             stdout=bounded,
             stdout_truncated=True,
+            policy_predicate="network_mode_mismatch",
         )
         wrapped = runner.SmokeRunnerError(
             "Docker executable changed during a smoke case",
@@ -591,7 +592,56 @@ class RuntimeSmokeRunnerTests(unittest.TestCase):
             hashlib.sha256(bounded.encode("utf-8")).hexdigest(),
         )
         self.assertEqual(wrapped.stdout, runner.isolation._OUTPUT_TRUNCATION_MARKER.decode("ascii"))
+        self.assertEqual(summary["policy_predicate"], "network_mode_mismatch")
         self.assertNotIn("x" * 16, runner._canonical_json(summary).decode("ascii"))
+
+    def test_policy_predicate_summary_is_allowlisted_and_optional(self) -> None:
+        accepted = runner.isolation.IsolationError(
+            "fixed public failure",
+            stage="container_policy_readback",
+            policy_predicate="security_option_mismatch",
+        )
+        accepted_summary = runner._failure_summary(accepted)
+        self.assertEqual(
+            accepted_summary["policy_predicate"],
+            "security_option_mismatch",
+        )
+
+        sentinel = "syntactically_safe_unlisted_predicate"
+        accepted.policy_predicate = sentinel
+        rejected_summary = runner._failure_summary(accepted)
+        self.assertNotIn("policy_predicate", rejected_summary)
+        self.assertNotIn(
+            sentinel,
+            runner._canonical_json(rejected_summary).decode("ascii"),
+        )
+
+        legacy = RuntimeError("legacy failure without predicate")
+        legacy_summary = runner._failure_summary(legacy)
+        self.assertNotIn("policy_predicate", legacy_summary)
+
+    def test_wrapper_drops_non_allowlisted_prior_policy_predicate(self) -> None:
+        sentinel = "syntactically_safe_unlisted_predicate"
+        prior = FakeIsolationError(
+            "unexpected_failure",
+            "container_policy_readback",
+            ordinal=1,
+            cleanup_attempted=True,
+            cleanup_verified=True,
+            absence=True,
+            staging_removed=True,
+        )
+        prior.policy_predicate = sentinel
+        wrapped = runner.SmokeRunnerError(
+            "fixed public wrapper",
+            code="docker_executable_drift",
+            stage="post_case_readback",
+            prior=prior,
+        )
+        summary = runner._failure_summary(wrapped)
+        self.assertFalse(hasattr(wrapped, "policy_predicate"))
+        self.assertNotIn("policy_predicate", summary)
+        self.assertNotIn(sentinel, runner._canonical_json(summary).decode("ascii"))
 
     def test_docker_replacement_after_case_fails_and_stops(self) -> None:
         class MutatingEngine(FakeEngine):

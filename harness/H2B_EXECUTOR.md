@@ -408,11 +408,42 @@ Board-policy CI runs `tests.test_cohort_runner`, `tests.test_cohort_executor`,
 `tests.test_container_recipe` contract checks with fake/local provider, HTTP,
 sandbox, controller, and Docker command runners. The separately runnable
 `tests.test_runtime_smoke_runner` module exercises the tracked nine-case runner
-with local fakes. These source tests make no real provider, model, Docker, or
-network calls and do not qualify a real image or Nightwatch runtime. Before the
-first actual attempt, an operator must record the approved image RepoDigest and
-pass the real tracked no-provider/no-network runtime smoke described in the
-container build notes.
+with local fakes. `tests.test_container_policy_probe` separately exercises the
+host-only policy-readback diagnostic with fakes. Board-policy CI runs both
+modules. These source tests make no real provider, model, Docker, or network
+calls and do not qualify a real image or Nightwatch runtime.
+
+Before a separately authorized runtime-smoke attempt, an operator may invoke
+`harness.container_policy_probe` against the intended immutable RepoDigest. It
+materializes the positive smoke script and input layout, creates the container,
+validates the isolation policy readback, then removes the inert container and
+staging without invoking `docker start`. It emits one canonical safe JSON line
+to standard output, writes no evidence artifact, and has no packet, ledger,
+provider, model, or qualification arguments. A `diagnostic_pass` establishes
+only that this host returned the expected create-time policy metadata at that
+moment. It does not execute CadQuery, qualify an image/host pair, consume or
+replace a sealed attempt, authorize model/provider use, grade a task, register
+a run, or support a publication claim.
+
+The diagnostic receipt is bound to the immutable image RepoDigest, exact clean
+source checkout, literal and peeled HEAD, tree, raw implementation manifest,
+and independently supplied Git and Docker executable SHA-256 values. It emits
+those safe hashes and source identities but never host paths, container names
+or IDs, command arguments, Docker metadata, environment values, output bodies,
+or exception text. Every pass and rejection also states that no container was
+started, no provider/model or benchmark was invoked, no qualification attempt
+was consumed, and the diagnostic alone does not establish qualification
+eligibility.
+
+For a created, never-started container, Docker may not materialize configured
+tmpfs entries in the separate `.Mounts` readback. The probe therefore accepts
+either no non-bind `.Mounts` entries or the complete exact tmpfs destination
+set. Exact tmpfs destinations and options remain mandatory in
+`HostConfig.Tmpfs`; partial sets and foreign mount types fail closed.
+
+Before the first actual attempt, an operator must still record the approved
+image RepoDigest and pass the real tracked no-provider/no-network runtime smoke
+described in the container build notes.
 
 That smoke binds literal and peeled Git HEAD/tree readbacks, raw committed
 implementation and container-build inputs, the exact RepoDigest and observed
@@ -420,6 +451,9 @@ image ID, a fixed public MARB image-label allowlist, and the hash of canonical
 in-image build-provenance bytes. Successful executions independently require
 cleanup, named-container absence, and export-staging removal. Failure-output
 bodies are disposed after bounded byte counts and hashes are recorded. These
+failures may include an optional additive-v1 `policy_predicate` selected only
+from the source-defined public allowlist; it identifies the rejected invariant
+but never carries an observed Docker value or inspection document. These
 controls do not change the operator boundary: fake/local tests remain
 non-qualifying, and the smoke neither authorizes a provider/model call nor
 qualifies an image without a separate exact runtime approval and real pass.
