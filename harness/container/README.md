@@ -195,8 +195,9 @@ context whose build payload contains exactly `Dockerfile`, `requirements.lock`,
 `native-debs.lock.json`, `verify_native_bundle.py`, `native-debs.sha256`, the
 reviewed top-level `wheelhouse/*.whl` files, and the reviewed top-level
 `native-debs/*.deb` files, plus `build-context.sha256` and the effective
-context-control `.dockerignore`. Write that `.dockerignore` with exact UTF-8/LF
-bytes using these exact allowlist entries and no broader negation:
+context-control `.dockerignore`. Copy the tracked
+`build-context.dockerignore` to that context as `.dockerignore` without byte
+transformation. Its exact UTF-8/LF allowlist is reproduced below for review:
 
 ```text
 **
@@ -228,18 +229,18 @@ manifest itself. The generator remains outside the context.
 manifest_tool='<reviewed-MARB-checkout>/scripts/canonical_manifest.py'
 python3 "$manifest_tool" preview build-context --root .
 python3 "$manifest_tool" write build-context --root . \
-  --expected-sha256 fd52aeee64309e26891542454bc02e4aad8ece49b01d3b6da44297ca4192ecb2
+  --expected-sha256 1a04532ee9d8be923e4857eaa0cfb64be53dc004c28d897add60c5fc4b2d9ded
 python3 "$manifest_tool" readback build-context --root .
 sha256sum Dockerfile .dockerignore runtime-contract.v0.13.json cadclaw-calibration.fad0dd55.json build-context.sha256
 ```
 
-For the unchanged R4/R5 payload identities and the R6 verifier prerequisite,
-the canonical
+For the current R7 run limiter, the unchanged R4/R5 payload identities, and the
+R6 verifier prerequisite, the canonical
 native vector is 39 entries and 4,351 bytes at the `0ad2f18d...fa1e1` digest
 above. The canonical non-self-referential context vector is 95 entries and
-11,219 bytes at the `fd52aeee...192ecb2` digest above; 96 files including the
-manifest total 346,371,248 bytes, while the 95 manifest entries total
-346,360,029 payload bytes. A different preview is a stop condition, not
+11,219 bytes at the `1a04532e...d9ded` digest above; 96 files including the
+manifest total 346,371,728 bytes, while the 95 manifest entries total
+346,360,509 payload bytes. A different preview is a stop condition, not
 authority to substitute a new expected digest.
 
 The generator rejects observable file, inventory, root, and ancestor identity
@@ -317,9 +318,9 @@ provider session, load a credential, or permit container network access. Its
 source/fake tests do not run Docker and do not qualify an image.
 
 The R4 and R6 context manifests and limiter digest remain historical evidence;
-this source change does not relabel either attempt. Any later approved build must
-generate and review a new current context manifest that binds the changed limiter
-bytes before consuming its own attempt.
+the current R7 vector above does not relabel either attempt. Any later source
+change must generate and review a new current context manifest that binds the
+changed bytes before consuming its own attempt.
 
 The exact ordered cases are:
 

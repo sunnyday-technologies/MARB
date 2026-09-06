@@ -106,6 +106,7 @@ SOURCE_FILES = (
     "harness/runtime_smoke_runner.py",
     "harness/container/Dockerfile",
     "harness/container/.dockerignore",
+    "harness/container/build-context.dockerignore",
     "harness/container/cadclaw-calibration.fad0dd55.json",
     "harness/container/native-debs.lock.json",
     "harness/container/requirements.lock",
@@ -590,7 +591,7 @@ def _image_provenance_ok(
             "harness/container/Dockerfile"
         ),
         _LABEL_PREFIX + "context-dockerignore-sha256": source_sha256s.get(
-            "harness/container/.dockerignore"
+            "harness/container/build-context.dockerignore"
         ),
         _LABEL_PREFIX + "requirements-lock-sha256": source_sha256s.get(
             "harness/container/requirements.lock"

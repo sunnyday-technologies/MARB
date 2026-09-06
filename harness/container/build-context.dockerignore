@@ -1,0 +1,15 @@
+**
+!Dockerfile
+!requirements.lock
+!run_limited.py
+!runtime-contract.v0.13.json
+!cadclaw-calibration.fad0dd55.json
+!wheelhouse.sha256
+!native-debs.lock.json
+!verify_native_bundle.py
+!native-debs.sha256
+!build-context.sha256
+!wheelhouse/
+!wheelhouse/*.whl
+!native-debs/
+!native-debs/*.deb
