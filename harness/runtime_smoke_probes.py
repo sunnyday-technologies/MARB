@@ -64,6 +64,7 @@ POSITIVE_PROVENANCE_AND_IMPORT_SOURCE = """\
 import hashlib
 import json
 import os
+import re
 from importlib.metadata import distribution, version
 from pathlib import Path
 
@@ -98,6 +99,27 @@ provenance = json.loads(provenance_raw.decode("utf-8"))
 assert provenance_raw == json.dumps(
     provenance, sort_keys=True, separators=(",", ":")
 ).encode("ascii") + b"\\n"
+
+def manifest_entries(raw):
+    text = raw.decode("ascii")
+    assert raw == text.encode("ascii") and text.endswith("\\n") and "\\r" not in text
+    lines = text.splitlines()
+    entries = {}
+    for line in lines:
+        parts = line.split("  ", 1)
+        assert len(parts) == 2 and re.fullmatch(r"[0-9a-f]{64}", parts[0])
+        assert parts[1] and parts[1] not in entries
+        entries[parts[1]] = parts[0]
+    assert lines and list(entries) == sorted(entries)
+    return entries
+
+requirements_raw = Path("/opt/marb/runtime-requirements.lock").read_bytes()
+wheelhouse_manifest_raw = Path("/opt/marb/runtime-wheelhouse.sha256").read_bytes()
+native_manifest_raw = Path("/opt/marb/native-debs.sha256").read_bytes()
+context_manifest_raw = Path("/opt/marb/build-context.sha256").read_bytes()
+wheelhouse_entries = manifest_entries(wheelhouse_manifest_raw)
+native_entries = manifest_entries(native_manifest_raw)
+context_entries = manifest_entries(context_manifest_raw)
 assert set(provenance) == {
     "schema", "runtime_contract", "runtime_contract_sha256", "cadclaw_commit",
     "cadclaw_gate_spec_version", "cadclaw_gate_registry_version",
@@ -154,6 +176,34 @@ assert all(
     for path, digest in expected_package_files.items()
 )
 assert provenance["schema"] == "marb_h2b_image_build_provenance.v3"
+assert hashlib.sha256(requirements_raw).hexdigest() == provenance["requirements_lock_sha256"]
+assert hashlib.sha256(wheelhouse_manifest_raw).hexdigest() == provenance["wheelhouse_manifest_sha256"]
+assert hashlib.sha256(native_manifest_raw).hexdigest() == provenance["native_deb_manifest_sha256"]
+assert hashlib.sha256(context_manifest_raw).hexdigest() == provenance["build_context_manifest_sha256"]
+fixed_context_provenance = {
+    "Dockerfile": "dockerfile_sha256",
+    ".dockerignore": "context_dockerignore_sha256",
+    "requirements.lock": "requirements_lock_sha256",
+    "run_limited.py": "run_limiter_sha256",
+    "runtime-contract.v0.13.json": "runtime_contract_sha256",
+    "cadclaw-calibration.fad0dd55.json": "cadclaw_calibration_sha256",
+    "wheelhouse.sha256": "wheelhouse_manifest_sha256",
+    "native-debs.lock.json": "native_deb_lock_sha256",
+    "verify_native_bundle.py": "native_bundle_verifier_sha256",
+    "native-debs.sha256": "native_deb_manifest_sha256",
+}
+assert set(context_entries) == {
+    *fixed_context_provenance,
+    *wheelhouse_entries,
+    *native_entries,
+}
+assert all(
+    context_entries[path] == provenance[provenance_key]
+    for path, provenance_key in fixed_context_provenance.items()
+)
+assert all(context_entries[path] == digest for path, digest in wheelhouse_entries.items())
+assert all(context_entries[path] == digest for path, digest in native_entries.items())
+assert context_entries["wheelhouse/cadclaw-0.10.0-py3-none-any.whl"] == provenance["cadclaw_wheel_sha256"]
 for key in (
     "runtime_contract", "runtime_contract_sha256", "cadclaw_commit",
     "cadclaw_gate_spec_version", "cadclaw_gate_registry_version",

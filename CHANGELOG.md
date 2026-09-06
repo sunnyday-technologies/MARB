@@ -18,8 +18,11 @@ release never relabels an older result.
   executable around every case, distinguish the exact entry-overflow limiter
   reason, and add focused fake/local adversarial regressions plus the
   canonical-manifest parent-root rule. These source tests do not run Docker or
-  qualify an image. Historical R4/R6 context vectors remain unchanged; a future
-  build requires a newly generated current context manifest.
+  qualify an image. Preserve the historical R4/R6 context vectors, bind the
+  current R7 effective build-context allowlist through a tracked canonical
+  template, publish its reconstructed context vector, and cross-check the
+  retained requirements, wheelhouse, native, and context manifests inside the
+  positive runtime probe.
 - Add the standalone, deterministic H2a `L1-ASSEMBLE` / `L2-RESOLVE` /
   `L4-ECO` cohort planner that
   validates frozen public inputs and allocates at least three independent run

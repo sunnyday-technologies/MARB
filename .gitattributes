@@ -24,6 +24,7 @@ scripts/hooks/* text eol=lf
 /harness/container/run_limited.py text eol=lf
 /harness/container/Dockerfile text eol=lf
 /harness/container/.dockerignore text eol=lf
+/harness/container/build-context.dockerignore text eol=lf
 /harness/container/requirements.lock text eol=lf
 /harness/container/native-debs.lock.json text eol=lf
 /harness/container/verify_native_bundle.py text eol=lf

@@ -64,6 +64,7 @@ EXECUTOR_NOTES = REPO / "harness" / "H2B_EXECUTOR.md"
 CHANGELOG = REPO / "CHANGELOG.md"
 GITIGNORE = REPO / ".gitignore"
 DOCKERIGNORE = CONTAINER / ".dockerignore"
+BUILD_CONTEXT_DOCKERIGNORE = CONTAINER / "build-context.dockerignore"
 GITATTRIBUTES = REPO / ".gitattributes"
 MANIFEST_TOOL = REPO / "scripts" / "canonical_manifest.py"
 RUNTIME_SMOKE_PROBES = REPO / "harness" / "runtime_smoke_probes.py"
@@ -122,6 +123,19 @@ CURRENT_RUN_LIMITER_SHA256 = (
     "f621fc46b49f53c21ed2ea44d21b65f6e8bb16bff4a61afcfb471c061e708188"
 )
 CURRENT_RUN_LIMITER_BYTES = 9_925
+R7_BUILD_CONTEXT_MANIFEST_SHA256 = (
+    "1a04532ee9d8be923e4857eaa0cfb64be53dc004c28d897add60c5fc4b2d9ded"
+)
+R7_CONTEXT_PAYLOAD_BYTES = 346_360_509
+R7_CONTEXT_TOTAL_BYTES = 346_371_728
+R7_CONTEXT_STATIC_DIGESTS = {
+    **R6_CONTEXT_STATIC_DIGESTS,
+    "run_limited.py": CURRENT_RUN_LIMITER_SHA256,
+}
+R7_CONTEXT_STATIC_BYTES = {
+    **R6_CONTEXT_STATIC_BYTES,
+    "run_limited.py": CURRENT_RUN_LIMITER_BYTES,
+}
 R4_WHEEL_MANIFEST = b"""f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8  wheelhouse/aiohappyeyeballs-2.6.1-py3-none-any.whl
 3a807cabd5115fb55af198b98178997a5e0e57dead43eb74a93d9c07d6d4a7dc  wheelhouse/aiohttp-3.13.5-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
 053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e  wheelhouse/aiosignal-1.4.0-py3-none-any.whl
@@ -225,6 +239,10 @@ def _r4_context_entries() -> list[canonical_manifest.ManifestEntry]:
 
 def _r6_context_entries() -> list[canonical_manifest.ManifestEntry]:
     return _context_entries(R6_CONTEXT_STATIC_DIGESTS)
+
+
+def _r7_context_entries() -> list[canonical_manifest.ManifestEntry]:
+    return _context_entries(R7_CONTEXT_STATIC_DIGESTS)
 
 
 def _serialize_in_order(entries: list[canonical_manifest.ManifestEntry]) -> bytes:
@@ -400,6 +418,50 @@ class CanonicalManifestTests(unittest.TestCase):
         )
         self.assertEqual(R4_CONTEXT_STATIC_BYTES["run_limited.py"], 9_445)
         self.assertEqual(R6_CONTEXT_STATIC_BYTES["run_limited.py"], 9_445)
+
+    def test_exact_current_r7_context_vector_without_payload_bodies(self) -> None:
+        effective_dockerignore = BUILD_CONTEXT_DOCKERIGNORE.read_bytes()
+        self.assertEqual(len(effective_dockerignore), R4_EFFECTIVE_DOCKERIGNORE_BYTES)
+        self.assertNotIn(b"\r", effective_dockerignore)
+        self.assertEqual(
+            hashlib.sha256(effective_dockerignore).hexdigest(),
+            R7_CONTEXT_STATIC_DIGESTS[".dockerignore"],
+        )
+        self.assertNotEqual(effective_dockerignore, DOCKERIGNORE.read_bytes())
+
+        context = canonical_manifest.build_manifest(_r7_context_entries())
+        self.assertEqual(len(context.entries), 95)
+        self.assertEqual(len(context.raw), 11_219)
+        self.assertEqual(context.sha256, R7_BUILD_CONTEXT_MANIFEST_SHA256)
+
+        tracked = (
+            "Dockerfile",
+            "cadclaw-calibration.fad0dd55.json",
+            "native-debs.lock.json",
+            "requirements.lock",
+            "run_limited.py",
+            "runtime-contract.v0.13.json",
+            "verify_native_bundle.py",
+        )
+        for path in tracked:
+            with self.subTest(path=path):
+                self.assertEqual(
+                    hashlib.sha256((CONTAINER / path).read_bytes()).hexdigest(),
+                    R7_CONTEXT_STATIC_DIGESTS[path],
+                )
+        native = canonical_manifest.build_manifest(_r4_native_entries())
+        reconstructed_payload = (
+            sum(R7_CONTEXT_STATIC_BYTES[path] for path in tracked)
+            + R4_EFFECTIVE_DOCKERIGNORE_BYTES
+            + len(R4_WHEEL_MANIFEST)
+            + len(native.raw)
+            + R4_WHEEL_PAYLOAD_BYTES
+            + native.payload_bytes
+        )
+        self.assertEqual(reconstructed_payload, R7_CONTEXT_PAYLOAD_BYTES)
+        self.assertEqual(
+            reconstructed_payload + len(context.raw), R7_CONTEXT_TOTAL_BYTES
+        )
 
     def test_r4_hash_first_native_variant_is_rejected(self) -> None:
         entries = _r4_native_entries()
@@ -997,7 +1059,17 @@ class ContainerRecipeTests(unittest.TestCase):
             cohort_executor.POSITIVE_PROVENANCE_AND_IMPORT_SOURCE,
             runtime_smoke_probes.POSITIVE_PROVENANCE_AND_IMPORT_SOURCE,
         )
-        for required in ("import OCP", "import cadclaw", "import cadquery", "import vtk"):
+        for required in (
+            "import OCP",
+            "import cadclaw",
+            "import cadquery",
+            "import vtk",
+            "/opt/marb/build-context.sha256",
+            "/opt/marb/runtime-wheelhouse.sha256",
+            "/opt/marb/runtime-requirements.lock",
+            "context_dockerignore_sha256",
+            "build_context_manifest_sha256",
+        ):
             with self.subTest(required=required):
                 self.assertIn(required, runtime_smoke_probes.POSITIVE_PROVENANCE_AND_IMPORT_SOURCE)
 
@@ -1228,7 +1300,7 @@ class ContainerRecipeTests(unittest.TestCase):
         self.assertIn("canonical_manifest.py preview native-debs", notes)
         self.assertIn("preview build-context --root .", notes)
         self.assertIn(R4_NATIVE_MANIFEST_SHA256, notes)
-        self.assertIn(R6_BUILD_CONTEXT_MANIFEST_SHA256, notes)
+        self.assertIn(R7_BUILD_CONTEXT_MANIFEST_SHA256, notes)
         self.assertNotIn("find wheelhouse", notes)
         self.assertNotIn("find native-debs", notes)
         self.assertNotIn("sort -k2", notes)

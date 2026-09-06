@@ -98,7 +98,7 @@ def provenance_labels() -> tuple[dict[str, str], str]:
             "harness/container/Dockerfile"
         ],
         prefix + "context-dockerignore-sha256": source_sha256s[
-            "harness/container/.dockerignore"
+            "harness/container/build-context.dockerignore"
         ],
         prefix + "build-context-manifest-sha256": "4" * 64,
     }
@@ -721,6 +721,19 @@ class RuntimeSmokeRunnerTests(unittest.TestCase):
                 self.assertEqual(item["hash_mode"], "raw")
                 self.assertEqual(item["bytes"], len(path.read_bytes()))
                 self.assertEqual(item["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_image_provenance_binds_effective_context_ignore_template(self) -> None:
+        source_root = Path(runner.__file__).resolve().parents[1]
+        labels, _ = provenance_labels()
+        effective = (
+            source_root / "harness" / "container" / "build-context.dockerignore"
+        ).read_bytes()
+        source_deny_all = (
+            source_root / "harness" / "container" / ".dockerignore"
+        ).read_bytes()
+        label = labels["org.sunnyday.marb.context-dockerignore-sha256"]
+        self.assertEqual(label, hashlib.sha256(effective).hexdigest())
+        self.assertNotEqual(label, hashlib.sha256(source_deny_all).hexdigest())
 
     def test_default_source_verifier_rejects_raw_drift_for_every_bound_file(self) -> None:
         source_root = Path(runner.__file__).resolve().parents[1]
