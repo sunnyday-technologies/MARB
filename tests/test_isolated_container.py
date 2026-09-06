@@ -701,6 +701,75 @@ class IsolatedContainerTests(unittest.TestCase):
         self.assertFalse(self.export_archive.exists())
         self.assertEqual(runner.responses, [])
 
+    def test_policy_probe_accepts_prestart_tmpfs_omission_from_mounts(self) -> None:
+        metadata = container_metadata(
+            self.workspace, self.input_root, self.export_archive
+        )
+        metadata["Mounts"] = [
+            mount
+            for mount in metadata["Mounts"]  # type: ignore[union-attr]
+            if mount.get("Type") == "bind"
+        ]
+        runner = FakeRunner(
+            policy_probe_responses(
+                self.workspace, self.input_root, metadata=metadata
+            )
+        )
+
+        result = self.sandbox(runner).probe_policy_readback(
+            self.workspace, "tool.py"
+        )
+
+        self.assertTrue(result.policy_readback_verified)
+        self.assertTrue(result.cleanup_verified)
+        self.assertTrue(result.container_absence_verified)
+        self.assertFalse(
+            any(call[0][1:3] == ["start", "--attach"] for call in runner.calls)
+        )
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_readback_rejects_partial_or_foreign_nonbind_mounts(self) -> None:
+        tmpfs_mounts = [
+            {"Type": "tmpfs", "Destination": destination, "RW": True}
+            for destination in ("/tmp", CONTAINER_WORKSPACE, CONTAINER_EXPORT)
+        ]
+        cases: list[tuple[str, list[dict[str, object]], str]] = [
+            ("one-tmpfs", tmpfs_mounts[:1], "extra_mount_count_mismatch"),
+            ("two-tmpfs", tmpfs_mounts[:2], "extra_mount_count_mismatch"),
+            (
+                "foreign-volume",
+                [
+                    *tmpfs_mounts[:2],
+                    {"Type": "volume", "Destination": CONTAINER_EXPORT, "RW": True},
+                ],
+                "tmpfs_mount_destinations_mismatch",
+            ),
+        ]
+        for label, extra_mounts, expected_predicate in cases:
+            with self.subTest(label=label):
+                metadata = container_metadata(
+                    self.workspace, self.input_root, self.export_archive
+                )
+                metadata["Mounts"] = [
+                    mount
+                    for mount in metadata["Mounts"]  # type: ignore[union-attr]
+                    if mount.get("Type") == "bind"
+                ] + extra_mounts
+                with self.assertRaises(IsolationError) as caught:
+                    self.sandbox(FakeRunner([]))._validate_container_metadata(
+                        metadata,
+                        container_id=CONTAINER_ID,
+                        container_name=CONTAINER_NAME,
+                        image_id=IMAGE_ID,
+                        workspace=self.workspace,
+                        input_root=self.input_root,
+                        export_archive=self.export_archive,
+                        script="tool.py",
+                    )
+                self.assertEqual(
+                    caught.exception.policy_predicate, expected_predicate
+                )
+
     def test_policy_probe_mismatch_is_safe_and_cleanup_is_verified(self) -> None:
         sentinel = "observed-policy-value-must-not-serialize"
         metadata = container_metadata(

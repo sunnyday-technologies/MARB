@@ -35,7 +35,10 @@ release never relabels an older result.
   through a tracked canonical
   template, publish its reconstructed context vector, and cross-check the
   retained requirements, wheelhouse, native, and context manifests inside the
-  positive runtime probe.
+  positive runtime probe. Accept Docker's created-state readback when the
+  configured tmpfs mounts are absent from `.Mounts`, while continuing to
+  require their exact destinations and options in `HostConfig.Tmpfs` and to
+  reject partial or foreign runtime mount lists.
 - Add the standalone, deterministic H2a `L1-ASSEMBLE` / `L2-RESOLVE` /
   `L4-ECO` cohort planner that
   validates frozen public inputs and allocates at least three independent run

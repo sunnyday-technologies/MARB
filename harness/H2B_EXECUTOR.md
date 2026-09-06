@@ -435,6 +435,12 @@ started, no provider/model or benchmark was invoked, no qualification attempt
 was consumed, and the diagnostic alone does not establish qualification
 eligibility.
 
+For a created, never-started container, Docker may not materialize configured
+tmpfs entries in the separate `.Mounts` readback. The probe therefore accepts
+either no non-bind `.Mounts` entries or the complete exact tmpfs destination
+set. Exact tmpfs destinations and options remain mandatory in
+`HostConfig.Tmpfs`; partial sets and foreign mount types fail closed.
+
 Before the first actual attempt, an operator must still record the approved
 image RepoDigest and pass the real tracked no-provider/no-network runtime smoke
 described in the container build notes.

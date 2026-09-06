@@ -1777,12 +1777,17 @@ class IsolatedDockerPython:
             for mount in other_mounts
             if isinstance(mount, dict) and mount.get("Type") == "tmpfs"
         }
-        if len(other_mounts) != 3:
+        # Docker may omit configured tmpfs mounts from ``.Mounts`` while a
+        # container is still in the created (never-started) state. The exact
+        # destinations and options remain mandatory in ``HostConfig.Tmpfs``
+        # above. If ``.Mounts`` exposes any tmpfs entries, require the complete
+        # exact set; a partial set or foreign mount type remains forbidden.
+        if len(other_mounts) not in (0, len(expected_tmpfs)):
             _policy_fail(
                 "extra_mount_count_mismatch",
                 "Docker container has an unauthorized extra mount",
             )
-        if tmpfs_mount_destinations != set(expected_tmpfs):
+        if other_mounts and tmpfs_mount_destinations != set(expected_tmpfs):
             _policy_fail(
                 "tmpfs_mount_destinations_mismatch",
                 "Docker container has an unauthorized extra mount",
