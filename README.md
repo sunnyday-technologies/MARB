@@ -157,8 +157,9 @@ invariant and requested-change reports are grader-owned deferred outputs; an
 executor result is `completed_ungraded`. No new benchmark run or score is
 claimed by this release. The current container implementation is restricted to
 Windows Docker Desktop host semantics, and no image/host pair is qualified until
-a real no-provider/no-network manual smoke succeeds after an operator approves
-an immutable RepoDigest. See
+a real run of the tracked nine-case no-provider/no-network smoke suite succeeds
+after an operator approves an immutable RepoDigest. Fake/local source tests prove
+the runner contract but do not qualify an image or host. See
 [`harness/H2B_EXECUTOR.md`](harness/H2B_EXECUTOR.md).
 
 ## Results — the board so far

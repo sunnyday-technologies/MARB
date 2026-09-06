@@ -6,6 +6,20 @@ release never relabels an older result.
 
 ## Unreleased — H2a planner, H2b executor, and Nightwatch controller
 
+- Add a tracked, deterministic nine-case no-provider/no-network runtime-smoke
+  runner with canonical per-case evidence and shared positive provenance/import
+  probe bytes. Make sandbox stdout/stderr truncation fail closed while retaining
+  only bounded diagnostics, preserve structured primary and cleanup failures,
+  then discard failure-output bodies after hashing. Bind literal `HEAD`, its
+  peeled commit/tree, the clean checkout, raw committed source/build blobs, the
+  immutable image RepoDigest/ID, the fixed public provenance-label allowlist,
+  and canonical in-image provenance bytes. Require explicit container-absence
+  and export-staging-removal success evidence, revalidate the authorized Docker
+  executable around every case, distinguish the exact entry-overflow limiter
+  reason, and add focused fake/local adversarial regressions plus the
+  canonical-manifest parent-root rule. These source tests do not run Docker or
+  qualify an image. Historical R4/R6 context vectors remain unchanged; a future
+  build requires a newly generated current context manifest.
 - Add the standalone, deterministic H2a `L1-ASSEMBLE` / `L2-RESOLVE` /
   `L4-ECO` cohort planner that
   validates frozen public inputs and allocates at least three independent run

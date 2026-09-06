@@ -251,9 +251,10 @@ these runs as sighted or vision cells. The container implementation is currently
 restricted to Windows Docker Desktop host semantics; Linux and rootless-host
 bind ownership behavior has not been qualified. The source calibration and
 versioned contract do not qualify an image. No image/host pair is qualified
-until a real, no-provider/no-network manual smoke succeeds after an operator has
-built and approved an exact image RepoDigest and read back its v3 provenance.
-CI uses injected fakes and makes no Docker, provider, or model calls.
+until the tracked, nine-case no-provider/no-network runtime smoke succeeds after
+an operator has built and approved an exact image RepoDigest and read back its v3
+provenance. CI tests the runner with injected fakes and makes no Docker, provider,
+model, or network calls; that test coverage is not runtime qualification.
 
 Plans truthfully report `blocked-before-execution` because planning never
 authorizes a call. Task-specific blockers remain enforceable: L2/L4 cannot be
@@ -403,6 +404,8 @@ supercomputer is remote, so runs still log as the `local_anchor` cell.
 - `nightwatch.py` — serial, aggregate-approval-bound local campaign controller.
 - `NIGHTWATCH.md` — exact campaign schema, CLI, ledger, and recovery contract.
 - `isolated_container.py` — digest-pinned, networkless Python sandbox policy.
+- `runtime_smoke_probes.py` — exact probe bytes shared by qualification and execution preflight.
+- `runtime_smoke_runner.py` — deterministic nine-case no-provider/no-network smoke runner.
 - `H2B_EXECUTOR.md` — operator authorization, evidence, and non-publication boundary.
 - `container/` — offline runtime build inputs and attestation instructions.
 - `marb_local_harness.py` — the builder described above.
