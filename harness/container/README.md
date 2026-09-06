@@ -317,6 +317,42 @@ will be named in execution authorization. The runner does not construct a
 provider session, load a credential, or permit container network access. Its
 source/fake tests do not run Docker and do not qualify an image.
 
+### Optional host-only policy readback
+
+Before consuming a separately approved smoke attempt, the operator may run the
+non-qualifying policy diagnostic against the intended immutable image:
+
+```text
+python -m harness.container_policy_probe --image <repository@sha256:digest> --docker-executable <absolute-normalized-docker.exe> --docker-executable-sha256 <sha256> --git-executable <absolute-normalized-git> --git-executable-sha256 <sha256> --source-root <reviewed-clean-checkout> --source-revision <40-hex-commit> --source-tree <40-hex-tree> --work-root <fresh-private-directory>
+```
+
+The diagnostic uses the positive smoke script and input layout, verifies the
+Docker executable before and after, creates one inert container, applies the
+same create-time policy readback validator used by execution, and removes the
+container and export staging. It never invokes `docker start`, imports the
+nine-case runner, executes CadQuery or model-authored code, constructs a
+provider/model session, grades or registers a run, reads a packet/ledger, or
+writes an evidence file. Standard output is exactly one canonical JSON line;
+it contains fixed booleans and, on rejection, at most one source-allowlisted
+policy predicate. It omits host paths, container identifiers, command
+arguments, Docker metadata, environment values, output bodies, and exception
+text. The only image identity emitted is the caller-supplied immutable
+RepoDigest; locally observed image IDs are not retained. Every pass and
+rejection explicitly records that the container was not started, no
+provider/model or benchmark was invoked, no qualification attempt
+was consumed, and the diagnostic does not itself establish qualification
+eligibility.
+
+Before and after the diagnostic, the tool binds the exact clean source
+checkout, literal and peeled HEAD, tree, raw implementation manifest, and the
+independently named Git and Docker executable hashes. The receipt contains the
+immutable image RepoDigest and those source/hash bindings, but never host paths.
+
+`diagnostic_pass` is not runtime qualification. It does not qualify an image or
+host, authorize a provider/model call, consume or replace a sealed attempt, or
+support a benchmark/publication claim. The complete separately approved
+nine-case smoke below remains mandatory.
+
 The R4 and R6 context manifests and limiter digest remain historical evidence;
 the current R7 vector above does not relabel either attempt. Any later source
 change must generate and review a new current context manifest that binds the

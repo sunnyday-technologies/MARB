@@ -435,6 +435,24 @@ class ExecutionResult:
 
 
 @dataclass(frozen=True)
+class PolicyReadbackResult:
+    """Readback from one inert create/attest/remove policy probe."""
+
+    image: str
+    image_id: str
+    docker_executable: str
+    workspace: Path
+    script: str
+    container_name: str
+    container_id: str
+    create_command: tuple[str, ...]
+    policy_readback_verified: bool
+    cleanup_verified: bool
+    container_absence_verified: bool
+    export_staging_removed: bool
+
+
+@dataclass(frozen=True)
 class WorkspaceUsage:
     file_count: int
     total_bytes: int
@@ -1840,6 +1858,271 @@ class IsolatedDockerPython:
             _fail("owned Docker container has a malformed identity")
         return self._cleanup_container(container_id, deadline=deadline)
 
+    def probe_policy_readback(
+        self,
+        workspace: Path,
+        relative_script: str,
+        *,
+        inspect_timeout: float | None = 30.0,
+        execution_timeout: float | None = 60.0,
+    ) -> PolicyReadbackResult:
+        """Create, attest, and remove one inert container without starting it."""
+        if execution_timeout is not None and execution_timeout <= 0:
+            _fail("execution timeout must be positive")
+        if inspect_timeout is not None and inspect_timeout <= 0:
+            _fail("inspection timeout must be positive")
+        started = self._monotonic()
+        deadline = None if execution_timeout is None else started + execution_timeout
+        canonical, script = validate_workspace(workspace, relative_script)
+        self._deadline_check(deadline)
+        input_root = validate_input_root(self.input_root, canonical)
+        self._deadline_check(deadline)
+        _, image_id, _ = self._inspect_local_image_details(
+            timeout=self._remaining_timeout(
+                deadline, inspect_timeout, label="Docker image preflight"
+            )
+        )
+        preparation_error: IsolationError | None = None
+        try:
+            self._deadline_check(deadline)
+            container_name = self._new_container_name()
+        except BaseException as exc:
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            preparation_error = _structured_execution_error(
+                exc,
+                stage="post_image_preparation",
+                stdout="",
+                stderr="",
+                stdout_truncated=False,
+                stderr_truncated=False,
+                returncode=None,
+                image=self.image,
+                image_id=image_id,
+                container_name=None,
+                container_id=None,
+            )
+        if preparation_error is not None:
+            preparation_error.__traceback__ = None
+            preparation_error.__cause__ = None
+            preparation_error.__context__ = None
+            raise preparation_error.with_traceback(None) from None
+
+        export_archive = canonical.parent / f".marb-export-{container_name}.tar"
+        create_command: list[str] | None = None
+        container_id: str | None = None
+        creation_uncertain = False
+        primary_error: BaseException | None = None
+        policy_readback_verified = False
+        failure_stage = "export_staging"
+        cleanup_failure: IsolationError | None = None
+        create_result: CommandResultLike | None = None
+        metadata: dict[str, Any] | None = None
+        candidate_id = ""
+        raw_id = ""
+        staging_owned = False
+        try:
+            try:
+                with export_archive.open("xb") as handle:
+                    staging_owned = True
+                    handle.flush()
+                    os.fsync(handle.fileno())
+            except OSError:
+                _fail("workspace export staging file cannot be created")
+            self._deadline_check(deadline)
+            create_command = self.build_create_command(
+                canonical, script, container_name, export_archive
+            )
+            self._deadline_check(deadline)
+            failure_stage = "container_creation"
+            creation_uncertain = True
+            create_result = self._invoke(
+                create_command,
+                timeout=self._remaining_timeout(
+                    deadline, inspect_timeout, label="Docker container creation"
+                ),
+            )
+            if create_result.returncode != 0:
+                _fail("Docker container creation failed")
+            raw_id, truncated = _bounded_text(create_result.stdout, MAX_STDOUT_BYTES)
+            candidate_id = raw_id.strip()
+            create_result = None
+            raw_id = ""
+            invalid_candidate = truncated or not CONTAINER_ID_RE.fullmatch(candidate_id)
+            if invalid_candidate:
+                candidate_id = ""
+                _fail("Docker returned a malformed container identity")
+            failure_stage = "container_policy_readback"
+            _, metadata = self._read_container_metadata(
+                candidate_id,
+                timeout=self._remaining_timeout(
+                    deadline,
+                    inspect_timeout,
+                    label="Docker policy readback",
+                    policy_predicate="policy_readback_deadline",
+                ),
+                policy_readback=True,
+            )
+            if metadata is None:
+                _policy_fail(
+                    "container_missing_before_readback",
+                    "Docker container disappeared before policy readback",
+                )
+            if not _is_owned_container(metadata, container_name, candidate_id):
+                _policy_fail(
+                    "container_ownership_mismatch",
+                    "Docker container ownership readback failed",
+                )
+            container_id = candidate_id
+            creation_uncertain = False
+            self._validate_container_metadata(
+                metadata,
+                container_id=container_id,
+                container_name=container_name,
+                image_id=image_id,
+                workspace=canonical,
+                input_root=input_root,
+                export_archive=export_archive,
+                script=script,
+            )
+            self._deadline_check(
+                deadline, policy_predicate="policy_readback_deadline"
+            )
+            policy_readback_verified = True
+            metadata = None
+            candidate_id = ""
+        except BaseException as exc:
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                primary_error = exc
+                raise
+            primary_error = _structured_execution_error(
+                exc,
+                stage=failure_stage,
+                stdout="",
+                stderr="",
+                stdout_truncated=False,
+                stderr_truncated=False,
+                returncode=None,
+                image=self.image,
+                image_id=image_id,
+                container_name=container_name,
+                container_id=container_id,
+            )
+            create_result = None
+            metadata = None
+            candidate_id = ""
+            raw_id = ""
+        finally:
+            cleanup_attempted = container_id is not None or creation_uncertain
+            cleanup_verified: bool | None = None
+            container_absence_verified: bool | None = None
+            cleanup_error: BaseException | None = None
+            export_staging_removed: bool | None = None
+            try:
+                cleanup_deadline = self._monotonic() + CLEANUP_TIMEOUT_SECONDS
+                if container_id is not None:
+                    container_absence_verified = self._cleanup_container(
+                        container_id, deadline=cleanup_deadline
+                    )
+                elif creation_uncertain:
+                    container_absence_verified = self._cleanup_uncertain_creation(
+                        container_name, deadline=cleanup_deadline
+                    )
+                if cleanup_attempted:
+                    cleanup_verified = container_absence_verified is True
+                    if not cleanup_verified:
+                        _fail(
+                            "Docker container cleanup could not be verified",
+                            code="cleanup_verification_failed",
+                            stage="container_cleanup",
+                        )
+            except BaseException as observed_cleanup_error:
+                cleanup_error = observed_cleanup_error
+                cleanup_verified = False
+                container_absence_verified = False
+
+            staging_error: IsolationError | None = None
+            if staging_owned:
+                try:
+                    _unlink_export_staging(export_archive, canonical.parent)
+                except IsolationError as observed_staging_error:
+                    staging_error = observed_staging_error
+                    export_staging_removed = False
+                else:
+                    export_staging_removed = True
+
+            if isinstance(primary_error, IsolationError):
+                primary_error._record_cleanup_evidence(
+                    attempted=cleanup_attempted,
+                    verified=cleanup_verified,
+                    container_absence_verified=container_absence_verified,
+                    export_staging_removed=export_staging_removed,
+                    cleanup_error_type=(
+                        type(cleanup_error or staging_error).__name__
+                        if cleanup_error is not None or staging_error is not None
+                        else None
+                    ),
+                )
+            if primary_error is None and (
+                cleanup_error is not None or staging_error is not None
+            ):
+                cleanup_failure = IsolationError(
+                    "Docker policy probe cleanup could not be verified",
+                    code="cleanup_verification_failed",
+                    stage=(
+                        "container_cleanup"
+                        if cleanup_error is not None
+                        else "export_staging_cleanup"
+                    ),
+                    image=self.image,
+                    image_id=image_id,
+                    container_name=container_name,
+                    container_id=container_id,
+                    cleanup_attempted=cleanup_attempted,
+                    cleanup_verified=False,
+                    container_absence_verified=container_absence_verified,
+                    export_staging_removed=export_staging_removed,
+                    cleanup_error_type=type(cleanup_error or staging_error).__name__,
+                )
+            if primary_error is not None or cleanup_failure is not None:
+                if cleanup_error is not None:
+                    _detach_exception_graph(cleanup_error)
+                if staging_error is not None:
+                    _detach_exception_graph(staging_error)
+                cleanup_error = None
+                staging_error = None
+
+        if primary_error is not None:
+            primary_error.__traceback__ = None
+            primary_error.__cause__ = None
+            primary_error.__context__ = None
+            raise primary_error.with_traceback(None) from None
+        if cleanup_failure is not None:
+            cleanup_failure.__traceback__ = None
+            cleanup_failure.__cause__ = None
+            cleanup_failure.__context__ = None
+            raise cleanup_failure.with_traceback(None) from None
+        if (
+            not policy_readback_verified
+            or container_id is None
+            or create_command is None
+        ):
+            _fail("Docker policy probe produced no verified readback")
+        return PolicyReadbackResult(
+            image=self.image,
+            image_id=image_id,
+            docker_executable=self.docker_executable,
+            workspace=canonical,
+            script=script,
+            container_name=container_name,
+            container_id=container_id,
+            create_command=tuple(create_command),
+            policy_readback_verified=True,
+            cleanup_verified=cleanup_verified is True,
+            container_absence_verified=container_absence_verified is True,
+            export_staging_removed=export_staging_removed is True,
+        )
+
     def execute(
         self,
         workspace: Path,
@@ -2247,6 +2530,7 @@ __all__ = [
     "ExecutionResult",
     "IsolatedDockerPython",
     "IsolationError",
+    "PolicyReadbackResult",
     "WorkspaceUsage",
     "validate_image_reference",
     "validate_workspace",

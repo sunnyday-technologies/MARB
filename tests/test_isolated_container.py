@@ -39,6 +39,7 @@ from harness.isolated_container import (
     WORKSPACE_TMPFS_SPEC,
     IsolatedDockerPython,
     IsolationError,
+    PolicyReadbackResult,
     validate_image_reference,
 )
 
@@ -293,6 +294,28 @@ def execution_responses(
             )
         ),
         start_response,
+        completed(returncode=1, stderr="already stopped"),
+        completed(returncode=1, stderr="already stopped"),
+        completed(stdout=CONTAINER_ID + "\n"),
+        completed(returncode=1, stderr="no such container"),
+    ]
+
+
+def policy_probe_responses(
+    workspace: Path,
+    input_root: Path,
+    *,
+    metadata: dict[str, object] | None = None,
+) -> list[subprocess.CompletedProcess[str]]:
+    export_archive = workspace.parent / f".marb-export-{CONTAINER_NAME}.tar"
+    return [
+        completed(stdout=image_metadata()),
+        completed(stdout=CONTAINER_ID + "\n"),
+        completed(
+            stdout=json.dumps(
+                metadata or container_metadata(workspace, input_root, export_archive)
+            )
+        ),
         completed(returncode=1, stderr="already stopped"),
         completed(returncode=1, stderr="already stopped"),
         completed(stdout=CONTAINER_ID + "\n"),
@@ -621,6 +644,203 @@ class IsolatedContainerTests(unittest.TestCase):
                 CONTAINER_ID,
             ],
         )
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_probe_exact_command_trace_never_starts_container(self) -> None:
+        runner = FakeRunner(policy_probe_responses(self.workspace, self.input_root))
+        result = self.sandbox(runner).probe_policy_readback(
+            self.workspace,
+            "tool.py",
+            inspect_timeout=11.0,
+            execution_timeout=22.0,
+        )
+        self.assertIsInstance(result, PolicyReadbackResult)
+        self.assertEqual(
+            [call[0] for call in runner.calls],
+            [
+                [
+                    DOCKER_EXE,
+                    "image",
+                    "inspect",
+                    "--format",
+                    "{{json .}}",
+                    IMAGE,
+                ],
+                list(result.create_command),
+                [
+                    DOCKER_EXE,
+                    "container",
+                    "inspect",
+                    "--format",
+                    "{{json .}}",
+                    CONTAINER_ID,
+                ],
+                [DOCKER_EXE, "kill", CONTAINER_ID],
+                [DOCKER_EXE, "stop", "--time", "0", CONTAINER_ID],
+                [DOCKER_EXE, "rm", "--force", CONTAINER_ID],
+                [
+                    DOCKER_EXE,
+                    "container",
+                    "inspect",
+                    "--format",
+                    "{{json .}}",
+                    CONTAINER_ID,
+                ],
+            ],
+        )
+        self.assertFalse(
+            any(call[0][1:3] == ["start", "--attach"] for call in runner.calls)
+        )
+        self.assertTrue(result.policy_readback_verified)
+        self.assertTrue(result.cleanup_verified)
+        self.assertTrue(result.container_absence_verified)
+        self.assertTrue(result.export_staging_removed)
+        self.assertEqual(result.image_id, IMAGE_ID)
+        self.assertEqual(result.container_name, CONTAINER_NAME)
+        self.assertEqual(result.container_id, CONTAINER_ID)
+        self.assertFalse(self.export_archive.exists())
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_probe_mismatch_is_safe_and_cleanup_is_verified(self) -> None:
+        sentinel = "observed-policy-value-must-not-serialize"
+        metadata = container_metadata(
+            self.workspace, self.input_root, self.export_archive
+        )
+        metadata["HostConfig"]["NetworkMode"] = sentinel  # type: ignore[index]
+        runner = FakeRunner(
+            policy_probe_responses(
+                self.workspace, self.input_root, metadata=metadata
+            )
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).probe_policy_readback(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.stage, "container_policy_readback")
+        self.assertEqual(error.policy_predicate, "network_mode_mismatch")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertTrue(error.cleanup_verified)
+        self.assertTrue(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertNotIn(sentinel, json.dumps(error.evidence, sort_keys=True))
+        self.assertFalse(
+            any(call[0][1:3] == ["start", "--attach"] for call in runner.calls)
+        )
+        self.assertFalse(self.export_archive.exists())
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_probe_cleanup_failure_fails_closed(self) -> None:
+        responses = policy_probe_responses(self.workspace, self.input_root)
+        responses[5] = completed(returncode=1, stderr="cannot remove")
+        runner = FakeRunner(responses[:6])
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).probe_policy_readback(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "cleanup_verification_failed")
+        self.assertEqual(error.stage, "container_cleanup")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertFalse(error.cleanup_verified)
+        self.assertFalse(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(error.cleanup_error_type, "IsolationError")
+        self.assertFalse(
+            any(call[0][1:3] == ["start", "--attach"] for call in runner.calls)
+        )
+        self.assertFalse(self.export_archive.exists())
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_probe_predicate_survives_cleanup_failure(self) -> None:
+        metadata = container_metadata(
+            self.workspace, self.input_root, self.export_archive
+        )
+        metadata["HostConfig"]["NetworkMode"] = "bridge"  # type: ignore[index]
+        responses = policy_probe_responses(
+            self.workspace, self.input_root, metadata=metadata
+        )
+        responses[5] = completed(returncode=1, stderr="cannot remove")
+        runner = FakeRunner(responses[:6])
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).probe_policy_readback(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.code, "isolation_contract_violation")
+        self.assertEqual(error.stage, "container_policy_readback")
+        self.assertEqual(error.policy_predicate, "network_mode_mismatch")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertFalse(error.cleanup_verified)
+        self.assertFalse(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(error.cleanup_error_type, "IsolationError")
+        self.assertFalse(self.export_archive.exists())
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_probe_never_removes_foreign_container(self) -> None:
+        metadata = container_metadata(
+            self.workspace, self.input_root, self.export_archive
+        )
+        metadata["Config"]["Labels"] = {  # type: ignore[index]
+            OWNERSHIP_LABEL: "someone-else"
+        }
+        runner = FakeRunner(
+            [
+                completed(stdout=image_metadata()),
+                completed(stdout=CONTAINER_ID),
+                completed(stdout=json.dumps(metadata)),
+                completed(stdout=json.dumps(metadata)),
+            ]
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).probe_policy_readback(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.policy_predicate, "container_ownership_mismatch")
+        self.assertTrue(error.cleanup_attempted)
+        self.assertFalse(error.cleanup_verified)
+        self.assertFalse(error.container_absence_verified)
+        self.assertTrue(error.export_staging_removed)
+        self.assertEqual(runner.calls[3][0][-1], CONTAINER_NAME)
+        self.assertFalse(
+            any(call[0][1] in {"kill", "stop", "rm"} for call in runner.calls)
+        )
+        self.assertFalse(self.export_archive.exists())
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_probe_removes_staging_and_leaves_workspace_unchanged(self) -> None:
+        nested = self.workspace / "nested"
+        nested.mkdir()
+        (nested / "payload.bin").write_bytes(b"immutable workspace sentinel\x00")
+        before = {
+            path.relative_to(self.workspace).as_posix(): (
+                "directory" if path.is_dir() else path.read_bytes()
+            )
+            for path in sorted(self.workspace.rglob("*"))
+        }
+        runner = FakeRunner(policy_probe_responses(self.workspace, self.input_root))
+        result = self.sandbox(runner).probe_policy_readback(
+            self.workspace, "tool.py"
+        )
+        after = {
+            path.relative_to(self.workspace).as_posix(): (
+                "directory" if path.is_dir() else path.read_bytes()
+            )
+            for path in sorted(self.workspace.rglob("*"))
+        }
+        self.assertEqual(after, before)
+        self.assertTrue(result.export_staging_removed)
+        self.assertFalse(self.export_archive.exists())
+        self.assertFalse(
+            any(call[0][1:3] == ["start", "--attach"] for call in runner.calls)
+        )
+        self.assertEqual(runner.responses, [])
+
+    def test_policy_probe_never_removes_unowned_staging_collision(self) -> None:
+        sentinel = b"pre-existing unowned staging bytes\n"
+        self.export_archive.write_bytes(sentinel)
+        runner = FakeRunner([completed(stdout=image_metadata())])
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).probe_policy_readback(self.workspace, "tool.py")
+        self.assertEqual(caught.exception.stage, "export_staging")
+        self.assertFalse(caught.exception.cleanup_attempted)
+        self.assertIsNone(caught.exception.export_staging_removed)
+        self.assertEqual(self.export_archive.read_bytes(), sentinel)
+        self.assertEqual(len(runner.calls), 1)
         self.assertEqual(runner.responses, [])
 
     def test_one_absolute_deadline_is_consumed_across_preflight_and_start(self) -> None:
