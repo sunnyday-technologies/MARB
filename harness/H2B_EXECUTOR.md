@@ -420,6 +420,9 @@ image ID, a fixed public MARB image-label allowlist, and the hash of canonical
 in-image build-provenance bytes. Successful executions independently require
 cleanup, named-container absence, and export-staging removal. Failure-output
 bodies are disposed after bounded byte counts and hashes are recorded. These
+failures may include an optional additive-v1 `policy_predicate` selected only
+from the source-defined public allowlist; it identifies the rejected invariant
+but never carries an observed Docker value or inspection document. These
 controls do not change the operator boundary: fake/local tests remain
 non-qualifying, and the smoke neither authorizes a provider/model call nor
 qualifies an image without a separate exact runtime approval and real pass.

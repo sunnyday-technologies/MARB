@@ -12,7 +12,7 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
-from typing import Callable, Mapping
+from typing import Any, Callable, Mapping
 from unittest import mock
 
 import harness.isolated_container as isolated
@@ -700,21 +700,59 @@ class IsolatedContainerTests(unittest.TestCase):
                 )
 
     def test_config_readback_rejects_security_drift_before_start(self) -> None:
-        mutations: dict[str, Callable[[dict[str, object]], None]] = {
-            "network": lambda item: item["HostConfig"].__setitem__("NetworkMode", "bridge"),  # type: ignore[union-attr]
-            "read-write-root": lambda item: item["HostConfig"].__setitem__("ReadonlyRootfs", False),  # type: ignore[union-attr]
-            "capability": lambda item: item["HostConfig"].__setitem__("CapAdd", ["SYS_ADMIN"]),  # type: ignore[union-attr]
-            "ipc": lambda item: item["HostConfig"].__setitem__("IpcMode", "private"),  # type: ignore[union-attr]
-            "cgroupns": lambda item: item["HostConfig"].__setitem__("CgroupnsMode", "host"),  # type: ignore[union-attr]
-            "device": lambda item: item["HostConfig"].__setitem__("Devices", [{"PathOnHost": "/dev/sda"}]),  # type: ignore[union-attr]
-            "port": lambda item: item["HostConfig"].__setitem__("PortBindings", {"80/tcp": [{}]}),  # type: ignore[union-attr]
-            "logging": lambda item: item["HostConfig"].__setitem__("LogConfig", {"Type": "json-file"}),  # type: ignore[union-attr]
-            "healthcheck": lambda item: item["Config"].__setitem__("Healthcheck", {"Test": ["CMD", "true"]}),  # type: ignore[union-attr]
-            "declared-volume": lambda item: item["Config"].__setitem__("Volumes", {"/data": {}}),  # type: ignore[union-attr]
-            "wrong-image": lambda item: item.__setitem__("Image", "sha256:" + "d" * 64),
-            "root-user": lambda item: item["Config"].__setitem__("User", "0:0"),  # type: ignore[union-attr]
+        mutations: dict[
+            str, tuple[Callable[[dict[str, object]], None], str]
+        ] = {
+            "network": (
+                lambda item: item["HostConfig"].__setitem__("NetworkMode", "bridge"),  # type: ignore[union-attr]
+                "network_mode_mismatch",
+            ),
+            "read-write-root": (
+                lambda item: item["HostConfig"].__setitem__("ReadonlyRootfs", False),  # type: ignore[union-attr]
+                "readonly_rootfs_mismatch",
+            ),
+            "capability": (
+                lambda item: item["HostConfig"].__setitem__("CapAdd", ["SYS_ADMIN"]),  # type: ignore[union-attr]
+                "cap_add_present",
+            ),
+            "ipc": (
+                lambda item: item["HostConfig"].__setitem__("IpcMode", "private"),  # type: ignore[union-attr]
+                "ipc_mode_mismatch",
+            ),
+            "cgroupns": (
+                lambda item: item["HostConfig"].__setitem__("CgroupnsMode", "host"),  # type: ignore[union-attr]
+                "cgroupns_mode_mismatch",
+            ),
+            "device": (
+                lambda item: item["HostConfig"].__setitem__("Devices", [{"PathOnHost": "/dev/sda"}]),  # type: ignore[union-attr]
+                "devices_present",
+            ),
+            "port": (
+                lambda item: item["HostConfig"].__setitem__("PortBindings", {"80/tcp": [{}]}),  # type: ignore[union-attr]
+                "port_bindings_present",
+            ),
+            "logging": (
+                lambda item: item["HostConfig"].__setitem__("LogConfig", {"Type": "json-file"}),  # type: ignore[union-attr]
+                "logging_policy_mismatch",
+            ),
+            "healthcheck": (
+                lambda item: item["Config"].__setitem__("Healthcheck", {"Test": ["CMD", "true"]}),  # type: ignore[union-attr]
+                "healthcheck_not_disabled",
+            ),
+            "declared-volume": (
+                lambda item: item["Config"].__setitem__("Volumes", {"/data": {}}),  # type: ignore[union-attr]
+                "declared_volume_present",
+            ),
+            "wrong-image": (
+                lambda item: item.__setitem__("Image", "sha256:" + "d" * 64),
+                "container_image_id_mismatch",
+            ),
+            "root-user": (
+                lambda item: item["Config"].__setitem__("User", "0:0"),  # type: ignore[union-attr]
+                "container_user_mismatch",
+            ),
         }
-        for label, mutate in mutations.items():
+        for label, (mutate, expected_predicate) in mutations.items():
             with self.subTest(label=label):
                 metadata = copy.deepcopy(
                     container_metadata(self.workspace, self.input_root, self.export_archive)
@@ -731,12 +769,365 @@ class IsolatedContainerTests(unittest.TestCase):
                         completed(returncode=1, stderr="no such container"),
                     ]
                 )
-                with self.assertRaises(IsolationError):
+                with self.assertRaises(IsolationError) as caught:
                     self.sandbox(runner).execute(self.workspace, "tool.py")
+                self.assertEqual(
+                    caught.exception.policy_predicate, expected_predicate
+                )
+                self.assertEqual(
+                    caught.exception.evidence["policy_predicate"],
+                    expected_predicate,
+                )
                 self.assertFalse(
                     any(call[0][1:3] == ["start", "--attach"] for call in runner.calls)
                 )
                 self.assertTrue(any(call[0][1] == "rm" for call in runner.calls))
+
+    def test_every_container_policy_validator_rejection_has_one_fixed_token(self) -> None:
+        sentinel = "observed-metadata-sentinel-must-not-serialize"
+
+        def assign(path: tuple[str, ...], value: object) -> Callable[[dict[str, object]], None]:
+            def mutate(metadata: dict[str, object]) -> None:
+                target: Any = metadata
+                for component in path[:-1]:
+                    target = target[component]
+                target[path[-1]] = value
+
+            return mutate
+
+        path_cases: list[
+            tuple[str, Callable[[dict[str, object]], None]]
+        ] = [
+            ("container_identity_mismatch", assign(("Id",), sentinel)),
+            ("container_image_id_mismatch", assign(("Image",), sentinel)),
+            ("container_state_malformed", assign(("State",), [])),
+            ("container_not_inert", assign(("State", "Running"), True)),
+            ("container_config_malformed", assign(("Config",), [])),
+            ("configured_image_mismatch", assign(("Config", "Image"), sentinel)),
+            ("container_user_mismatch", assign(("Config", "User"), sentinel)),
+            ("container_workdir_mismatch", assign(("Config", "WorkingDir"), sentinel)),
+            ("container_command_mismatch", assign(("Config", "Cmd"), [sentinel])),
+            ("declared_volume_present", assign(("Config", "Volumes"), {sentinel: {}})),
+            ("exposed_port_present", assign(("Config", "ExposedPorts"), {"1/tcp": {}})),
+            ("healthcheck_not_disabled", assign(("Config", "Healthcheck"), {"Test": [sentinel]})),
+            ("ownership_label_mismatch", assign(("Config", "Labels"), {OWNERSHIP_LABEL: sentinel})),
+            ("host_config_malformed", assign(("HostConfig",), [])),
+        ]
+        exact_host_fields = {
+            "NetworkMode": "network_mode_mismatch",
+            "IpcMode": "ipc_mode_mismatch",
+            "CgroupnsMode": "cgroupns_mode_mismatch",
+            "PidMode": "pid_mode_mismatch",
+            "UTSMode": "uts_mode_mismatch",
+            "ReadonlyRootfs": "readonly_rootfs_mismatch",
+            "Privileged": "privileged_mode_mismatch",
+            "AutoRemove": "auto_remove_mismatch",
+            "PidsLimit": "pids_limit_mismatch",
+            "Memory": "memory_limit_mismatch",
+            "MemorySwap": "memory_swap_limit_mismatch",
+            "NanoCpus": "cpu_limit_mismatch",
+            "PublishAllPorts": "publish_all_ports_mismatch",
+        }
+        path_cases.extend(
+            (predicate, assign(("HostConfig", key), sentinel))
+            for key, predicate in exact_host_fields.items()
+        )
+        path_cases.extend(
+            [
+                ("cap_drop_mismatch", assign(("HostConfig", "CapDrop"), [])),
+                ("cap_add_present", assign(("HostConfig", "CapAdd"), [sentinel])),
+                ("security_option_mismatch", assign(("HostConfig", "SecurityOpt"), [sentinel])),
+                ("restart_policy_mismatch", assign(("HostConfig", "RestartPolicy"), {"Name": sentinel})),
+                ("logging_policy_mismatch", assign(("HostConfig", "LogConfig"), {"Type": sentinel})),
+                ("tmpfs_metadata_malformed", assign(("HostConfig", "Tmpfs"), [])),
+            ]
+        )
+
+        def mutate_tmpfs_destinations(metadata: dict[str, object]) -> None:
+            tmpfs = metadata["HostConfig"]["Tmpfs"]  # type: ignore[index]
+            tmpfs.pop("/tmp")
+            tmpfs[sentinel] = "rw"
+
+        path_cases.append(("tmpfs_destinations_mismatch", mutate_tmpfs_destinations))
+        for destination, predicate in (
+            ("/tmp", "tmpfs_tmp_options_mismatch"),
+            (CONTAINER_WORKSPACE, "tmpfs_workspace_options_mismatch"),
+            (CONTAINER_EXPORT, "tmpfs_export_options_mismatch"),
+        ):
+            path_cases.append(
+                (predicate, assign(("HostConfig", "Tmpfs", destination), sentinel))
+            )
+        path_cases.append(
+            ("ulimits_metadata_malformed", assign(("HostConfig", "Ulimits"), {}))
+        )
+
+        def mutate_ulimit_entry(metadata: dict[str, object]) -> None:
+            metadata["HostConfig"]["Ulimits"][0] = sentinel  # type: ignore[index]
+
+        def mutate_ulimit_names(metadata: dict[str, object]) -> None:
+            metadata["HostConfig"]["Ulimits"][0]["Name"] = sentinel  # type: ignore[index]
+
+        def mutate_ulimit_value(name: str) -> Callable[[dict[str, object]], None]:
+            def mutate(metadata: dict[str, object]) -> None:
+                for item in metadata["HostConfig"]["Ulimits"]:  # type: ignore[index]
+                    if item["Name"] == name:
+                        item["Soft"] = sentinel
+
+            return mutate
+
+        path_cases.extend(
+            [
+                ("ulimit_entry_malformed", mutate_ulimit_entry),
+                ("ulimit_names_mismatch", mutate_ulimit_names),
+                ("ulimit_nofile_mismatch", mutate_ulimit_value("nofile")),
+                ("ulimit_fsize_mismatch", mutate_ulimit_value("fsize")),
+            ]
+        )
+        host_resources = {
+            "Binds": "binds_present",
+            "VolumesFrom": "volumes_from_present",
+            "Devices": "devices_present",
+            "DeviceRequests": "device_requests_present",
+            "DeviceCgroupRules": "device_cgroup_rules_present",
+            "PortBindings": "port_bindings_present",
+            "Links": "links_present",
+            "ExtraHosts": "extra_hosts_present",
+        }
+        path_cases.extend(
+            (predicate, assign(("HostConfig", key), [sentinel]))
+            for key, predicate in host_resources.items()
+        )
+        path_cases.extend(
+            [
+                ("network_settings_malformed", assign(("NetworkSettings",), [])),
+                ("published_ports_present", assign(("NetworkSettings", "Ports"), {"1/tcp": [{}]})),
+                ("mounts_metadata_malformed", assign(("Mounts",), {})),
+            ]
+        )
+
+        def mutate_mount(
+            destination: str, key: str, value: object
+        ) -> Callable[[dict[str, object]], None]:
+            def mutate(metadata: dict[str, object]) -> None:
+                for item in metadata["Mounts"]:  # type: ignore[union-attr]
+                    if item.get("Destination") == destination:
+                        item[key] = value
+                        return
+                raise AssertionError("fixture mount is unavailable")
+
+            return mutate
+
+        def append_mount(metadata: dict[str, object]) -> None:
+            metadata["Mounts"].append(  # type: ignore[union-attr]
+                {"Type": "tmpfs", "Destination": sentinel, "RW": True}
+            )
+
+        path_cases.extend(
+            [
+                ("bind_mount_count_mismatch", mutate_mount(CONTAINER_HOST_WORKSPACE, "Type", "volume")),
+                ("bind_destinations_mismatch", mutate_mount(CONTAINER_HOST_WORKSPACE, "Destination", sentinel)),
+                ("workspace_bind_mismatch", mutate_mount(CONTAINER_HOST_WORKSPACE, "RW", True)),
+                ("immutable_input_bind_mismatch", mutate_mount(CONTAINER_INPUT_ROOT, "RW", True)),
+                ("kit_bind_mismatch", mutate_mount(CONTAINER_INPUT, "RW", True)),
+                ("export_bind_mismatch", mutate_mount(f"{CONTAINER_EXPORT}/workspace.tar", "RW", False)),
+                ("extra_mount_count_mismatch", append_mount),
+                ("tmpfs_mount_destinations_mismatch", mutate_mount("/tmp", "Destination", sentinel)),
+                ("docker_control_socket_present", mutate_mount("/tmp", "Source", "/var/run/docker.sock")),
+                ("effective_entrypoint_mismatch", assign(("Path",), sentinel)),
+                ("effective_args_mismatch", assign(("Args",), [sentinel])),
+            ]
+        )
+
+        observed: set[str] = set()
+        sandbox = self.sandbox(FakeRunner([]))
+        for expected_predicate, mutate in path_cases:
+            with self.subTest(policy_predicate=expected_predicate):
+                metadata = copy.deepcopy(
+                    container_metadata(
+                        self.workspace, self.input_root, self.export_archive
+                    )
+                )
+                mutate(metadata)
+                with self.assertRaises(IsolationError) as caught:
+                    sandbox._validate_container_metadata(
+                        metadata,
+                        container_id=CONTAINER_ID,
+                        container_name=CONTAINER_NAME,
+                        image_id=IMAGE_ID,
+                        workspace=self.workspace,
+                        input_root=self.input_root,
+                        export_archive=self.export_archive,
+                        script="tool.py",
+                    )
+                error = caught.exception
+                self.assertEqual(error.policy_predicate, expected_predicate)
+                serialized = json.dumps(error.evidence, sort_keys=True)
+                self.assertIn(expected_predicate, serialized)
+                self.assertNotIn(sentinel, serialized)
+                observed.add(expected_predicate)
+
+        procedural = {
+            "policy_readback_deadline",
+            "container_inspect_output_limit",
+            "container_inspect_json_malformed",
+            "container_metadata_malformed",
+            "container_missing_before_readback",
+            "container_ownership_mismatch",
+        }
+        self.assertEqual(
+            observed,
+            set(isolated.CONTAINER_POLICY_PREDICATES) - procedural,
+        )
+
+    def test_policy_predicate_allowlist_rejects_dynamic_diagnostic_text(self) -> None:
+        sentinel = "syntactically_safe_unlisted_predicate"
+        rejected = IsolationError(
+            "fixed public failure message", policy_predicate=sentinel
+        )
+        self.assertIsNone(rejected.policy_predicate)
+        self.assertNotIn("policy_predicate", rejected.evidence)
+        self.assertNotIn(sentinel, json.dumps(rejected.evidence, sort_keys=True))
+
+        unhashable = IsolationError(
+            "fixed public failure message",
+            policy_predicate=[sentinel],  # type: ignore[arg-type]
+        )
+        self.assertIsNone(unhashable.policy_predicate)
+        self.assertNotIn("policy_predicate", unhashable.evidence)
+
+        accepted = IsolationError(
+            "fixed public failure message",
+            policy_predicate="network_mode_mismatch",
+        )
+        self.assertEqual(
+            accepted.evidence["policy_predicate"], "network_mode_mismatch"
+        )
+        self.assertNotIn("fixed public failure message", json.dumps(accepted.evidence))
+
+    def test_policy_readback_procedural_failures_use_fixed_tokens(self) -> None:
+        raw_inspect_sentinel = "raw-inspect-body-must-not-serialize"
+        procedural = {
+            "policy_readback_deadline",
+            "container_inspect_output_limit",
+            "container_inspect_json_malformed",
+            "container_metadata_malformed",
+            "container_missing_before_readback",
+            "container_ownership_mismatch",
+        }
+        observed: set[str] = set()
+        inspect_cases = (
+            (
+                "container_inspect_output_limit",
+                completed(stdout="x" * (isolated.MAX_STDOUT_BYTES + 1)),
+                None,
+            ),
+            (
+                "container_inspect_json_malformed",
+                completed(stdout="{" + raw_inspect_sentinel),
+                raw_inspect_sentinel,
+            ),
+            ("container_metadata_malformed", completed(stdout="[]"), None),
+        )
+        for expected_predicate, response, forbidden in inspect_cases:
+            with self.subTest(policy_predicate=expected_predicate):
+                runner = FakeRunner([response])
+                with self.assertRaises(IsolationError) as caught:
+                    self.sandbox(runner)._read_container_metadata(
+                        CONTAINER_ID,
+                        timeout=30.0,
+                        policy_readback=True,
+                    )
+                self.assertEqual(
+                    caught.exception.policy_predicate, expected_predicate
+                )
+                serialized = json.dumps(caught.exception.evidence, sort_keys=True)
+                if forbidden is not None:
+                    self.assertNotIn(forbidden, serialized)
+                observed.add(expected_predicate)
+
+        deadline_runner = FakeRunner([])
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(
+                deadline_runner, monotonic=lambda: 2.0
+            )._remaining_timeout(
+                1.0,
+                30.0,
+                label="Docker policy readback",
+                policy_predicate="policy_readback_deadline",
+            )
+        self.assertEqual(
+            caught.exception.policy_predicate, "policy_readback_deadline"
+        )
+        observed.add("policy_readback_deadline")
+
+        missing_runner = FakeRunner(
+            [
+                completed(stdout=image_metadata()),
+                completed(stdout=CONTAINER_ID),
+                completed(returncode=1, stderr="no such container"),
+                completed(returncode=1, stderr="no such container"),
+            ]
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(missing_runner).execute(self.workspace, "tool.py")
+        self.assertEqual(
+            caught.exception.policy_predicate,
+            "container_missing_before_readback",
+        )
+        observed.add("container_missing_before_readback")
+
+        foreign = container_metadata(
+            self.workspace, self.input_root, self.export_archive
+        )
+        foreign["Config"]["Labels"] = {OWNERSHIP_LABEL: "foreign"}  # type: ignore[index]
+        owned = container_metadata(
+            self.workspace, self.input_root, self.export_archive
+        )
+        ownership_runner = FakeRunner(
+            [
+                completed(stdout=image_metadata()),
+                completed(stdout=CONTAINER_ID),
+                completed(stdout=json.dumps(foreign)),
+                completed(stdout=json.dumps(owned)),
+                completed(returncode=1, stderr="already stopped"),
+                completed(returncode=1, stderr="already stopped"),
+                completed(),
+                completed(returncode=1, stderr="no such container"),
+            ]
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(ownership_runner).execute(self.workspace, "tool.py")
+        self.assertEqual(
+            caught.exception.policy_predicate,
+            "container_ownership_mismatch",
+        )
+        self.assertTrue(caught.exception.cleanup_verified)
+        self.assertTrue(caught.exception.container_absence_verified)
+        observed.add("container_ownership_mismatch")
+        self.assertEqual(observed, procedural)
+
+    def test_policy_predicate_survives_a_separate_cleanup_failure(self) -> None:
+        metadata = container_metadata(
+            self.workspace, self.input_root, self.export_archive
+        )
+        metadata["HostConfig"]["NetworkMode"] = "bridge"  # type: ignore[index]
+        runner = FakeRunner(
+            [
+                completed(stdout=image_metadata()),
+                completed(stdout=CONTAINER_ID),
+                completed(stdout=json.dumps(metadata)),
+                completed(returncode=1, stderr="already stopped"),
+                completed(returncode=1, stderr="already stopped"),
+                completed(returncode=1, stderr="cannot remove"),
+            ]
+        )
+        with self.assertRaises(IsolationError) as caught:
+            self.sandbox(runner).execute(self.workspace, "tool.py")
+        error = caught.exception
+        self.assertEqual(error.policy_predicate, "network_mode_mismatch")
+        self.assertEqual(error.cleanup_error_type, "IsolationError")
+        self.assertFalse(error.cleanup_verified)
+        self.assertFalse(error.container_absence_verified)
 
     def test_extra_bind_and_socket_mounts_are_rejected_before_start(self) -> None:
         for source in (str(self.workspace.parent), "/var/run/docker.sock"):

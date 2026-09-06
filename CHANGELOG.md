@@ -18,7 +18,11 @@ release never relabels an older result.
   executable around every case, distinguish the exact entry-overflow limiter
   reason, and add focused fake/local adversarial regressions plus the
   canonical-manifest parent-root rule. These source tests do not run Docker or
-  qualify an image. Preserve the historical R4/R6 context vectors, bind the
+  qualify an image. Add an optional v1 `policy_predicate` failure field drawn
+  only from a fixed public allowlist, so a rejected Docker policy readback can
+  identify the failed invariant without retaining observed metadata, paths,
+  messages, arguments, environment data, or output bodies. Preserve the
+  historical R4/R6 context vectors, bind the
   current R7 effective build-context allowlist through a tracked canonical
   template, publish its reconstructed context vector, and cross-check the
   retained requirements, wheelhouse, native, and context manifests inside the
