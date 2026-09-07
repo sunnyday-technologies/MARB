@@ -52,13 +52,15 @@ site, or deployment action.
   `vision_attested` is `false`. These runs must not be labeled or compared as
   sighted/vision cells.
 - The implementation is currently restricted to Windows Docker Desktop host
-  semantics. No image/host pair is qualified until the tracked mandatory
-  nine-case runtime smoke succeeds. Linux and rootless-host bind/file ownership
+  semantics. One exact private source/image/runtime binding passed the tracked
+  mandatory nine-case R8 runtime smoke; any replacement source, image, or host
+  requires a fresh qualification. Linux and rootless-host bind/file ownership
   behavior for container UID/GID `65532:65532` remains unqualified.
 - No real runtime image digest is shipped or implied by this repository. An
   operator must build or obtain the versioned image, record its registry
-  `RepoDigest`, and complete the no-provider/no-network runtime smoke in
-  [`container/README.md`](container/README.md) before any real run. The v0.13
+  `RepoDigest`, and complete the provider-free, network-none runtime smoke in
+  [`container/README.md`](container/README.md) before a run under that exact
+  binding. The v0.13
   recipe additionally binds the exact offline Debian native closure and
   requires archive and installed-package checks, clean-environment `ldd` on
   actual CPython load roots, 412-of-420 member reachability, a separate
@@ -158,9 +160,12 @@ source, publishes, or deploys. See [`NIGHTWATCH.md`](NIGHTWATCH.md) for the full
 schema, `status` and `run` commands, required aggregate confirmation literal
 `EXECUTE_MARB_NIGHTWATCH:<campaign-sha256>`, and recovery rules. Dedicated
 fake/local Nightwatch tests exist and are included in board-policy CI. They do
-not invoke a real provider, model, Docker runtime, or network. No real
-provider/model/Docker campaign or runtime qualification has been performed,
-and no completed real campaign is claimed.
+not invoke a real provider, model, Docker runtime, or network. No completed real
+Nightwatch campaign is claimed. Separately, retained private R8 evidence records
+one exact source/image/runtime binding passing all nine provider-free,
+network-none cases, and one private local-no-charge S1 slot later completed
+boxed execution and trusted offline grading. Neither event was a Nightwatch
+campaign, public cohort, or model-performance claim.
 
 ## No-call authorization workflow
 
@@ -395,10 +400,11 @@ grade-runtime identity. The v0.13 execution contract records a narrow,
 calibration-backed compatibility relation to that historical contract; it does
 not relabel or replace the grader, task, answer key, or prior evidence.
 
-The source calibration does not qualify a container. No OCI image/host pair is
-qualified until its exact RepoDigest passes the mandatory no-provider,
-no-network smoke and provenance readback below; no provider or model call may
-precede that gate.
+The source calibration does not qualify a container. An OCI image/runtime pair
+is qualified only when its exact RepoDigest passes the mandatory provider-free,
+network-none smoke and provenance readback below; no provider or model call may
+precede that gate. Retained private R8 evidence records one exact binding that
+passed this prerequisite.
 
 ## CI and manual gates
 
@@ -441,9 +447,12 @@ either no non-bind `.Mounts` entries or the complete exact tmpfs destination
 set. Exact tmpfs destinations and options remain mandatory in
 `HostConfig.Tmpfs`; partial sets and foreign mount types fail closed.
 
-Before the first actual attempt, an operator must still record the approved
-image RepoDigest and pass the real tracked no-provider/no-network runtime smoke
-described in the container build notes.
+Before any actual attempt under a source/image/runtime binding, an operator must
+record the approved image RepoDigest and pass the real tracked provider-free,
+network-none runtime smoke described in the container build notes. Retained
+private R8 evidence satisfied that prerequisite for one exact binding before
+the private S1 attempt; it does not carry over to a replacement source, image,
+or host.
 
 That smoke binds literal and peeled Git HEAD/tree readbacks, raw committed
 implementation and container-build inputs, the exact RepoDigest and observed
