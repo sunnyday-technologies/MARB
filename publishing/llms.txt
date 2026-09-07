@@ -1,0 +1,46 @@
+# MARB
+
+> Public Mechanical Assembly Reasoning Benchmark materials published by Sunnyday Technologies and CADCLAW.
+
+## Canonical pages
+
+- Benchmark home: https://marb.cadclaw.io/
+- First-results snapshot: https://marb.cadclaw.io/first-results/
+- Studies log: https://marb.cadclaw.io/studies/
+- MARB-A Pascal pilot: https://marb.cadclaw.io/pascal/
+- MARB v0.9 recap: https://marb.cadclaw.io/recap/
+- CADCLAW engine: https://cadclaw.io/
+
+## Machine-readable resources
+
+- This summary: https://marb.cadclaw.io/llms.txt
+- Sitemap: https://marb.cadclaw.io/sitemap.xml
+- Crawler and AI-use policy: https://marb.cadclaw.io/robots.txt
+- Experimental static discovery record: https://marb.cadclaw.io/.well-known/mcp-manifest.json
+- Security contact: https://marb.cadclaw.io/.well-known/security.txt
+
+## Current public record
+
+- Current repository scoring specification: v0.12. Dated board cells retain their recorded v0.9 tags.
+- The repository run registry contains 43 records at this source revision. Site boards are dated editorial snapshots and can summarize fewer cells.
+- Engineering update, 2026-09-06: one exact source, image, and runtime binding passed the nine-case R8 provider-free, network-none qualification. One privately retained S1 sample subsequently completed boxed execution and trusted offline grading but failed the native inventory, interference, and floating gates. It is pipeline evidence, not a registered public run, cohort, model comparison, portable qualification, or physical validation.
+- MARB reports declared artifact metrics and gates under the task, scorer, software versions, and conditions stated for each record.
+- Public code, methods, kits, grades, and result records remain governed by their repository file licenses. Answer keys and leak-detection rules remain separately gated to protect benchmark integrity.
+
+## Evidence and reliance boundary
+
+- Results are publisher-run measurements, not independent certification, physical testing, manufacturing approval, safety review, code-compliance determination, professional engineering opinion, or a claim about a product's overall performance.
+- Cross-cell interpretation must retain tool, prompt, hint, assistance, attempt, seed, host-meter, software-version, and missing-data differences. A dated result does not establish causation, general model superiority, or future price/performance.
+- Automated and simulation checks can miss real-world material, tolerance, assembly, and use-condition failures. Manufacturing and safety decisions require qualified review and appropriate physical validation.
+
+## Commercial boundary
+
+- This public site exposes no paid API, hosted MCP tools, payment endpoint, transaction authority, or purchasing agent.
+- Sunnyday may manually scope a sponsored benchmark run or private evaluation after an inquiry. Planning ranges are non-binding; no order exists until entity, scope, independence, deliverables, taxes, data and artifact rights, privacy, cancellation/refund, and payment terms are confirmed in a signed order or invoice.
+- Sponsorship does not buy or guarantee a score, rank, favorable conclusion, publication outcome, endorsement, certification, or product-performance claim.
+
+## Content use
+
+- Search indexing and real-time AI input are allowed. Model training is not permitted by this site's Content Signal: search=yes, ai-input=yes, ai-train=no.
+- Content Signal communicates the publisher's machine-readable preference; applicable contracts, licenses, law, and third-party rights still govern use.
+- Updated: 2026-09-06.

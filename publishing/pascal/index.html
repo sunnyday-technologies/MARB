@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MARB-A, the architecture lane: three AIs build the same house in Pascal | CADCLAW</title>
+  <meta name="description" content="A dated MARB-A pilot in Pascal: three single-run workflows were scored under task PH-1 and grader v0.1.1. Results are task-specific and include known grader, timing, and sample-size caveats." />
+  <meta property="og:title" content="MARB-A: three AIs build the same house in Pascal | CADCLAW" />
+  <meta property="og:description" content="Three n=1 Pascal workflows exposed a rotation-unit ambiguity under one frozen task and grader. See the artifacts, registry, and stated limitations." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://marb.cadclaw.io/pascal/" />
+  <meta property="og:image" content="https://marb.cadclaw.io/media/pascal_ph1_hero_composite.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="canonical" href="https://marb.cadclaw.io/pascal/" />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary" />
+  <style>
+    .restable{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;}
+    .restable th,.restable td{border:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:top;}
+    .restable thead th{background:var(--navy);color:#fff;font-family:'Orbitron',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+    .restable tbody tr:nth-child(even){background:var(--paper);}
+    .restable td strong{color:var(--navy);}
+    .restable tr.top td{background:rgba(151,215,0,.10);}
+    .study-meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-faint);margin:2px 0 14px;}
+    .pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy);background:rgba(151,215,0,.18);border:1px solid var(--rule);border-radius:999px;padding:2px 9px;}
+    figure{margin:24px 0;}
+    figure img{max-width:100%;height:auto;border:1px solid var(--rule);}
+    figcaption{font-size:13px;color:var(--ink-faint);margin-top:8px;line-height:1.5;}
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="/" aria-label="CADCLAW home">
+    <img src="/CADCLAW_logo.jpg" alt="CADCLAW" />
+  </a>
+  <nav>
+    <a href="/">Benchmark</a>
+    <a href="/studies/">Studies</a>
+    <a href="/pascal/">Pascal lane</a>
+    <a href="/recap/">Recap</a>
+    <a class="ghost" href="https://github.com/sunnyday-technologies/MARB" aria-label="MARB on GitHub">GitHub →</a>
+  </nav>
+</header>
+
+<main>
+  <section class="section">
+    <h1>MARB-A: three AIs build the same house</h1>
+    <p class="study-meta">Lane: MARB-A architecture · Task: PH-1 "Bungalow" · Kit pascal-v0.1 · Grader v0.1.1 (frozen) · 2026-07-09 · <span class="pill">n=1 per cell</span></p>
+
+    <p class="lede">This pilot extends MARB beyond the mechanical task: a workflow builds a specified house in <a href="https://github.com/pascalorg/editor">Pascal</a>, a free, open-source 3D building editor, through the tested agent interface. The submitted scene export is scored against a gated reference layout under a separate MARB-A method. Sessions used documented access controls; “controlled” does not mean a security sandbox.</p>
+
+    <p>In these three single runs, two workflows wrote furniture rotations in the wrong unit, while one met the recorded PH-1 gates in 9.9 minutes. That is a result for this task, tool version, grader, and run—not a claim of perfect architecture, construction quality, or general model capability. The renders below are outputs of the tested Pascal workflow.</p>
+
+    <figure>
+      <img src="/media/pascal_ph1_trap_vs_pass.png" alt="Two 3D renders of the same house by Pascal: top shows furniture rotated at odd angles (Claude Fable 5); bottom shows furniture correctly squared (GPT-5.5 Codex)." />
+      <figcaption>Same task, same tool, rendered by Pascal itself. Top: Claude Fable 5 — every position exact, every rotation written in the wrong units (Claude Opus 4.8 at max effort failed identically). Bottom: GPT-5.5 Codex — correct units, 100% orientation, 9.9 minutes.</figcaption>
+    </figure>
+
+    <h2>The task</h2>
+    <p>The blind kit supplies a dimensioned bungalow: six rooms, six doors, nine windows, and 22 catalog furniture items, including target coordinates. The test records whether the submitted scene preserves the declared contract. The protocol records no human placement assistance and no reference-layout or grader access; this is a publisher-reported condition, not an independent security attestation.</p>
+
+    <h2>The board</h2>
+    <table class="restable">
+      <thead>
+        <tr><th>Model · effort</th><th>ORIENT-A</th><th>Gates</th><th>Wall-clock</th><th>Tokens billed</th></tr>
+      </thead>
+      <tbody>
+        <tr class="top"><td><strong>GPT-5.5 · Codex · xhigh</strong></td><td><strong>100%</strong></td><td>all PASS</td><td><strong>9.9 min</strong></td><td><strong>2.11 M</strong> (22k out)</td></tr>
+        <tr><td>Claude Opus 4.8 · max</td><td>31.6%</td><td>collisions FAIL</td><td>19.9 min</td><td>13.50 M (313k out)</td></tr>
+        <tr><td>Claude Fable 5 · medium</td><td>31.6%</td><td>collisions FAIL</td><td>117.8 min¹</td><td>4.83 M (129k out)</td></tr>
+      </tbody>
+    </table>
+    <p class="study-meta">All three placed every wall, door, window, and furniture item at 0.0 mm median error, with an exact bill of materials. ¹ Includes human approval latency (this run predates auto-approval); the other two ran fully auto-approved. Token meters count differently across vendors — the bills are listed, not compared.</p>
+
+    <figure>
+      <img src="/media/pascal_ph1_threeway.png" alt="Three-panel bar chart comparing orientation accuracy, wall-clock minutes, and token bill for the three models." />
+      <figcaption>Positions saturated at 0.0 mm for all three — orientation and cost are what separate the cohort.</figcaption>
+    </figure>
+
+    <h2>The trap: one undocumented number</h2>
+    <p>In the tool version tested (<code>@pascal-app/mcp 0.3.1</code>), the furniture rotation input takes a bare number — no units stated anywhere a model can see — and stores radians (the three.js convention). Both Claude models wrote degrees. The software accepted 90, 180, 270 without a word. Rendered by Pascal itself: furniture 10–37° off square, a kitchen unit through a wall, the collision gate failing. The orientation score reads 31.6%, but earned credit is roughly zero — the "correct" items just happened to face the default direction.</p>
+    <p>The recorded Opus 4.8 workflow placed two disposable test sofas, read the values back, deleted them, and still concluded degrees because the field echoed the submitted values. In this interface, that readback alone did not distinguish degrees from radians.</p>
+    <p>The Codex run wrote radians and recorded 100% ORIENT-A under this grader. Review included the exported values, construction route, and an available-transcript access scan. That scan cannot prove training-data provenance or absence of every undisclosed influence. The observed unit ambiguity affected two runs; generalization requires more tasks and seeds.</p>
+    <p>The two Claude runs recorded the same rotation-unit failure despite different effort settings. With one run per cell and other possible differences, this is a descriptive observation rather than a causal or purchasing conclusion.</p>
+
+    <h2>The deeper gap: no eyes</h2>
+    <p>In the tested headless Pascal path, GLB export was stubbed and no sanctioned render tool was available to the workflows. A render might have made the rotation error visible, but this pilot did not test that counterfactual. A later kit with a sanctioned self-render tool must be treated as a new cohort.</p>
+
+    <figure>
+      <img src="/media/pascal_ph1_fable5_medium_01_final.png" alt="Side-by-side floor plans: the goal layout and the as-built layout with furniture footprints visibly rotated off square." />
+      <figcaption>Goal vs built (Claude Fable 5), plotted from the graded scene: walls and openings aligned to the millimeter, furniture footprints skewed by the units error.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="/media/pascal_ph1_fable5_medium_01_timelapse.gif" alt="Animated build timelapse: walls appear, then doors and windows, then furniture, replayed from the session transcript." />
+      <figcaption>One build replayed step-by-step from the session transcript: walls, then openings, then furniture.</figcaption>
+    </figure>
+
+    <h2>Check our work: every mistake on the record</h2>
+    <ul>
+      <li>Our wall metric mis-scored a perfectly valid wall layout on run one (the model built the same centerlines as different segments). Fixed with a segmentation-invariant coverage metric, both scores published, grader frozen at v0.1.1 before runs two and three.</li>
+      <li>One model's run log claimed it was a different model entirely; another logged a nonsense elapsed time. Names, clocks, and token bills come from session metadata, never from the model.</li>
+      <li>Our own cleanup accidentally deleted the first run's kit files mid-run (the model had already loaded the brief and finished normally); that run's wall-clock also includes human approval waits. Both caveats live on its registry entry.</li>
+    </ul>
+
+    <h2>Provenance and shelf life</h2>
+    <p>Task, grader, figures, exported scenes, and the run registry—including the caveats above—are public in the <a href="https://github.com/sunnyday-technologies/MARB">MARB repository</a> (see <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/pascal_runs.json">results/pascal_runs.json</a> and <a href="https://github.com/sunnyday-technologies/MARB/tree/main/tasks/pascal_house">tasks/pascal_house/</a>). The answer key is gated separately. Pascal changes can shorten this finding's shelf life, so results remain tied to the stated tool version and date. No priority or uniqueness claim is made.</p>
+    <p>MARB-A results are a separate cohort family and are never pooled with the mechanical board. Every cell here is a single run; repeat seeds are the next step, same as they were on the mechanical side.</p>
+  </section>
+</main>
+
+<footer>
+  <p>MARB is developed by Sunnyday Technologies and runs in the open. Questions: <a href="mailto:info@sunn3d.com">info@sunn3d.com</a> · <a href="https://github.com/sunnyday-technologies/MARB">GitHub</a></p>
+  <p class="muted">MARB-A results are Sunnyday Technologies' own measurements under the task, grader, software versions, and dates shown. Each cell here is n=1. They are not a statement about any product's overall quality, architecture capability, code compliance, safety, constructability, or fitness for purpose. Verify independently before relying on them. Sunnyday Technologies is independent and is not affiliated with, sponsored by, or endorsed by Pascal's maintainers, Anthropic, or OpenAI; names are used only to identify tested tools. MARB’s own code is MIT-licensed; the CAD parts in the blind kits are licensed separately, with OpenBuilds-derived parts under CC BY-SA 4.0. The grading stack makes use of, and is based on, facilities provided by the Open CASCADE Technology software, which is licensed under LGPL-2.1 with the Open CASCADE Exception and is installed as a dependency rather than redistributed here. Full third-party licence chain in the <a href="https://github.com/sunnyday-technologies/MARB#license">project README</a>.</p>
+</footer>
+
+</body>
+</html>

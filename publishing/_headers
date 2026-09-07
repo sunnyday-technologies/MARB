@@ -1,0 +1,42 @@
+/*
+  Content-Signal: search=yes, ai-input=yes, ai-train=no
+  Link: </llms.txt>; rel="alternate"; type="text/plain"
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; connect-src 'none'; font-src 'self'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; manifest-src 'none'; media-src 'none'; object-src 'none'; script-src 'sha256-WPwPJaOWTDPxQGv5lz4NVzWQk7Ua945wEQrWzMONzKc=' 'sha256-p8B0YaBSex+uorUHzVQB6iE768A6gXeMl/RZAPwu/ZQ='; style-src 'self' 'unsafe-inline'; worker-src 'none'; upgrade-insecure-requests
+  Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=(), usb=()
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+
+/404.html
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/llms.txt
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Type: text/plain; charset=utf-8
+
+/robots.txt
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Type: text/plain; charset=utf-8
+
+/sitemap.xml
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600, must-revalidate
+  Content-Type: application/xml; charset=utf-8
+
+/.well-known/mcp-manifest.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Type: application/json; charset=utf-8
+
+/.well-known/security.txt
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400, must-revalidate
+  Content-Type: text/plain; charset=utf-8
+
+/media/*
+  Cache-Control: public, max-age=86400, must-revalidate

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Angry Millimeter: dated token and MARB measurements for AI-driven CAD assembly | CADCLAW</title>
+  <meta name="description" content="A 2026-06-12 MARB v0.9 snapshot of recorded artifact metrics and available or recovered token counts. Results are method-specific and do not establish causal efficiency or purchasing recommendations." />
+  <meta property="og:title" content="The Angry Millimeter: what tokens cost today for AI-driven CAD assembly | CADCLAW" />
+  <meta property="og:description" content="Dated MARB v0.9 artifact metrics and incomplete host-specific token accounting, with sample-size and comparison limits." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://marb.cadclaw.io/recap/" />
+  <meta property="og:image" content="https://marb.cadclaw.io/media/marb_token_efficiency.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="canonical" href="https://marb.cadclaw.io/recap/" />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary" />
+  <style>
+    .restable{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;}
+    .restable th,.restable td{border:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:top;}
+    .restable thead th{background:var(--navy);color:#fff;font-family:'Orbitron',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+    .restable tbody tr:nth-child(even){background:var(--paper);}
+    .restable td strong{color:var(--navy);}
+    .restable tr.top td{background:rgba(151,215,0,.10);}
+    .restable tr.dim td{color:var(--ink-faint);font-style:italic;}
+    .study-meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-faint);margin:2px 0 14px;}
+    figure{margin:24px 0;}
+    figure img{max-width:100%;height:auto;border:1px solid var(--rule);}
+    figcaption{font-size:12.5px;color:var(--ink-faint);margin-top:8px;}
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="/" aria-label="CADCLAW home">
+    <img src="/CADCLAW_logo.jpg" alt="CADCLAW" />
+  </a>
+  <nav>
+    <a href="/">Benchmark</a>
+    <a href="/studies/">Studies</a>
+    <a href="/pascal/">Pascal lane</a>
+    <a href="/first-results/">First results</a>
+    <a href="/recap/">Recap</a>
+    <a class="ghost" href="https://github.com/sunnyday-technologies/MARB" aria-label="MARB on GitHub">GitHub →</a>
+  </nav>
+</header>
+
+<main>
+  <section class="section">
+    <h1>The Angry Millimeter — a dated token and artifact-metric snapshot</h1>
+    <p class="study-meta">MARB v0.9 recap, updated 2026-06-12. One task (the M3-CRETE printer frame, ~100 authored parts), one blind kit, one automated grader (CADCLAW). Drivers: Claude Opus 4.7, Claude Fable 5 (four effort settings), GPT-5 Codex, qwen3-coder-next 80B (local text, two cohorts now at ten seeds each), and the sighted local cells (qwen3-vl 32B with the goal image in-loop; Nemotron 3 Nano Omni).</p>
+    <p class="study-meta"><strong>Archive note.</strong> This page preserves the 2026-06-12 board and token-accounting snapshot. The repository's current scoring specification is v0.12; historical run labels and values remain unchanged.</p>
+
+    <p class="lede">This page preserves the MARB board snapshot updated 2026-06-12 and the token values available under that study's accounting method. Frontier cells are single runs, local cohorts have the sample sizes shown, tool paths differ, and several hosts expose different or no usage fields. The chart supports descriptive comparisons within the recorded conditions; it is not a causal efficiency study, price forecast, or purchasing recommendation.</p>
+
+    <figure>
+      <img src="/media/marb_token_efficiency.png" alt="Dated scatter chart of recorded billed tokens versus GAP median for six frontier workflow cells; usage accounting differs by host and the chart is not a normalized efficiency ranking" />
+      <figcaption>Dated billed-token versus GAP view for cells with available or recovered usage. GAP is one answer-key metric; token accounting is host-specific and incomplete.</figcaption>
+    </figure>
+
+    <h2>The task, in one paragraph</h2>
+    <p>Mechanical-track cells record a blind-kit version, authored STEP parts, goal renders, task brief, tool path, model, assistance conditions, and scorer. CADCLAW reports <strong>GAP</strong>, <strong>ORIENT</strong>, and <strong>POS</strong> against the answer key under MARB v0.9. Kit versions, hints, interfaces, attempts, seeds, and token capture differ across cells and must remain part of the comparison.</p>
+
+    <h2>The board</h2>
+
+    <figure>
+      <img src="/media/marb_scoreboard.png" style="max-width:760px;display:block;margin:0 auto;" alt="MARB v0.9 scoreboard: eleven AI cells ranked by GAP median, from Claude Opus 4.7 at 0.0 mm down to the sighted 32B vision model at 873 mm" />
+      <figcaption>The full board, ranked by GAP median. Lower is better for GAP and POS; higher is better for ORIENT.</figcaption>
+    </figure>
+
+    <table class="restable">
+      <thead>
+        <tr><th>#</th><th>Model · tool</th><th>Effort</th><th>GAP median</th><th>ORIENT</th><th>POS rel.</th><th>Time</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><strong>Claude Opus 4.7</strong> · CadQuery</td><td>max</td><td><strong>0.0 mm</strong></td><td>51%</td><td>49.9 mm</td><td>49 min</td></tr>
+        <tr><td>2</td><td><strong>Claude Opus 4.7</strong> · Fusion</td><td>max</td><td>2.0 mm</td><td>47%</td><td>47.7 mm</td><td>34 min</td></tr>
+        <tr class="top"><td>3</td><td><strong>Claude Fable 5</strong> · CadQuery</td><td>ultra (multi-agent)</td><td>3.0 mm</td><td>47%</td><td><strong>30.4 mm</strong></td><td>83 min</td></tr>
+        <tr><td>4</td><td><strong>Claude Opus 4.8</strong> · Fusion</td><td>kit v1.3 (hint)</td><td>5.7 mm</td><td>39%</td><td>52.5 mm</td><td>41 min</td></tr>
+        <tr><td>5</td><td><strong>Claude Fable 5</strong> · CadQuery</td><td>medium</td><td>6.5 mm</td><td>59%</td><td>48.5 mm</td><td>39 min</td></tr>
+        <tr><td>6</td><td><strong>Claude Fable 5</strong> · CadQuery</td><td>low</td><td>7.0 mm</td><td>53%</td><td>68.0 mm</td><td>38 min</td></tr>
+        <tr><td>7</td><td><strong>Claude Fable 5</strong> · CadQuery</td><td>high</td><td>7.0 mm</td><td>49%</td><td>38.1 mm</td><td>45 min</td></tr>
+        <tr><td>8</td><td><strong>GPT-5 Codex</strong> · CadQuery</td><td>max</td><td>7.8 mm</td><td><strong>69%</strong></td><td>47.2 mm</td><td><strong>13 min</strong></td></tr>
+        <tr><td>9</td><td><strong>Local</strong> qwen3-coder-next 80B (n=9)</td><td>mechanics v2</td><td>272 ± 149 mm</td><td>12%</td><td>118 ± 47 mm</td><td>~4.5 min/run</td></tr>
+        <tr><td>10</td><td><strong>Local</strong> qwen3-coder-next 80B (n=8)</td><td>lean v5</td><td>341 ± 133 mm</td><td>20%</td><td>233 ± 139 mm</td><td>~4.5 min/run</td></tr>
+        <tr><td>11</td><td><strong>Sighted</strong> qwen3-vl 32B (n=5)</td><td>lean v5 + goal image</td><td>873 ± 174 mm</td><td>0%</td><td>1005 ± 613 mm</td><td>~30 min/run</td></tr>
+        <tr class="dim"><td>·</td><td>Reference (answer key)</td><td></td><td>0.0 mm</td><td>100%</td><td>0.0 mm</td><td></td></tr>
+      </tbody>
+    </table>
+
+    <p>None of the included artifacts met the benchmark's declared geometric threshold. That does not by itself determine physical buildability. The board is a dated collection of cells, not a fitted capability curve or universal ranking.</p>
+
+    <h2>Findings to date</h2>
+
+    <p><strong>1. Presence and location separated in this task.</strong> The included frontier runs placed roughly the supplied part count while recording a spread in answer-key position and gap metrics. The result shows why inventory alone is insufficient; it does not establish that placement is “solved” generally or that human review cannot detect the same conditions.</p>
+
+    <p><strong>2. Founding-cohort time/attempt association.</strong> One nine-attempt workflow recorded 0.0 mm median GAP in 49 minutes; one single-attempt workflow recorded 7.8 mm GAP and 69% ORIENT in 13 minutes. With n=1 and different tool paths, MARB does not infer a general iteration-versus-speed tradeoff or compare the products overall.</p>
+
+    <p><strong>3. The three n=1 effort cells were not monotonic.</strong> Medium recorded the lowest GAP and highest ORIENT, while high recorded the lowest relative POS. Repeated seeds are required before treating this as an effort effect or cost recommendation.</p>
+
+    <p><strong>4. The ultra cell changed the harness.</strong> That run added multiple declared audit agents and recorded 3.0 mm GAP and 30.4 mm relative POS. It also reported shaft, belt, and pulley conditions for review. A single run cannot isolate the harness effect from stochastic or other workflow differences.</p>
+
+    <p><strong>5. Local prompt cohorts recorded different loadable-export rates.</strong> The cohort given the correct CadQuery export idiom produced more loadable files than the initial cohort; later guidance and turn-budget cohorts varied. Extension seeds reduced the initial five-of-five counts. These small cohorts do not establish a universal prompt law or physical buildability.</p>
+
+    <figure>
+      <img src="/media/marb_sighted_3panel.png" alt="Three renders from one camera: the goal machine, the blind 80B text model's loose 110-solid build, and the sighted 32B vision model's near-empty 17-solid build" />
+      <figcaption>One descriptive render comparison: goal, selected blind-text artifact, and selected sighted artifact. Model size and modality differ.</figcaption>
+    </figure>
+
+    <p><strong>6. Selected sighted and blind cohorts differed.</strong> The sighted 32B cohort produced five loadable exports with fewer placed parts and higher reported errors than the selected blind 80B cohort; a second sighted model produced no loadable export in five attempts. Size, modality, and protocol are confounded, so no causal image-token conclusion is supported.</p>
+
+    <p><strong>7. Extension seeds changed the estimates.</strong> Initial five-of-five loadable-export counts became 9/10 and 8/10, and the reported spreads widened. This illustrates sampling uncertainty without implying that any particular initial cohort was misleading.</p>
+
+    <p><strong>8. The local cohort provides a dated anchor.</strong> The recorded local artifacts had larger answer-key errors and more reported overlaps than the included frontier cells. Results apply to the named models, quantization, hardware, prompts, kits, and dates; they do not define a permanent “floor.”</p>
+
+    <h2>The token ledger: recorded usage, with incompatible meters</h2>
+
+    <p>The harness captured local usage under its host meter. Claude values were reconstructed by summing available per-message usage blocks in retained transcripts. The recorded Codex CLI session did not expose a comparable count. Cache accounting, token definitions, prices, and missing fields differ by host, so the table is an audit record rather than a normalized efficiency ranking.</p>
+
+    <table class="restable">
+      <thead>
+        <tr><th>Run</th><th>Billed tokens</th><th>Output tokens</th><th>Capture</th><th>Attempts</th><th>GAP result</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Opus 4.7 · CadQuery</td><td>22.1M</td><td>321K</td><td>recovered from transcript</td><td>9</td><td>0.0 mm</td></tr>
+        <tr><td>Opus 4.7 · Fusion</td><td>34.2M</td><td>1.15M</td><td>recovered from transcript</td><td>12</td><td>2.0 mm</td></tr>
+        <tr><td>Fable 5 · ultra</td><td>23.0M</td><td>614K</td><td>recovered from transcript</td><td>8</td><td>3.0 mm</td></tr>
+        <tr><td>Fable 5 · high</td><td>18.5M</td><td>442K</td><td>recovered from transcript</td><td>4</td><td>7.0 mm</td></tr>
+        <tr class="top"><td>Fable 5 · medium</td><td><strong>4.7M</strong></td><td><strong>374K</strong></td><td>recovered from transcript</td><td>3</td><td>6.5 mm</td></tr>
+        <tr><td>Fable 5 · low</td><td>4.2M</td><td>330K</td><td>recovered from transcript</td><td>3</td><td>7.0 mm</td></tr>
+        <tr><td>GPT-5 Codex</td><td colspan="2">not exposed by host, in-session or on disk</td><td>unavailable</td><td>1</td><td>7.8 mm</td></tr>
+        <tr><td>Local 80B (per run)</td><td colspan="2">35–139K total (median ~75K)</td><td>full, native</td><td>1</td><td>272–341 mm</td></tr>
+        <tr><td>Sighted 32B (per run)</td><td colspan="2">67–122K total</td><td>full, native</td><td>1</td><td>873 mm</td></tr>
+      </tbody>
+    </table>
+
+    <p>Within the incomplete, host-specific ledger, four descriptive comparisons are visible.</p>
+
+    <p><strong>The Fusion and CadQuery Opus cells differed.</strong> The recorded Fusion cell had 55% more billed tokens and higher error values on the three displayed metrics. The study did not isolate the interface as the cause; attempts, interaction pattern, and tool maturity also differ.</p>
+
+    <p><strong>The medium-effort cell recorded a lower billed-token count.</strong> It recorded 4.7M billed tokens, 6.5 mm GAP, and 59% ORIENT. One run and one host meter do not establish a “value” winner, expected future cost, or suitable purchasing choice.</p>
+
+    <p><strong>The high-effort cell was non-monotonic in this run.</strong> It recorded 3.9× the billed tokens of medium with higher GAP and lower ORIENT, while recording lower relative POS. Repeated seeds are needed before estimating an effort or cost effect.</p>
+
+    <p><strong>The ultra and Opus-CadQuery cells had similar recorded bills.</strong> They produced different metric profiles under different workflows. The comparison motivates a seeded harness experiment; it does not prove that audit tokens caused precision or that the recorded price is fair.</p>
+
+    <p>No cross-vendor efficiency winner is supported by this dataset. The useful operational finding is the measurement gap: MARB records unavailable token usage as unavailable and requires the capture method to travel with each result.</p>
+
+    <h2>Honest limits</h2>
+    <ul>
+      <li>Every included frontier cell is a single run. Local cohort sizes vary and are shown with each result. Do not infer trends from the frontier deltas.</li>
+      <li>Token capture and accounting differ by host, and at least one displayed frontier cell lacks a comparable count.</li>
+      <li>The grader scores per-part pose and interface gaps. It does not yet score connectivity — whether parts join into one rigid structure. That gate (L1) is the next grader level, and the local study is exactly why: it is possible to score parts near their homes while building nothing a wrench could touch.</li>
+      <li>None of the eleven summarized artifacts met the declared benchmark threshold. That threshold is not a physical buildability certification.</li>
+    </ul>
+
+    <h2>What's next</h2>
+    <p>Planned work includes frontier seeds, a declared connectivity gate, controlled modality comparisons, and stronger token capture. The site pages are dated snapshots; consult the <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_runs.json">run registry</a> and each scorer version rather than assuming this page is current.</p>
+
+    <p>Method, grades, run registry with the available provenance fields, and the CADCLAW engine: <a href="https://github.com/sunnyday-technologies/CADCLAW">GitHub</a>. Reviewers welcome — <a href="mailto:info@sunn3d.com">info@sunn3d.com</a>.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-grid">
+    <div>
+      <h4>CADCLAW</h4>
+      <p>An automated check suite for STEP assemblies.</p>
+      <p class="muted">MIT License · © 2026 <a href="https://sunn3d.com">Sunnyday Technologies</a></p>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <a href="https://github.com/sunnyday-technologies/MARB">MARB benchmark (GitHub)</a>
+      <a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW engine (GitHub)</a>
+      <a href="https://github.com/sunnyday-technologies/MARB/issues">Issues</a>
+      <a href="https://doi.org/10.5281/zenodo.19647390">CADCLAW engine DOI</a>
+    </div>
+    <div>
+      <h4>Related</h4>
+      <a href="https://m3-crete.com">M3-CRETE</a>
+      <a href="https://cemforge.ai">CEMFORGE</a>
+      <a href="https://open3dcp.org">Open3DCP</a>
+      <a href="https://sunn3d.com">Sunnyday Technologies</a>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <a href="mailto:info@sunn3d.com">info@sunn3d.com</a>
+      <a href="https://sunn3d.com">sunn3d.com</a>
+    </div>
+  </div>
+  <p class="muted" style="max-width:1180px;margin:16px auto 0;padding:0 40px;font-size:11.5px;text-align:center;line-height:1.6;">MARB results are Sunnyday Technologies' own measurements from a published method, on the software versions and dates shown, not a statement about any product's overall quality, performance, or fitness for any purpose. Token figures are as captured or recovered per run log and are approximate. Provided "as is," for informational purposes, without warranty of any kind; verify independently before relying on them. Sunnyday Technologies is independent and is not affiliated with, sponsored by, or endorsed by Anthropic, OpenAI, Autodesk, Dassault Systemes, Alibaba, or NVIDIA. Claude, Claude Fable, Claude Mythos, and Claude Opus are trademarks of Anthropic, PBC; other product and company names are trademarks of their respective owners — all used here only to identify the tools tested. MARB’s own code is MIT-licensed; the CAD parts in the blind kits are licensed separately, with OpenBuilds-derived parts under CC BY-SA 4.0. The grading stack makes use of, and is based on, facilities provided by the Open CASCADE Technology software, which is licensed under LGPL-2.1 with the Open CASCADE Exception and is installed as a dependency rather than redistributed here. Full third-party licence chain in the <a href="https://github.com/sunnyday-technologies/MARB#license">project README</a>.</p>
+</footer>
+</body>
+</html>

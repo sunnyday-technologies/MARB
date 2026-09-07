@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MARB studies, the running log of benchmark experiments | CADCLAW</title>
+  <meta name="description" content="A running log of MARB studies. Each study is a self-contained experiment on the same task, authored part kit, and automated CADCLAW grader. Includes the frontier-model first results, the Claude Fable 5 reasoning-effort sweep, and the graded local open-weight anchor study." />
+  <meta property="og:title" content="MARB studies | CADCLAW" />
+  <meta property="og:description" content="A running log of MARB studies on the same task, kit, and grader: frontier models, a reasoning-effort sweep, and a graded local open-weight anchor." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://marb.cadclaw.io/studies/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="canonical" href="https://marb.cadclaw.io/studies/" />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary" />
+  <style>
+    .restable{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;}
+    .restable th,.restable td{border:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:top;}
+    .restable thead th{background:var(--navy);color:#fff;font-family:'Orbitron',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+    .restable tbody tr:nth-child(even){background:var(--paper);}
+    .restable td strong{color:var(--navy);}
+    .restable tr.top td{background:rgba(151,215,0,.10);}
+    .study-meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-faint);margin:2px 0 14px;}
+    .pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy);background:rgba(151,215,0,.18);border:1px solid var(--rule);border-radius:999px;padding:2px 9px;}
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="/" aria-label="CADCLAW home">
+    <img src="/CADCLAW_logo.jpg" alt="CADCLAW" />
+  </a>
+  <nav>
+    <a href="/">Benchmark</a>
+    <a href="/studies/">Studies</a>
+    <a href="/pascal/">Pascal lane</a>
+    <a href="/first-results/">First results</a>
+    <a href="/recap/">Recap</a>
+    <a class="ghost" href="https://github.com/sunnyday-technologies/MARB" aria-label="MARB on GitHub">GitHub →</a>
+  </nav>
+</header>
+
+<main>
+  <section class="section">
+    <h1>MARB studies</h1>
+    <p class="lede">Each entry records its task, kit, driver, prompt or note, tool path, run count, scorer, and date. Shared conditions improve comparison, while seed count, model size, modality, tool interface, timeout behavior, and protocol changes remain visible confounders.</p>
+    <p>A note on terms. <strong>Artifact-completion metrics</strong> record whether a run produced a loadable STEP and how many part instances it placed. “Loadable” does not mean physically buildable. The separate <strong>grade</strong> reports position, orientation, and answer-key gap metrics under the named scorer version.</p>
+
+    <table class="restable">
+      <thead>
+        <tr><th>Study</th><th>Driver</th><th>Date</th><th>Runs</th><th>Headline</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr class="top">
+          <td><strong><a href="#sighted">Sighted local cells</a></strong></td>
+          <td>qwen3-vl 32B + Nemotron 3 Nano Omni (vision, goal image in-loop)</td>
+          <td>2026-06-12</td>
+          <td>15</td>
+          <td>Descriptive cross-model comparison: the sighted 32B cohort placed fewer parts and recorded higher GAP than the blind 80B cohort; size and modality are confounded. Nemotron Omni: 0/5 loadable exports.</td>
+          <td><span class="pill">Published</span></td>
+        </tr>
+        <tr class="top">
+          <td><strong><a href="#fable-effort">Fable 5 effort sweep</a></strong></td>
+          <td>Claude Fable 5 (CadQuery)</td>
+          <td>2026-06-11</td>
+          <td>4</td>
+          <td>Four single-run cells: three effort settings plus a materially different multi-agent harness. Results are descriptive until repeated seeds are available.</td>
+          <td><span class="pill">Published</span></td>
+        </tr>
+        <tr class="top">
+          <td><strong><a href="#local">Local open-weight anchor</a></strong></td>
+          <td>qwen3-coder-next (80B, on one local box)</td>
+          <td>2026-05-30</td>
+          <td>30</td>
+          <td>Prompt-cohort study with extension seeds. Loadable-export rates and positional grades varied; the resulting artifacts remained far from the reference.</td>
+          <td><span class="pill">Published</span></td>
+        </tr>
+        <tr>
+          <td><strong><a href="/">First results, frontier models</a></strong></td>
+          <td>Claude (Fusion, CadQuery), OpenAI Codex (CadQuery)</td>
+          <td>2026-05-26</td>
+          <td>3</td>
+          <td>Each founding run used authored parts and four goal renders. None met the declared geometric threshold; see the dated scoring method.</td>
+          <td><span class="pill">Published</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section" id="fable-effort">
+    <h2>Study: the Claude Fable 5 effort sweep</h2>
+    <p class="study-meta">Driver: Claude Fable 5, reasoning effort low / medium / high, plus an ultra run (multi-agent: build, 4-agent adversarial audit, targeted fixes). CAD tool: CadQuery. Kit and grader identical to the first results. Blind runs, one per setting. Positional grades (MARB v0.9).</p>
+
+    <p class="lede">Three single-agent cells varied a recorded reasoning-effort setting under the same task and kit. A fourth “ultra” cell also changed the harness by adding multiple audit agents, so it is not an effort-only comparison. The question is what these four recorded workflows produced—not what more spending generally buys.</p>
+
+    <table class="restable">
+      <thead>
+        <tr><th>Effort</th><th>GAP median</th><th>ORIENT aligned</th><th>POS relative median</th><th>Wall-clock</th><th>Billed tokens</th></tr>
+      </thead>
+      <tbody>
+        <tr class="top"><td><strong>Ultra</strong> (multi-agent)</td><td><strong>3.0 mm</strong></td><td>47%</td><td><strong>30.4 mm</strong></td><td>83 min</td><td>23.0M</td></tr>
+        <tr><td><strong>Medium</strong></td><td>6.5 mm</td><td><strong>59%</strong></td><td>48.5 mm</td><td>39 min</td><td><strong>4.7M</strong></td></tr>
+        <tr><td>Low</td><td>7.0 mm</td><td>53%</td><td>68.0 mm</td><td>38 min</td><td>4.2M</td></tr>
+        <tr><td>High</td><td>7.0 mm</td><td>49%</td><td>38.1 mm</td><td>45 min</td><td>18.5M</td></tr>
+      </tbody>
+    </table>
+    <p class="caption" style="text-align:left;">Token figures were recovered post-run by summing recorded per-message usage blocks. In these n=1 cells, high effort recorded 3.9× the billed tokens of medium and higher GAP/lower ORIENT values. Host accounting and cache treatment limit cross-system cost comparisons.</p>
+
+    <p>Within these three single-agent runs, the metrics were not monotonic with the named effort setting: medium recorded the lowest GAP and highest ORIENT, high recorded the lowest relative POS, and low recorded the highest relative POS. One run per setting is insufficient for a causal or purchasing conclusion.</p>
+
+    <p>The <strong>ultra run</strong> used a materially different multi-agent harness that probed kit parts, ran declared audits, and applied targeted fixes. It recorded 3.0 mm GAP and 30.4 mm relative POS in 83 minutes with a recovered 23.0M-token bill. The audit reported specific shaft, belt, and pulley conditions for review. This single cell cannot isolate whether the harness, stochastic variation, or another condition produced the metric differences.</p>
+
+    <p>On the dated board, these cells occupy different positions by the primary GAP metric. Because each frontier cell is a single run and the ultra harness changes more than one factor, treat the differences as hypotheses for repeated testing. The <a href="/recap/">recap</a> retains the token-accounting limitations.</p>
+  </section>
+
+  <section class="section" id="sighted">
+    <h2>Study: the sighted local cells</h2>
+    <p class="study-meta">Drivers: qwen3-vl:32b (vision, 8 turns n=5 + 12 turns n=2 preliminary) and nemotron3:33b Omni (vision, n=5), goal image inlined on turn 1, lean-v5 guidance. Same kit, grader, and harness as every other cell. Token capture native. Graded MARB v0.9.</p>
+
+    <p class="lede">These cells supplied a goal image in-loop to vision-capable models. The recorded sighted cohorts did not outperform the selected blind 80B text cohort on the reported metrics, but model size, modality, run budget, and other factors differ; this is not an image-on/image-off ablation.</p>
+
+    <table class="restable">
+      <thead>
+        <tr><th>Cell</th><th>Loadable export</th><th>Parts placed (median)</th><th>GAP median</th><th>ORIENT</th><th>POS rel.</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Blind text 80B</strong> (qwen3-coder-next, selected 14-turn cohort, n=9)</td><td>9/10</td><td>~62</td><td><strong>272 ± 149 mm</strong></td><td>12%</td><td>118 ± 47 mm</td></tr>
+        <tr><td><strong>Sighted 32B</strong> (qwen3-vl, 8 turns, n=5)</td><td>5/5</td><td><strong>12–17</strong></td><td>873 ± 174 mm</td><td>0%</td><td>1005 ± 613 mm</td></tr>
+        <tr><td>Sighted 32B, 12 turns <em>(n=2, preliminary)</em></td><td>2/2 graded</td><td>16–20</td><td>335 ± 138 mm</td><td>5%</td><td>260 ± 249 mm</td></tr>
+        <tr><td>Sighted Nemotron 3 Nano Omni (n=5)</td><td><strong>0/5</strong></td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <figure style="margin:18px 0;">
+      <img src="/media/marb_sighted_3panel.png" style="max-width:100%;border:1px solid var(--rule);" alt="Goal vs blind text build vs sighted vision build, one camera" loading="lazy" />
+    </figure>
+    <ul>
+      <li><strong>Observed sighted 32B cohort.</strong> All five runs produced loadable exports with 12–17 placed parts and higher reported errors than the selected blind 80B cohort. The study does not identify the cause.</li>
+      <li><strong>Preliminary 12-turn variant.</strong> Two completed seeds recorded lower GAP than the eight-turn cohort while still placing fewer than 20 parts; three other attempts were lost to a documented host timeout. No general turn-budget conclusion is supported.</li>
+      <li><strong>Observed Nemotron cohort.</strong> Five recorded sessions produced no loadable export. This is an artifact-completion result under the stated harness, not a claim about physical buildability or the model generally.</li>
+      <li><strong>Caveat, stated plainly:</strong> this compares a 32B vision model against an 80B text model — different sizes — because those are the strongest local options per modality. The cell answers a shop's question ("does my best local vision model beat my best local text model here?"), not a controlled ablation. A same-model image-on/off ablation needs a frontier vision model and is queued.</li>
+    </ul>
+  </section>
+
+  <section class="section" id="local">
+    <h2>Study: the local open-weight anchor</h2>
+    <p class="study-meta">Driver: qwen3-coder-next:q4_K_M (80B total, 3B active), text only, on a single local AI supercomputer. CAD tool: CadQuery 2.7.0. Kit: v1.1. Blind run, no internet, no memory of past work. 40 runs in six cohorts plus extension seeds. Buildability metrics plus positional grades (MARB v0.9; graded cohorts now n = 9 and n = 8 loadable of 10 attempts each).</p>
+
+    <p class="lede">This study records a self-hosted 80B coding model on one local system under the same mechanical task. “Self-hosted” does not mean free: hardware, electricity, setup, operator time, and opportunity cost remain outside the token table.</p>
+
+    <p>The study began with thirty runs across six five-run prompt cohorts and later added extension seeds, for forty recorded attempts in the stated aggregate. Notes clarified the tool or task without intentionally revealing the gated reference design; this is a protocol statement, not proof against all contamination.</p>
+
+    <table class="restable">
+      <thead>
+        <tr><th>Cohort</th><th>Note given</th><th>Turn budget</th><th>Loadable STEP</th><th>Parts placed (median)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>A</td><td>None (control)</td><td>8</td><td>1 of 5</td><td>15</td></tr>
+        <tr class="top"><td>B</td><td>Correct CAD export idiom</td><td>8</td><td><strong>5 of 5</strong></td><td><strong>98</strong></td></tr>
+        <tr><td>C</td><td>B, plus a build-volume clarification</td><td>8</td><td>3 of 5</td><td>28</td></tr>
+        <tr><td>D</td><td>B, plus design-goal requests</td><td>8</td><td>2 of 5</td><td>24</td></tr>
+        <tr><td>E</td><td>Same as D</td><td>14</td><td>4 of 5</td><td>30</td></tr>
+        <tr class="top"><td>F</td><td>Lean note, the export idiom sharpened</td><td>8</td><td><strong>5 of 5</strong></td><td>84</td></tr>
+      </tbody>
+    </table>
+    <p class="caption" style="text-align:left;max-width:80ch;">Target is about 100 placed part instances. The kit holds authored STEP parts; the model places each one and exports a single STEP file.</p>
+
+    <h3>What the recursion taught us</h3>
+    <ul>
+      <li><strong>Export-call association.</strong> The cohort given the correct export idiom recorded more loadable exports than the initial five-run cohort. Small cohort sizes and stochastic variation prevent a causal estimate.</li>
+      <li><strong>Additional guidance cohorts.</strong> Cohorts with build-volume and design-goal notes recorded lower initial loadable-export rates. The study does not establish why.</li>
+      <li><strong>Longer-budget cohort.</strong> The 14-turn cohort recorded a higher initial export rate than the preceding design-goal cohort but did not establish improved physical or engineering quality.</li>
+      <li><strong>Lean-note cohort.</strong> The lean note matched the initial five-of-five loadable-export count; extension seeds later reduced the combined rates.</li>
+    </ul>
+
+    <h3>The grades: placed, not jointed</h3>
+    <p><em>Updated 2026-06-12 with five extension seeds per selected cohort:</em> the initial five-of-five loadable-export counts became <strong>9/10 (mechanics v2) and 8/10 (lean v5)</strong>, and the reported spreads widened. The aggregates below use the loadable seeds.</p>
+<p>The two cohorts were graded with the same GAP, POS, and ORIENT definitions used for the mechanical frontier track. Metric definitions are shared, but model, prompt, kit version, interface, seed count, and execution conditions must remain part of any comparison.</p>
+
+    <table class="restable">
+      <thead>
+        <tr><th>Cohort (n = 5)</th><th>GAP median</th><th>ORIENT aligned</th><th>POS relative median</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Mechanics v2</strong> (n=9 of 10)</td><td>272 ± 149 mm</td><td>12%</td><td>118 ± 47 mm</td></tr>
+        <tr><td><strong>Lean v5</strong> (n=8 of 10)</td><td>341 ± 133 mm</td><td>20%</td><td>233 ± 139 mm</td></tr>
+        <tr><td><em>Frontier range, for scale</em></td><td><em>0.0 to 7.8 mm</em></td><td><em>47 to 69%</em></td><td><em>38 to 68 mm</em></td></tr>
+      </tbody>
+    </table>
+
+    <figure>
+      <img src="/media/marb_local_3panel.png" alt="Three-panel figure: the goal machine next to two selected local artifacts, which place a broadly similar part inventory without reproducing the reference assembly" loading="lazy" />
+      <figcaption>The goal next to two selected local artifacts. The recorded inventory and scale are broadly similar; the submitted assembly relationships differ from the reference.</figcaption>
+    </figure>
+
+    <ul>
+      <li><strong>Parts land 100 to 400 mm off on a 2000 mm machine.</strong> Joints that should sit flush are 300 to 400 mm apart at the median, and only 11 to 14% of interfaces fall within 1 mm. About 30% of asymmetric parts get the correct rotation.</li>
+      <li><strong>The shape is closer than the anchor.</strong> Relative position error is far smaller than absolute (104 mm vs roughly 500 mm for mechanics v2): the model captures local clustering better than it anchors the whole frame.</li>
+      <li><strong>Loadable export and positional grade are different outcomes.</strong> Lean v5 recorded a higher loadable-export rate while mechanics v2 recorded lower positional errors in this sample.</li>
+      <li><strong>The structural gates agree.</strong> Both graded builds fail inventory on the part mix (not the count) and show 20 to 28 pairs of clipping solids, while nothing floats free. Parts grouped together, not a connected frame; a connectivity gate that scores seated joints is the next grader level.</li>
+    </ul>
+
+    <h3>What this study does not yet answer</h3>
+    <ul>
+      <li><strong>Design judgement at scale.</strong> Asking a small model to weigh manufacturability, thermal load, vibration, fatigue, and kinematics is the real goal of the benchmark. It pays off only with a larger model, a longer budget, and a grader that can score those modes. That work belongs in the shared task definition, not in a local note.</li>
+    </ul>
+    <p>Method, harness, grades, and the run catalogue are in the open-source repository. These mechanical-task cohorts use the stated MARB v0.9 metrics; the separate Pascal lane uses its own grader and is not pooled with them.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-grid">
+    <div>
+      <h4>CADCLAW</h4>
+      <p>An automated check suite for STEP assemblies.</p>
+      <p class="muted">MIT License · © 2026 <a href="https://sunn3d.com">Sunnyday Technologies</a></p>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <a href="https://github.com/sunnyday-technologies/MARB">MARB benchmark (GitHub)</a>
+      <a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW engine (GitHub)</a>
+      <a href="https://github.com/sunnyday-technologies/MARB/issues">Issues</a>
+      <a href="https://doi.org/10.5281/zenodo.19647390">CADCLAW engine DOI</a>
+    </div>
+    <div>
+      <h4>Related</h4>
+      <a href="https://m3-crete.com">M3-CRETE</a>
+      <a href="https://cemforge.ai">CEMFORGE</a>
+      <a href="https://open3dcp.org">Open3DCP</a>
+      <a href="https://sunn3d.com">Sunnyday Technologies</a>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <a href="mailto:info@sunn3d.com">info@sunn3d.com</a>
+      <a href="https://sunn3d.com">sunn3d.com</a>
+    </div>
+  </div>
+  <p class="muted" style="max-width:1180px;margin:16px auto 0;padding:0 40px;font-size:11.5px;text-align:center;line-height:1.6;">MARB results are Sunnyday Technologies' own measurements from a published method, on the software versions and dates shown, not a statement about any product's overall quality, performance, or fitness for any purpose. Provided "as is," for informational purposes, without warranty of any kind; verify independently before relying on them. Sunnyday Technologies is independent and is not affiliated with, sponsored by, or endorsed by Anthropic, OpenAI, Autodesk, Dassault Systemes, Alibaba, or NVIDIA. Product and company names are trademarks of their respective owners, used here only to identify the tools tested. MARB’s own code is MIT-licensed; the CAD parts in the blind kits are licensed separately, with OpenBuilds-derived parts under CC BY-SA 4.0. The grading stack makes use of, and is based on, facilities provided by the Open CASCADE Technology software, which is licensed under LGPL-2.1 with the Open CASCADE Exception and is installed as a dependency rather than redistributed here. Full third-party licence chain in the <a href="https://github.com/sunnyday-technologies/MARB#license">project README</a>.</p>
+</footer>
+</body>
+</html>
