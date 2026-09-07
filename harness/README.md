@@ -44,7 +44,10 @@ if ($PSVersionTable.PSVersion -lt [version]"7.4") { throw "PowerShell 7.4+ is re
   --seed-basis independent-run-ordinal `
   --seed 01 --seed 02 --seed 03 > $planPath
 if ($LASTEXITCODE -ne 0) { throw "planner failed; discard the incomplete plan file" }
-$planSha256 = (Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$planEnvelope = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
+$planSha256 = [string]$planEnvelope.plan_sha256
+if ($planSha256 -cnotmatch '^[0-9a-f]{64}$') { throw "planner output has no valid plan_sha256" }
+$planFileSha256 = (Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash.ToLowerInvariant()
 ```
 
 The full lowercase source commit must match the checked-out `HEAD`. The planner
@@ -57,6 +60,9 @@ including its final newline. PowerShell 7.4+ preserves native byte streams for
 the native `>` redirection above. Do not pipe through `Out-File`, `Set-Content`, or older
 PowerShell native redirection, which can transcode or add a BOM. This capture is
 external to H2a; the planner itself remains read-only and has no file-write path.
+The executor's `--expected-plan-sha256` argument and confirmation literal use
+the envelope's embedded `plan_sha256`; the whole-file `$planFileSha256` is a
+separate inventory digest and is not interchangeable with it.
 
 `cohort_executor.py` is the separate H2b executor. It executes exactly one
 planned slot only after fail-closed readback of:
@@ -184,9 +190,13 @@ loopback, credential-free, local-no-charge slots with an exact zero-cost spend
 attestation. External, credentialed, metered, and otherwise potentially paid
 providers stay manual-only under the one-slot H2b protocol. The controller's
 dedicated fake/local tests exist and are included in board-policy CI. Those
-tests do not invoke a real provider, model, Docker runtime, or network. No real
-provider/model/Docker campaign or runtime qualification has been performed,
-and no completed real campaign is claimed.
+tests do not invoke a real provider, model, Docker runtime, or network. No
+completed real Nightwatch campaign is claimed. Separately, one exact private
+source/image/runtime binding passed the nine-case provider-free, network-none
+R8 qualification, and one private local-no-charge S1 slot later completed boxed
+execution and trusted offline grading. Neither event was a Nightwatch campaign,
+a public cohort, or a model-performance claim; neither mutated the public
+registry, board, site, or deployment.
 
 Read and reconcile state without writes or execution:
 
@@ -249,12 +259,22 @@ native image-view tool is exposed, staged image bytes may be inspected through
 model-authored Python, and `vision_attested` is `false`. Do not label or compare
 these runs as sighted or vision cells. The container implementation is currently
 restricted to Windows Docker Desktop host semantics; Linux and rootless-host
-bind ownership behavior has not been qualified. The source calibration and
-versioned contract do not qualify an image. No image/host pair is qualified
-until the tracked, nine-case no-provider/no-network runtime smoke succeeds after
-an operator has built and approved an exact image RepoDigest and read back its v3
-provenance. CI tests the runner with injected fakes and makes no Docker, provider,
-model, or network calls; that test coverage is not runtime qualification.
+bind ownership behavior has not been qualified. Source calibration and a
+versioned contract alone do not qualify an image. Retained private R8 evidence
+records one exact source/image/runtime binding passing the tracked nine-case
+provider-free, network-none smoke after RepoDigest and v3-provenance readback.
+Any replacement source, image, or execution host requires fresh qualification.
+The named cases were `positive_provenance_and_import`,
+`expected_nonzero_exit`, `network_denial`, `protected_write_denial`,
+`exact_clean_environment`, `stdout_overflow_rejection`,
+`workspace_input_rejection_overflow`, `export_workspace_overflow`, and
+`timeout`. The retained private evidence envelope and canonical evidence
+payload have SHA-256 identities
+`fe2937719c93fb581d96ca7b14dc7e281605df0d48017f2c76209d4a9765b3b0`
+and `d3e1d5fe8240e8b1055a3f643856287ef811b03635b48e0203f09d762b3d0c66`,
+respectively. CI tests the runner with injected fakes and makes no Docker,
+provider, model, or network calls; that test coverage is not runtime
+qualification.
 
 Plans truthfully report `blocked-before-execution` because planning never
 authorizes a call. Task-specific blockers remain enforceable: L2/L4 cannot be

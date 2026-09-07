@@ -1410,6 +1410,12 @@ class ContainerRecipeTests(unittest.TestCase):
         self.assertIn("`Set-Content`", notes)
         self.assertIn("planner itself remains read-only", normalized)
         self.assertIn(".Hash.ToLowerInvariant()", notes)
+        self.assertIn("$planEnvelope = Get-Content", notes)
+        self.assertIn("$planSha256 = [string]$planEnvelope.plan_sha256", notes)
+        self.assertIn("$planFileSha256 = (Get-FileHash", notes)
+        self.assertIn("whole-file `$planFileSha256`", normalized)
+        self.assertIn("not interchangeable", normalized)
+        self.assertNotIn("$planSha256 = (Get-FileHash", notes)
 
     def test_operator_digest_examples_normalize_powershell_hashes_to_lowercase(self) -> None:
         executor_notes = EXECUTOR_NOTES.read_text(encoding="utf-8")

@@ -9,8 +9,12 @@ model, Docker, or network action.
 
 Dedicated fake/local Nightwatch tests exist and are included in board-policy
 CI. They do not invoke a real provider, model, Docker runtime, or network. No
-real provider/model/Docker campaign or runtime qualification has been
-performed, and no completed real campaign is claimed here.
+completed real Nightwatch campaign is claimed here. Separately, retained
+private R8 evidence records one exact source/image/runtime binding passing all
+nine provider-free, network-none cases, and one private local-no-charge S1 slot
+later completed boxed execution and trusted offline grading. Those events do
+not qualify Nightwatch campaign execution or support a public model-performance
+claim.
 
 ## Authority chain
 

@@ -6,6 +6,13 @@ release never relabels an older result.
 
 ## Unreleased — H2a planner, H2b executor, and Nightwatch controller
 
+- Correct the operator example so `--expected-plan-sha256` uses the canonical
+  envelope's embedded `plan_sha256`, while the whole-file SHA-256 remains a
+  distinct inventory digest. Record the sanitized post-merge state: one exact
+  private binding passed all nine provider-free, network-none R8 runtime cases,
+  and one private local-no-charge S1 slot completed boxed execution and trusted
+  offline grading. Neither is a completed Nightwatch campaign, public cohort,
+  physical-validation result, or model-performance claim.
 - Add a tracked, deterministic nine-case no-provider/no-network runtime-smoke
   runner with canonical per-case evidence and shared positive provenance/import
   probe bytes. Make sandbox stdout/stderr truncation fail closed while retaining
@@ -117,9 +124,11 @@ release never relabels an older result.
   state remains `completed_ungraded` with no grading, registry, board, site,
   publication, or deployment authority. Dedicated fake/local Nightwatch tests
   exist and are included in board-policy CI without making real provider,
-  model, Docker, or network calls. No real provider/model/Docker campaign or
-  runtime qualification has been performed, and no completed real campaign is
-  claimed here.
+  model, Docker, or network calls. At implementation-merge time no real
+  provider/model/Docker campaign or runtime qualification had been performed,
+  and no completed real campaign was claimed. Later private qualification and
+  S1 smoke status are recorded in the current harness documentation; they do
+  not retroactively turn these fake/local tests into runtime evidence.
 - Clarify that the permanent `.slot-claims` record prevents duplicate claims
   only within one checkout because `runs/` is ignored and checkout-local.
   Cross-clone and cross-host uniqueness remains an operator/campaign-ledger and
@@ -139,8 +148,8 @@ release never relabels an older result.
   temporary-context `.dockerignore`, complete context manifest, and final
   runtime are digest-attested. The active provenance schema is
   `marb_h2b_image_build_provenance.v3`. No real image RepoDigest or passing
-  no-provider/no-network runtime smoke is claimed by this source release; the
-  image remains unqualified.
+  no-provider/no-network runtime smoke was claimed by this source release; the
+  image was not yet qualified at source-merge time.
 - Repair the fail-closed v0.13 native-runtime recipe after its first approved
   offline build stopped on missing `libGL.so.1`. Freeze the complete signed-
   metadata-derived Debian 13 `trixie` `linux/amd64` closure as 39 exact packages
