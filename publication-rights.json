@@ -7,6 +7,7 @@
   "supported_by_repository_hash": [],
   "rights_cleared_for_release": [
     "publishing/CADCLAW_logo.jpg",
+    "publishing/media/cadclaw-marb-30-day-update-600.png",
     "publishing/media/arb_flowchart.png",
     "publishing/media/arb_scoreboard.png",
     "publishing/media/cadquery_review_collage.png",
@@ -46,7 +47,8 @@
     "2026-08-21, owner decision (Nick Sonnentag): the remaining retained assets are Sunnyday-authored figures and Sunnyday-owned marks (CADCLAW, CEMFORGE, LOGiMIX, M3-CRETE, Open3DCP, ACME Lab, Sunnyday). Cleared for release; no counsel review required, and the site sells nothing. Separately, 15 files referenced by no published page were withdrawn from the publish set and moved to the local, git-ignored _unpublished_media_2026-08-21/ directory. They were not deleted. Withdrawing them removes them from the rights surface entirely.",
     "2026-08-21, owner decision (Nick Sonnentag): the licensed Typodermic Nulshock face is not ours to redistribute and was removed from the repository tree. It is preserved locally outside version control and .gitignore now blocks any .otf/.ttf or Nulshock-named file from re-entering. NOTE: the blob (c3337ace, 33640 bytes) remains reachable in the PUBLIC history of both MARB and CADCLAW via earlier commits; removing it from HEAD stops future distribution but does not purge history. A history rewrite plus force-push is required to purge it, and is a separate owner decision.",
     "2026-08-21, owner attestation (Nick Sonnentag), recorded verbatim: \"I approve release\". Every retained public asset is recorded in rights_cleared_for_release, the owner/counsel review list is empty, the tracked repository hold is resolved by removal, and the excluded font is excluded from the artifact. release_authorized set to true on that instruction.",
-    "2026-08-21: the remaining retained assets are MARB's own generated benchmark figures (scoreboards, GAP/ORIENT plots, Pascal PH-1 renders, token-efficiency charts) and the Sunnyday mark, produced by this repository from its own runs. Cleared under the same owner rule: Sunnyday-authored, no third-party material depicted, nothing sold."
+    "2026-08-21: the remaining retained assets are MARB's own generated benchmark figures (scoreboards, GAP/ORIENT plots, Pascal PH-1 renders, token-efficiency charts) and the Sunnyday mark, produced by this repository from its own runs. Cleared under the same owner rule: Sunnyday-authored, no third-party material depicted, nothing sold.",
+    "2026-09-06: cadclaw-marb-30-day-update-600.png was created specifically for Sunnyday as a deterministic vector-derived graphic with no external assets; the retained PNG SHA-256 is 3b7e12c890635293da57989abf396fbf0c89b18cfd1f72da378a797ff45e4122. Cleared under the existing owner rule for Sunnyday-created figures."
   ],
   "withdrawn_from_publication": [
     "publishing/media/angry-mm.jpg",

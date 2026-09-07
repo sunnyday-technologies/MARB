@@ -2,8 +2,9 @@
 
 The public benchmark site is deployed **only** from [`publishing/`](publishing/)
 in this project. That folder is the complete site root (HTML, CSS, fonts,
-media) and is the single source of truth for what is public. It is gitignored
-here only because it is media-heavy (~34 MB); treat it as published content.
+media) and is the single source of truth for what is public. The public source
+is tracked so a clean checkout can reproduce and review the release artifact.
+Locally held excluded fonts remain gitignored and must not enter the repository.
 
 Deploy (Cloudflare Pages, project `marb`, production branch `production`):
 

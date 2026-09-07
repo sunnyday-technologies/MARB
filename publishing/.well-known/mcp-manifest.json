@@ -1,0 +1,48 @@
+{
+  "schema_version": "0.1",
+  "status": "experimental-nonstandard-static-discovery",
+  "name": "MARB public benchmark",
+  "site": "https://marb.cadclaw.io/",
+  "description": "Read-only discovery for dated, publisher-run MARB benchmark materials. This static site is not an MCP server and exposes no agent authority.",
+  "updated": "2026-08-11",
+  "scoring_version": "v0.12",
+  "registry_record_count": 43,
+  "resources": [
+    {
+      "name": "Benchmark home",
+      "url": "https://marb.cadclaw.io/",
+      "method": "GET",
+      "media_type": "text/html"
+    },
+    {
+      "name": "Agent-readable summary",
+      "url": "https://marb.cadclaw.io/llms.txt",
+      "method": "GET",
+      "media_type": "text/plain"
+    },
+    {
+      "name": "Sitemap",
+      "url": "https://marb.cadclaw.io/sitemap.xml",
+      "method": "GET",
+      "media_type": "application/xml"
+    },
+    {
+      "name": "Public run registry",
+      "url": "https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_runs.json",
+      "method": "GET",
+      "media_type": "application/json",
+      "external": true
+    }
+  ],
+  "tools": [],
+  "hosted_mcp": false,
+  "payments": false,
+  "transaction_authority": false,
+  "commercial_inquiry": {
+    "mode": "manual-scope-only",
+    "url": "mailto:info@sunn3d.com?subject=MARB%20sponsored%20run%20inquiry",
+    "creates_order": false,
+    "terms": "No order exists until entity, scope, independence, deliverables, taxes, rights, privacy, cancellation/refund, and payment terms are confirmed in a signed order or invoice."
+  },
+  "reliance_limit": "Results are method-specific decision-support evidence, not physical validation, certification, engineering advice, or a guarantee of product performance."
+}

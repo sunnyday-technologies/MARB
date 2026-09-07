@@ -1,0 +1,7 @@
+# Sunnyday Technologies security contact for MARB
+Contact: mailto:security@sunn3d.com
+Contact: mailto:info@sunn3d.com
+Canonical: https://marb.cadclaw.io/.well-known/security.txt
+Preferred-Languages: en
+Policy: https://github.com/sunnyday-technologies/CADCLAW/security/policy
+Expires: 2027-08-11T00:00:00Z

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Mechanical Assembly Readiness Benchmark (MARB), measuring AI-built machines | CADCLAW</title>
+  <meta name="description" content="A versioned benchmark for comparing AI assembly workflows on declared geometric metrics and gates. Results are method-specific measurements, not physical validation or a readiness certification." />
+  <meta property="og:title" content="The Mechanical Assembly Readiness Benchmark (MARB), CADCLAW" />
+  <meta property="og:description" content="Versioned MARB results and methods for comparing AI assembly workflows. Scores apply to the published task, kit, grader, assistance conditions, and run date." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://marb.cadclaw.io/" />
+  <meta property="og:image" content="https://marb.cadclaw.io/media/cadclaw-marb-30-day-update-600.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://marb.cadclaw.io/media/cadclaw-marb-30-day-update-600.png" />
+  <link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/portfolio-loop.css" />
+  <link rel="canonical" href="https://marb.cadclaw.io/" />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "@id": "https://marb.cadclaw.io/#benchmark",
+    "name": "Mechanical Assembly Readiness Benchmark (MARB)",
+    "alternateName": "MARB",
+    "description": "A versioned collection of benchmark tasks, run records, scores, and methods for comparing AI assembly workflows under declared conditions. Scores do not certify buildability, safety, manufacturing readiness, technology readiness, integration readiness, or product quality.",
+    "url": "https://marb.cadclaw.io/",
+    "version": "v0.12",
+    "dateModified": "2026-09-06",
+    "isAccessibleForFree": true,
+    "conditionsOfAccess": "Public methods and results are available under their repository file licenses; answer keys remain gated to protect future benchmark integrity.",
+    "creator": { "@type": "Organization", "name": "Sunnyday Technologies", "url": "https://sunn3d.com/" },
+    "measurementTechnique": "Version-specific GAP, ORIENT, and POS metrics plus declared inventory, interference, floating-part, and lane-specific gates. Each result applies only to its recorded task, kit, grader, workflow, assistance conditions, software versions, and run date.",
+    "distribution": [
+      { "@type": "DataDownload", "name": "MARB repository", "contentUrl": "https://github.com/sunnyday-technologies/MARB" },
+      { "@type": "DataDownload", "name": "MARB run registry", "contentUrl": "https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_runs.json" }
+    ]
+  }
+  </script>
+  <style>
+    .restable{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;}
+    .restable th,.restable td{border:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:top;}
+    .restable thead th{background:var(--navy);color:#fff;font-family:'Orbitron',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+    .restable tbody tr:nth-child(even){background:var(--paper);}
+    .restable td em{color:var(--ink-faint);font-style:italic;}
+    .restable td strong{color:var(--navy);}
+    .restable.leaderboard td:first-child{text-align:center;font-family:'Orbitron',sans-serif;color:var(--navy);font-weight:700;width:36px;}
+    .restable .score strong{font-size:16px;}
+    .restable tr.top td{background:rgba(151,215,0,.10);}
+    .restable tr.ref td,.restable tr.ref td strong{color:var(--ink-faint);}
+    .restable .th-sub{font-weight:400;text-transform:none;opacity:.75;}
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="/" aria-label="CADCLAW home">
+    <img src="/CADCLAW_logo.jpg" alt="CADCLAW" />
+  </a>
+  <nav>
+    <a href="#ladder">The ladder</a>
+    <a href="#board">The board</a>
+    <a href="#results">First results</a>
+    <a href="/studies/">Studies</a>
+    <a href="/pascal/">Pascal lane</a>
+    <a href="/recap/">Recap</a>
+    <a href="#papers">Papers &amp; data</a>
+    <a href="#sponsor">Sponsor</a>
+    <a class="ghost" href="https://github.com/sunnyday-technologies/MARB" aria-label="MARB on GitHub">GitHub →</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <h1>MARB — Mechanical Assembly Readiness Benchmark</h1>
+      <p class="tag"><strong>How close can an AI workflow come to a declared assembly target?</strong> <strong>MARB</strong> compares exported artifacts under a versioned geometric method: the same recorded task and grader, with GAP, ORIENT, POS, and configured gate results reported separately. It measures the published run—not physical buildability, safety, or certified readiness.</p>
+      <div class="cta-row">
+        <a class="cta primary" href="#board">See the dated board</a>
+        <a class="cta" href="/recap/">The Angry Millimeter (recap)</a>
+        <a class="cta" href="https://github.com/sunnyday-technologies/MARB">MARB on GitHub</a>
+        <a class="cta" href="https://huggingface.co/spaces/SunnydayTech/marb-leaderboard">On Hugging Face</a>
+      </div>
+      <p class="sub">Benchmark, grades, and write-ups are open (<a href="#papers">papers &amp; data</a>). White paper review copies: <a href="mailto:info@sunn3d.com?subject=MARB%20white%20paper%20review">info@sunn3d.com</a></p>
+    </div>
+    <div class="hero-mark">
+      <img src="/media/sdt.png" alt="Sunnyday Technologies" />
+    </div>
+  </section>
+
+  <section class="strip">
+    <div class="stat"><span class="num">L0–L7</span><span class="lbl">Capability ladder</span></div>
+    <div class="stat"><span class="num">0.0 mm</span><span class="lbl">Best GAP median (Claude · CadQuery)</span></div>
+    <div class="stat"><span class="num">~54%</span><span class="lbl">Interfaces within 1 mm (best run)</span></div>
+    <div class="stat"><span class="num">~100</span><span class="lbl">Parts supplied in the founding task</span></div>
+  </section>
+
+  <section class="section" id="update">
+    <h2>Engineering update · 2026-09-06</h2>
+    <p class="lede">Recent work strengthened MARB's boxed execution, validation, provenance, and evidence-retention path without changing the published GAP, POS, or ORIENT formulas. The current repository scoring specification is v0.12; the dated board below retains its original v0.9 labels. The qualified path binds source and tree identity, a content-addressed runtime image, gate version, and retained evidence hashes.</p>
+    <div class="output-media" style="max-width:600px">
+      <img src="/media/cadclaw-marb-30-day-update-600.png" alt="CADCLAW and MARB capability update: authored STEP, assembly and validation, boxed execution, and traceable evidence" />
+      <p class="caption">Capability update through 2026-09-06. Same measures, stronger evidence controls.</p>
+    </div>
+    <div class="callout"><strong>Current evidence boundary.</strong> One exact source, image, and runtime binding passed the nine-case R8 provider-free, network-none qualification. One privately retained S1 sample then completed boxed execution and trusted offline grading, but failed the native inventory, interference, and floating gates. This is pipeline evidence—not a registered public run, benchmark cohort, model comparison, portable runtime qualification, physical validation, or certification. A replacement source, image, or execution environment requires fresh qualification.</div>
+  </section>
+
+  <section class="section" id="gap">
+    <h2>The gap</h2>
+    <p class="lede">AI-CAD benchmarking includes geometry-generation, part-classification, joint-prediction, and other assembly-oriented methods. MARB focuses on one narrower question: how a submitted multi-part artifact compares with a declared answer key and gate configuration.</p>
+    <p class="lede">The method reports inventory, interference, floating-part, GAP, ORIENT, and POS evidence where the applicable scorer version supports them. It does not prove that a machine is functional, safe, manufacturable, physically buildable, or ready for use.</p>
+    <div class="callout"><strong>Prior-art boundary.</strong> The earlier survey snapshot is dated 2026-05 and is not a priority or uniqueness claim. New benchmarks may exist; the maintained value is the published task, method, run registry, and reproducible comparison surface.</div>
+  </section>
+
+  <section class="section dark" id="ladder">
+    <h2>The ladder</h2>
+    <p class="lede">The maintainers use an L0–L7 research roadmap to separate increasingly broad capability claims. A rung can be evaluated only after its task, evidence, and acceptance rules are defined; the ladder is not a certification scheme.</p>
+    <div class="gates">
+      <div class="gate"><h3>L0 · Component</h3><p>One part is exactly as specified.</p></div>
+      <div class="gate new"><h3>L1 · Assemble the kit <span class="badge">Today</span></h3><p>Parts placed, aligned, no collisions, nothing floating. <em>The Model T.</em></p></div>
+      <div class="gate"><h3>L2 · Constraint-robust</h3><p>Re-solves correctly when parameters change.</p></div>
+      <div class="gate"><h3>L3 · Mechanically valid</h3><p>Full-travel kinematics + load-holding, measured.</p></div>
+      <div class="gate"><h3>L4 · Engineering change</h3><p>Re-design to a new requirement, no regressions.</p></div>
+      <div class="gate"><h3>L5 · Design from intent</h3><p>Pick &amp; arrange parts from functional goals. <em>Tesla.</em></p></div>
+      <div class="gate"><h3>L6 · Optimization research</h3><p>Candidate multi-physics comparison against a declared human baseline.</p></div>
+      <div class="gate"><h3>L7 · Closed-loop research goal</h3><p>Proposed design, build, measurement, review, and improvement tasks with human authority and safety controls.</p></div>
+    </div>
+    <p class="muted">The published mechanical cohort evaluates a limited L1-style kit-assembly task. It does not establish the frontier capability of all systems, and later rungs remain proposals until their methods and evidence are published.</p>
+  </section>
+
+  <section class="section" id="chart">
+    <h2>Capability × Readiness</h2>
+    <p class="lede">The maintainers provide an indicative comparison between the research ladder and <strong>TRL</strong>, <strong>MRL</strong>, and <strong>IRL</strong> concepts. It is a discussion aid—not an equivalence, official mapping, agency assessment, or shortcut to a readiness review.</p>
+    <div class="output-media">
+      <img src="/media/trl_mrl_irl_chart.png" alt="The CADCLAW capability ladder (L0–L7) mapped to TRL, MRL, and IRL evidence bands" />
+      <p class="caption">CADCLAW capability ladder ↔ TRL / MRL / IRL, indicative evidence bands, not equivalence.</p>
+    </div>
+    <p class="lede"><strong>Two different axes.</strong> Formal readiness processes evaluate a technology or system under their own authorities and evidence requirements. MARB evaluates a recorded workflow and exported artifact under a benchmark method. CADCLAW findings may be one input to an engineering review, but they are not readiness evidence by themselves.</p>
+    <div class="callout"><strong>Reliance limit.</strong> Neither MARB nor CADCLAW assigns TRL, MRL, IRL, compliance, certification, safety, or production status. Those conclusions require the applicable authority, broader evidence, qualified review, and physical validation.</div>
+  </section>
+
+  <section class="section">
+    <h2>How the benchmark runs</h2>
+    <p class="lede">Within a declared cohort, MARB records the task, kit, prompt, tool path, model, assistance conditions, software versions, attempts, and grader. Shared inputs and a shared scorer improve comparability; differences in tools, hints, interfaces, seeds, and execution conditions remain potential confounders.</p>
+    <div class="output-media" style="max-width:1200px">
+      <img src="/media/arb_flowchart.png" alt="MARB pipeline: inputs to AI driver to exported STEP to CADCLAW gates to MARB score and readiness to human review" />
+      <p class="caption">The MARB pipeline, inputs → AI driver → exported STEP → CADCLAW gates → MARB score + readiness → human review, with a read-fix-rerun loop.</p>
+    </div>
+  </section>
+
+  <section class="section" id="metrics">
+    <h2>The metrics</h2>
+    <p class="lede">Each compatible record reports two categories separately: <strong>declared artifact metrics</strong> under the named scorer version and <strong>recorded effort fields</strong> such as elapsed time, attempts, and available usage. Neither category proves physical quality or total cost.</p>
+    <div class="gates">
+      <div class="gate"><h3>Configured artifact checks</h3><p>MARB v0.9 reports inventory, interference, floating-part, GAP, ORIENT, and POS evidence where applicable. Each check has a defined digital scope and known omissions.</p></div>
+      <div class="gate"><h3>Mechanical sub-grade · 0–100</h3><p>A method-specific combination of declared placement and interference components. It is a benchmark score, not a physical-buildability, manufacturing, safety, or structural-performance factor.</p></div>
+      <div class="gate"><h3>L0–L7 research roadmap</h3><p>A maintainer-authored capability map for framing future evidence. It is not a scalar readiness score and is not equivalent to an official TRL, MRL, IRL, certification, or gate review.</p></div>
+      <div class="gate"><h3>Effort fields</h3><p>Wall-clock, available usage, attempts, retries, corrections, and recorded human interventions are reported separately. Host meters and missing fields can differ, so they are not a normalized cost ranking.</p></div>
+    </div>
+    <div class="callout"><strong>Comparison boundary.</strong> A cell is a recorded workflow result, not a pure estimate of model capability. Cross-cell interpretation must account for kit version, authoring interface, prompt/hints, assistance, attempts, seed count, grader version, and missing token data.</div>
+  </section>
+
+  <section class="section dark">
+    <h2>Dated digital reference task</h2>
+    <p class="lede">The reference is a resolver-built answer key for a two-metre 3D-printer / CNC frame of roughly 100 parts. The named MARB v0.9 metrics compare submitted artifacts with that reference; it is not an AI result or a physical-validation record.</p>
+    <ul class="not-prove-list">
+      <li><strong>The answer key records zero findings under the configured inventory, interference, and floating-part gates.</strong> That is a property of this reference and scorer configuration, not an AI result or proof of physical quality.</li>
+      <li><strong>Consistently graded by the publisher</strong>: the same versioned automated method is applied to the recorded artifacts; this is not third-party independent testing.</li>
+      <li><strong>Dated cohort result</strong>: one Claude · CadQuery run recorded <strong>0.0&nbsp;mm median GAP error</strong> while still failing other geometric conditions. One metric is not physical buildability.</li>
+    </ul>
+    <div class="callout">The resolver-built answer key is the benchmark reference, not an AI result or a physical certification. The dated cohort below compares three recorded workflows under the published grader.</div>
+  </section>
+
+  <section class="section" id="board">
+    <h2>The board, 2026-06-11</h2>
+    <p class="lede">This is the site snapshot dated 2026-06-11: eleven summarized cells for the mechanical task, ranked by the published primary metric. The repository <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_runs.json">run registry</a> may contain later or additional records, and the <a href="https://huggingface.co/spaces/SunnydayTech/marb-leaderboard">Hugging Face Space</a> is a separate publication surface that must be checked independently for freshness.</p>
+    <div class="output-media">
+      <img src="/media/marb_scoreboard.png" alt="MARB v0.9 scoreboard: eleven AI builds ranked by GAP median, from Claude Opus 4.7 at 0.0 mm down to the sighted 32B vision model at 873 mm" />
+      <p class="caption">Published 2026-06-11 snapshot. Ranks and descriptive labels apply only to this image, scoring version, included cells, and recorded conditions.</p>
+    </div>
+    <div class="output-media">
+      <img src="/media/marb_token_efficiency.png" alt="Dated scatter chart of recorded billed tokens versus GAP median for six frontier workflow cells; token accounting differs by host and is incomplete" />
+      <p class="caption">Dated token-versus-GAP view for cells with available or recovered usage. Token accounting differs by host and is incomplete; see the method and limitations in <a href="/recap/">the recap</a>.</p>
+    </div>
+    <p class="lede">Deep dives: <a href="/recap/">the recap article</a> (findings to date + the token ledger), <a href="/studies/">the studies log</a> (the Fable 5 effort sweep and the graded local open-weight anchor), and <a href="/first-results/">the first-results write-up</a> (the original three-way head-to-head, preserved below as the founding study), and the new <a href="/pascal/">MARB-A architecture lane</a> (three models build a house in Pascal; two fall into the same units trap).</p>
+  </section>
+
+  <section class="section" id="results">
+    <h2>First head-to-head <span style="font-size:14px;color:var(--ink-faint);font-weight:400">(the founding study, 2026-05-26)</span></h2>
+    <p class="lede">Three publisher-run workflows—Claude Opus 4.7 with Fusion and CadQuery, and <strong>OpenAI Codex / GPT-5</strong> with CadQuery—used fresh prompt-only sessions and the same founding kit. Each placed the supplied parts without human placement assistance; none met the benchmark's declared geometric threshold. These are single workflow runs, not independent product tests.</p>
+    <div class="output-media">
+      <img src="/media/m3_target.png" alt="The target M3-CRETE machine; one of four reference renders each AI was given" />
+      <p class="caption">One of four goal renders provided (the 3/4 overview); the kit also includes front, top, and side views.</p>
+    </div>
+    <div class="output-media">
+      <img src="/media/hero_score_vs_time.png" alt="GAP median versus build time for all seven frontier builds; Claude Opus 4.7 on CadQuery hit 0.0 mm in 49 minutes, OpenAI Codex was fastest at 13 minutes" />
+      <p class="caption">Recorded GAP versus wall-clock time for the included frontier cells. The chart is descriptive; it does not establish that model, iteration count, or reasoning effort caused the observed differences.</p>
+    </div>
+    <table class="restable leaderboard">
+      <thead><tr><th>#</th><th>Model · tool</th><th>GAP median ↓</th><th>ORIENT aligned ↑</th><th>POS rel median ↓</th><th>Time</th><th>Cost <span class="th-sub">est.</span></th></tr></thead>
+      <tbody>
+        <tr class="top"><td>1</td><td><strong>Claude Opus 4.7</strong> · CadQuery</td><td class="score"><strong>0.0 mm</strong></td><td>51%</td><td>49.9 mm</td><td>48.8 min</td><td>~$68</td></tr>
+        <tr><td>2</td><td><strong>Claude Opus 4.7</strong> · Fusion</td><td class="score"><strong>2.0 mm</strong></td><td>47%</td><td>47.7 mm</td><td>33.7 min</td><td>~$174</td></tr>
+        <tr><td>3</td><td><strong>GPT&#8209;5 Codex</strong> · CadQuery</td><td class="score"><strong>7.8 mm</strong></td><td style="color:#4e7a00;font-weight:700">69%</td><td style="color:#4e7a00;font-weight:700">47.2 mm</td><td><strong>13.0 min</strong></td><td><em>not reported</em></td></tr>
+        <tr class="ref"><td>n/a</td><td>CADCLAW reference <em>(answer key)</em></td><td class="score"><strong>0.0 mm</strong></td><td>100%</td><td>0.0 mm</td><td>resolver</td><td>n/a</td></tr>
+      </tbody>
+    </table>
+    <p class="caption" style="text-align:left;max-width:74ch;"><strong>MARB v0.9.</strong> <strong>GAP median</strong> = error vs the answer key's intended interface gap (≈0 mm bolted, ≈1 mm motion clearance). <strong>ORIENT aligned</strong> = % of asymmetric parts in the correct rotation. <strong>POS rel median</strong> = position error relative to each part's neighbours (frame-invariant). The configured bands (≤5 mm = located, ≤5° = aligned) are benchmark definitions, not machining tolerances or physical-buildability criteria. Cost estimates use the price basis recorded for the dated study; Codex CLI did not report comparable usage. Results 2026&#8209;05&#8209;26 · CadQuery 2.7.0, Autodesk Fusion 2702.1.58 · graded per the <a href="https://github.com/sunnyday-technologies/MARB/blob/main/spec/MARB_SCORING.md">MARB v0.9 scoring spec</a>.</p>
+    <p class="lede">Every flagged clip is structural, beams overlapping at splice joints and post/frame junctions, and the centered 2040 inserts overlapping their beams. <strong>Both also placed the Z-posts in the wrong rotation</strong> versus the reference, an orientation error that was not captured by the original configured gate set. Current MARB scoring reports ORIENT separately.</p>
+    <div class="callout"><strong>Interference is one declared geometric gate.</strong> Detected overlaps reduce the L1-style score under the published method. Passing that gate would not establish manufacturability, assembly sequence, tolerances, structural performance, safety, or physical buildability.</div>
+    <div class="callout"><strong>Fairness note.</strong> CADCLAW and its placement resolver were first built around CadQuery, before the Fusion connection (MCP) existed, so the CadQuery runs may carry a home-field edge in tooling maturity. We flag it so the comparison stays honest; later scorer versions report orientation evidence, while broader reference-task coverage remains future work.</div>
+    <div class="output-media">
+      <img src="/media/fusion_build_progression.png" alt="Claude-Fusion build progression from 10 to 100 parts" />
+      <p class="caption">Claude-Fusion, building the frame (10 → 100 parts). The model emits no parametric timeline, so we recovered the build order afterward by driving the live Fusion model through its MCP, revealing the placed parts in order under a fixed isometric camera.</p>
+    </div>
+    <div class="output-media">
+      <img src="/media/cadquery_review_collage.png" alt="Grid of in-process CAD review renders the Claude-CadQuery driver generated while assembling the machine" />
+      <p class="caption">Claude-CadQuery's own in-process renders, the orthographic + isometric checks it generated as it built. This is the human-reviewable output that lets a watcher catch a bad run early and stop it to save tokens.</p>
+    </div>
+  </section>
+
+  <section class="section dark" id="method">
+    <h2>What we asked, and what we didn't</h2>
+    <p class="lede">We gave the <strong>goal, not the method</strong>. The driver got the target, the pictured assembly plus design constraints, and the kit, but <em>not</em> the build sequence. The original human-guided build specified an inside-out order (X axis → Y → Z-posts) and detailed steps; here we deliberately withheld that and let the AI decide how to reach the pictured result.</p>
+    <p class="lede">MARB measures the submitted artifact under the declared task and metrics. It does not directly measure a model's internal understanding. A submission with present but overlapping or mis-oriented parts demonstrates those artifact conditions, no more.</p>
+    <p class="lede"><strong>Human-reviewable throughout.</strong> Both drivers emitted orthographic + isometric renders as they built, so a person could watch the assembly take shape and abort a bad run early to save tokens. (Fusion didn't persist its in-session views, so we recovered the progression afterward straight from the live model via its MCP, see above.)</p>
+    <p class="lede"><strong>Descriptive founding-cohort spread.</strong> The three runs took <strong>13–49 minutes</strong>. The most iterative workflow recorded the lowest GAP value and the longest time; the one-attempt workflow recorded the shortest time and a higher GAP value. With one run per workflow and different tool paths, MARB does not infer that self-review caused either result. Later local and effort studies are reported separately in the <a href="/studies/">studies log</a> and <a href="/recap/">recap</a>.</p>
+  </section>
+
+  <section class="section" id="summary">
+    <h2>Why it matters, in plain English</h2>
+    <p class="lede">Repeatable geometric checks can help teams find selected conditions earlier and compare workflow changes under a controlled method. The economic value depends on the assembly, review process, defect class, compute cost, and what the configured checks can actually observe.</p>
+    <p class="lede">CADCLAW can report selected properties of a supplied STEP artifact against declared rules. It cannot prove an assembly is right, prevent an escaped defect, quantify savings, or replace native-CAD review, engineering analysis, inspection, or physical testing.</p>
+    <div class="audience">
+      <div><h3>For engineers</h3><p>A versioned way to evaluate configured geometric checks on exported artifacts and inspect what each gate did not cover.</p></div>
+      <div><h3>For programs</h3><p>A reproducible benchmark record that may support research review; it is not a substitute for formal readiness evidence.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="different">
+    <h2>What makes it different</h2>
+    <p class="lede">MARB is not "a CAD checker." Specifics separate it from CAD-vendor tooling and from prior benchmarks:</p>
+    <ul class="not-prove-list">
+      <li><strong>Grades the submitted STEP, not a vendor's feature tree.</strong> A shared exported-artifact method reduces some vendor-specific differences while retaining export, tool-path, and metadata limitations.</li>
+      <li><strong>Scores one submitted multi-part artifact.</strong> The configured checks operate across the supplied assembly, while some public joint and mate datasets evaluate part pairs. Coverage still depends on the declared gates and task.</li>
+      <li><strong>Separates benchmark capability from readiness.</strong> An indicative crosswalk is published for discussion, but MARB scores do not enter or replace an official gate review.</li>
+      <li><strong>Uses a versioned reference assembly.</strong> The mechanical task is based on the M3-CRETE experimental reference design; the benchmark does not claim physical conformance or production validation.</li>
+      <li><strong>Publishes claim checks and limits.</strong> CADCLAW includes configurable text-audit tooling, which is a backstop rather than a guarantee of truthful or complete claims.</li>
+    </ul>
+    <div class="callout"><strong>Open method and open engine.</strong> MARB's published method and CADCLAW's MIT-licensed code can be inspected and challenged. Openness supports review; it does not make a score independently validated, unbiased, complete, or suitable for a safety or procurement decision. Qualified humans retain engineering and release authority.</div>
+  </section>
+
+  <section class="section" id="papers">
+    <h2>Papers and public benchmark data</h2>
+    <p class="lede">The public result records link to the repository's scoring spec, graders, public kits, grades, and run registry. The registry lists available per-run provenance fields such as model, tool, timing, usage, and attempts; fields can be unavailable, and answer keys remain separately gated.</p>
+    <table class="restable">
+      <thead><tr><th>Artifact</th><th>What it is</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td><strong>The Angry Millimeter</strong></td><td>Recap article: findings to date + the token ledger</td><td><a href="/recap/">marb.cadclaw.io/recap</a></td></tr>
+        <tr><td><strong>MARB-A: the Pascal lane</strong></td><td>Three-run pilot in the open-source Pascal editor under a separate method</td><td><a href="/pascal/">marb.cadclaw.io/pascal</a></td></tr>
+        <tr><td><strong>Studies log</strong></td><td>Published study records: effort sweep, local open-weight anchor, and founding results</td><td><a href="/studies/">marb.cadclaw.io/studies</a></td></tr>
+        <tr><td><strong>Scoring spec (current v0.12)</strong></td><td>The current method; dated mechanical-track grades retain their recorded v0.9 tags</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/spec/MARB_SCORING.md">MARB/spec</a></td></tr>
+        <tr><td><strong>Frontier track write-ups</strong></td><td>Claude tracks comparison + prompt-framework findings</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/comparison_claude_tracks.md">comparison</a> · <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/prompt_framework_findings.md">findings</a></td></tr>
+        <tr><td><strong>Local-anchor study</strong></td><td>30 runs, six prompt cohorts, graded — the full write-up</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/local_anchor_study.md">MARB/results</a></td></tr>
+        <tr><td><strong>Grades &amp; registry</strong></td><td>Graded metrics and the provenance fields available for each registered run</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_v0_9_grades.json">grades</a> · <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_runs.json">registry</a></td></tr>
+        <tr><td><strong>Blind kits &amp; graders</strong></td><td>Run your own model against the board (kits, harness, metrics)</td><td><a href="https://github.com/sunnyday-technologies/MARB">MARB repo</a></td></tr>
+        <tr><td><strong>CADCLAW engine</strong></td><td>The open engine used for the published mechanical-track grading</td><td><a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW repo</a></td></tr>
+        <tr><td><strong>Hugging Face mirror</strong></td><td>Benchmark dataset, gated answer key, and the live leaderboard Space</td><td><a href="https://huggingface.co/datasets/SunnydayTech/marb-m3-crete">dataset</a> · <a href="https://huggingface.co/datasets/SunnydayTech/marb-m3-crete-answer-key">answer key</a> · <a href="https://huggingface.co/spaces/SunnydayTech/marb-leaderboard">leaderboard</a></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section" id="sponsor">
+    <h2>Request a sponsored benchmark run</h2>
+    <p class="lede">Sunnyday can scope a new model/tool cell, repeat-seed cohort, or private evaluation as a manual service. A sponsored public run is identified in the run registry, follows the versioned method, and is published regardless of whether the result is favorable. Sponsorship does not buy a score, rank, conclusion, endorsement, certification, or claim about the sponsor's product.</p>
+    <div class="gates">
+      <div class="gate"><h3>Frontier run · planning range $100+</h3><p>One scoped scripted-CAD run under a named kit and grader. Final price and deliverables depend on model access, compute, and rights.</p></div>
+      <div class="gate"><h3>GUI/tool run · planning range $250+</h3><p>One scoped run through an approved tool interface. Availability, software terms, operator controls, and artifact rights must be confirmed.</p></div>
+      <div class="gate"><h3>Seed cohort · planning range $500+</h3><p>A proposed repeat-run cohort under one frozen cell definition. Sample size and statistical treatment are agreed before work starts.</p></div>
+      <div class="gate"><h3>Model sweep · custom scope</h3><p>A multi-cell study with a written protocol, disclosure terms, deliverables, review window, and publication decision defined in advance.</p></div>
+    </div>
+    <div class="cta-row">
+      <a class="cta primary" href="mailto:info@sunn3d.com?subject=MARB%20sponsored%20run%20inquiry">Request scope and availability</a>
+    </div>
+    <p class="muted" style="max-width:80ch;">Planning ranges are non-binding and exclude applicable taxes, third-party licenses, unusual compute, travel, and custom engineering. This site does not accept payment or create an order. Work begins only after entity, tax, rights, privacy, independence, cancellation/refund, payment, and deliverable terms are confirmed in a signed order or invoice. Sponsors should obtain their own legal, accounting, and tax advice.</p>
+  </section>
+
+  <section class="section dark">
+    <h2>Read &amp; review</h2>
+    <p class="lede">We are publishing a maintainer-authored draft method and an indicative readiness crosswalk for review. MARB is not a ratified consensus standard, accredited test, or official readiness framework.</p>
+    <div class="cta-row">
+      <a class="cta primary" href="mailto:info@sunn3d.com?subject=MARB%20white%20paper%20review">Request the white paper</a>
+      <a class="cta" href="https://github.com/sunnyday-technologies/MARB">MARB on GitHub</a>
+      <a class="cta" href="https://cadclaw.io/ci-for-cad/">How CADCLAW works</a>
+    </div>
+    <p class="muted">Reviewers and collaborators welcome, labs, CAD vendors, and standards bodies especially.</p>
+  </section>
+</main>
+
+<section id="sdt-portfolio-loop-20260528" class="sdt-portfolio-loop" aria-label="Sunnyday full-loop portfolio">
+  <div class="sdt-portfolio-loop__inner">
+    <div class="sdt-loop">
+      <svg viewBox="0 0 1400 1180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sunnyday portfolio map: CEMFORGE decision support, M3-CRETE experimental reference, ACME Lab test planning, Open3DCP draft schema, and LOGiMIX logistics">
+        <defs>
+          <linearGradient id="loopAB" x1="700" y1="220" x2="250" y2="940" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#97d700"/></linearGradient>
+          <linearGradient id="loopBC" x1="250" y1="940" x2="1150" y2="940" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#97d700"/><stop offset="1" stop-color="#1c84a6"/></linearGradient>
+          <linearGradient id="loopCA" x1="1150" y1="940" x2="700" y2="220" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1c84a6"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+          <filter id="loopGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="1400" height="1340"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="loopShadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="5" stdDeviation="10" flood-color="#000" flood-opacity="0.5"/></filter>
+          <clipPath id="o3dClip"><rect x="560" y="560" width="280" height="280" rx="28"/></clipPath>
+          <linearGradient id="o3dGreen" x1="560" y1="840" x2="840" y2="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#97d700" stop-opacity="0.95"/><stop offset="0.55" stop-color="#97d700" stop-opacity="0"/></linearGradient>
+          <linearGradient id="o3dBlue" x1="840" y1="840" x2="560" y2="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1c84a6" stop-opacity="0.95"/><stop offset="0.55" stop-color="#1c84a6" stop-opacity="0"/></linearGradient>
+        </defs>
+        <g class="sdt-loop__lines" filter="url(#loopGlow)" pointer-events="none">
+          <line x1="700" y1="220" x2="250" y2="940" stroke="url(#loopAB)"/>
+          <line x1="250" y1="940" x2="1150" y2="940" stroke="url(#loopBC)"/>
+          <line x1="1150" y1="940" x2="700" y2="220" stroke="url(#loopCA)"/>
+          <line x1="560" y1="225" x2="405" y2="232" stroke="#ffffff"/>
+        </g>
+        <text class="sdt-loop__leg" x="700" y="62">ANALYZE</text>
+        <text class="sdt-loop__leg" x="250" y="1135">REFERENCE</text>
+        <text class="sdt-loop__leg" x="1150" y="1135">PLAN TESTS</text>
+        <a class="sdt-loop__node" href="https://cemforge.ai/"><title>Decision support by CEMFORGE</title><rect x="560" y="80" width="280" height="280" rx="28"/><image href="/media/logos/cemforge-logo.png" x="572" y="102" width="256" height="236" preserveAspectRatio="xMidYMid meet"/></a>
+        <a class="sdt-loop__node" href="https://m3-crete.com/"><title>Experimental reference by M3-CRETE</title><rect x="110" y="800" width="280" height="280" rx="28"/><image href="/media/logos/m3-crete-mark.svg" x="150" y="840" width="200" height="200" preserveAspectRatio="xMidYMid meet"/></a>
+        <a class="sdt-loop__node" href="https://acme-lab.io/"><title>Test planning by ACME Lab</title><rect x="1010" y="800" width="280" height="280" rx="28"/><image href="/media/logos/acme-lab-logo.svg" x="1042" y="832" width="216" height="216" preserveAspectRatio="xMidYMid meet"/></a>
+        <a class="sdt-loop__node" href="https://open3dcp.org/"><title>Draft schema by Open3DCP</title><rect x="560" y="560" width="280" height="280" rx="28"/><g clip-path="url(#o3dClip)" pointer-events="none"><path d="M560 560 H840 V840 H560 Z" fill="url(#o3dGreen)"/><path d="M560 560 H840 V840 H560 Z" fill="url(#o3dBlue)"/></g><image href="/media/logos/open3dcp-logo.svg" x="580" y="580" width="240" height="240" preserveAspectRatio="xMidYMid meet"/></a>
+        <a class="sdt-loop__node" href="https://logimix.io/"><title>Logistics, by LOGiMIX</title><rect x="105" y="160" width="300" height="142" rx="20"/><image href="/media/logos/logimix-wordmark.png" x="130" y="190" width="250" height="82" preserveAspectRatio="xMidYMid meet"/></a>
+        <a class="sdt-loop__node" href="https://sunn3d.com/"><title>Sunnyday Technologies</title><rect x="1130" y="70" width="200" height="200" rx="24"/><image href="/media/logos/sunnyday-s-mark.png" x="1148" y="88" width="164" height="164" preserveAspectRatio="xMidYMid meet"/><text class="sdt-loop__brandlabel" x="1230" y="312">SUNNYDAY</text><text class="sdt-loop__brandlabel" x="1230" y="350">TECHNOLOGIES</text></a>
+      </svg>
+    </div>
+    <nav class="sdt-portfolio-loop__grid" aria-label="Sunnyday full-loop platform links">
+      <a class="sdt-portfolio-loop__card" href="https://cemforge.ai/">
+        <span class="sdt-portfolio-loop__role">Decision support</span>
+        <strong class="sdt-portfolio-loop__by">with CEMFORGE</strong>
+      </a>
+      <a class="sdt-portfolio-loop__card" href="https://m3-crete.com/">
+        <span class="sdt-portfolio-loop__role">Experimental reference</span>
+        <strong class="sdt-portfolio-loop__by">with M3-CRETE</strong>
+      </a>
+      <a class="sdt-portfolio-loop__card" href="https://acme-lab.io/">
+        <span class="sdt-portfolio-loop__role">Test planning</span>
+        <strong class="sdt-portfolio-loop__by">with ACME Lab</strong>
+      </a>
+      <a class="sdt-portfolio-loop__card" href="https://open3dcp.org/">
+        <span class="sdt-portfolio-loop__role">Draft schema</span>
+        <strong class="sdt-portfolio-loop__by">with Open3DCP</strong>
+      </a>
+      <a class="sdt-portfolio-loop__card" href="https://logimix.io/">
+        <span class="sdt-portfolio-loop__role">Logistics</span>
+        <strong class="sdt-portfolio-loop__by">by LOGiMIX</strong>
+      </a>
+    </nav>
+    <p class="sdt-portfolio-loop__note">
+      This is a portfolio map, not a claim of automated integration, a shared production dataset, physical validation, certification, or an end-to-end commercial system. Each project states its own evidence and readiness boundaries.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-grid">
+    <div>
+      <h4>CADCLAW</h4>
+      <p>An automated check suite for STEP assemblies.</p>
+      <p class="muted">MIT License · © 2026 <a href="https://sunn3d.com">Sunnyday Technologies</a></p>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <a href="https://github.com/sunnyday-technologies/MARB">MARB benchmark (GitHub)</a>
+      <a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW engine (GitHub)</a>
+      <a href="https://huggingface.co/SunnydayTech">MARB on Hugging Face</a>
+      <a href="https://github.com/sunnyday-technologies/MARB/issues">Issues</a>
+      <a href="https://doi.org/10.5281/zenodo.19647390">CADCLAW engine DOI</a>
+    </div>
+    <div>
+      <h4>Related</h4>
+      <a href="https://m3-crete.com">M3-CRETE</a>
+      <a href="https://cemforge.ai">CEMFORGE</a>
+      <a href="https://open3dcp.org">Open3DCP</a>
+      <a href="https://sunn3d.com">Sunnyday Technologies</a>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <a href="mailto:info@sunn3d.com">info@sunn3d.com</a>
+      <a href="https://sunn3d.com">sunn3d.com</a>
+    </div>
+  </div>
+  <p class="muted" style="max-width:1180px;margin:16px auto 0;padding:0 40px;font-size:11.5px;text-align:center;line-height:1.6;">MARB scores are Sunnyday Technologies' own measurements from a published method, on the software versions and dates shown, each a single run of one task, not a statement about any product's overall quality, performance, or fitness for any purpose. Provided "as is," for informational purposes, without warranty of any kind; verify independently before relying on them. Sunnyday Technologies is independent and is not affiliated with, sponsored by, or endorsed by Anthropic, OpenAI, Autodesk, or Dassault Systèmes. M3-CRETE™ and CEMFORGE™ are trademarks of Sunnyday Technologies; other product and company names (including Autodesk Fusion, SolidWorks, Claude, OpenAI Codex, and CadQuery) are trademarks of their respective owners, used here only to identify the tools tested. MARB’s own code is MIT-licensed; the CAD parts in the blind kits are licensed separately, with OpenBuilds-derived parts under CC BY-SA 4.0. The grading stack makes use of, and is based on, facilities provided by the Open CASCADE Technology software, which is licensed under LGPL-2.1 with the Open CASCADE Exception and is installed as a dependency rather than redistributed here. Full third-party licence chain in the <a href="https://github.com/sunnyday-technologies/MARB#license">project README</a>.</p>
+</footer>
+
+</body>
+</html>

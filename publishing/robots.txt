@@ -1,0 +1,8 @@
+# MARB benchmark - robots and Content Signal policy
+# Search indexing and real-time AI input are allowed. Model training is not permitted.
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /cdn-cgi/
+
+Sitemap: https://marb.cadclaw.io/sitemap.xml
