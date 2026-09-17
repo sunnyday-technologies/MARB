@@ -231,6 +231,7 @@
       <img src="/media/hero_score_vs_time.png" alt="GAP median versus build time for all seven frontier builds; Claude Opus 4.7 on CadQuery hit 0.0 mm in 49 minutes, OpenAI Codex was fastest at 13 minutes" />
       <p class="caption">Recorded GAP versus wall-clock time for the included frontier cells. The chart is descriptive; it does not establish that model, iteration count, or reasoning effort caused the observed differences.</p>
     </div>
+    <div class="board-scroll" tabindex="0" role="region" aria-label="Founding study results; scroll horizontally on small screens">
     <table class="restable leaderboard">
       <thead><tr><th>#</th><th>Model · tool</th><th>GAP median ↓</th><th>ORIENT aligned ↑</th><th>POS rel median ↓</th><th>Time</th><th>Cost <span class="th-sub">est.</span></th></tr></thead>
       <tbody>
@@ -240,6 +241,7 @@
         <tr class="ref"><td>n/a</td><td>CADCLAW reference <em>(answer key)</em></td><td class="score"><strong>0.0 mm</strong></td><td>100%</td><td>0.0 mm</td><td>resolver</td><td>n/a</td></tr>
       </tbody>
     </table>
+    </div>
     <p class="caption" style="text-align:left;max-width:74ch;"><strong>MARB v0.9.</strong> <strong>GAP median</strong> = error vs the answer key's intended interface gap (≈0 mm bolted, ≈1 mm motion clearance). <strong>ORIENT aligned</strong> = % of asymmetric parts in the correct rotation. <strong>POS rel median</strong> = position error relative to each part's neighbours (frame-invariant). The configured bands (≤5 mm = located, ≤5° = aligned) are benchmark definitions, not machining tolerances or physical-buildability criteria. Cost estimates use the price basis recorded for the dated study; Codex CLI did not report comparable usage. Results 2026&#8209;05&#8209;26 · CadQuery 2.7.0, Autodesk Fusion 2702.1.58 · graded per the <a href="https://github.com/sunnyday-technologies/MARB/blob/main/spec/MARB_SCORING.md">MARB v0.9 scoring spec</a>.</p>
     <p class="lede">Every flagged clip is structural, beams overlapping at splice joints and post/frame junctions, and the centered 2040 inserts overlapping their beams. <strong>Both also placed the Z-posts in the wrong rotation</strong> versus the reference, an orientation error that was not captured by the original configured gate set. Current MARB scoring reports ORIENT separately.</p>
     <div class="callout"><strong>Interference is one declared geometric gate.</strong> Detected overlaps reduce the L1-style score under the published method. Passing that gate would not establish manufacturability, assembly sequence, tolerances, structural performance, safety, or physical buildability.</div>
