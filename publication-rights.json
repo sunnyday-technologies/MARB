@@ -1,11 +1,18 @@
 {
   "schema_version": "1.0",
   "site": "https://marb.cadclaw.io/",
-  "reviewed_on": "2026-08-21",
+  "reviewed_on": "2026-09-17",
   "release_authorized": true,
   "release_hold": "",
   "supported_by_repository_hash": [],
   "rights_cleared_for_release": [
+    "publishing/media/astra-vs-grok/position-and-coverage.png",
+    "publishing/media/astra-vs-grok/gap-and-coverage.png",
+    "publishing/media/astra-vs-grok/grok-a01.png",
+    "publishing/media/astra-vs-grok/grok-a02.png",
+    "publishing/media/astra-vs-grok/grok-a03.png",
+    "publishing/media/astra-vs-grok/astra-a05.png",
+    "publishing/media/astra-vs-grok/astra-a06.png",
     "publishing/CADCLAW_logo.jpg",
     "publishing/media/cadclaw-marb-30-day-update-600.png",
     "publishing/media/arb_flowchart.png",
@@ -39,6 +46,7 @@
   ],
   "tracked_repository_hold": [],
   "notes": [
+    "2026-09-17: owner authorized publication of the Astra vs Grok Bot story and its provisional measurements, excluding personal and unnecessary data. Seven retained visuals are two Sunnyday-generated metric charts and five submitted renders of the existing Sunnyday M3-CRETE task geometry. Cleared under the existing owner rule for benchmark figures and M3-CRETE renders; image pixels are unchanged and nonessential PNG metadata is removed. Supporting asset hashes and publication authorization are retained privately. No raw CAD, return archives or execution records enter the site artifact.",
     "Hash correspondence establishes repository provenance for a file, not copyright or trademark clearance.",
     "A production release requires every retained image, animation, logo, and SVG to appear in rights_cleared_for_release with retained supporting evidence.",
     "Product and company marks may be used only for truthful identification with the published independence disclaimer.",

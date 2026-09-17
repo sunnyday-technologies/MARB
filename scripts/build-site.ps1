@@ -177,7 +177,7 @@ $rootFiles = @(
 )
 foreach ($file in $rootFiles) { Copy-PublicFile $file }
 
-$publicDirectories = @("first-results", "media", "pascal", "recap", "studies", ".well-known")
+$publicDirectories = @("astra-vs-grok", "first-results", "media", "pascal", "recap", "studies", ".well-known")
 foreach ($directory in $publicDirectories) { Copy-PublicDirectory $directory }
 
 $publishFiles = @(Get-ChildItem -LiteralPath $Target -Recurse -File -Force)
@@ -273,6 +273,7 @@ $sitemapNodes = @($sitemapXml.SelectNodes("//*[local-name()='url']"))
 $sitemapUrls = @($sitemapNodes | ForEach-Object { $_.SelectSingleNode("./*[local-name()='loc']").InnerText })
 $requiredSitemapUrls = @(
   "https://marb.cadclaw.io/",
+  "https://marb.cadclaw.io/astra-vs-grok/",
   "https://marb.cadclaw.io/first-results/",
   "https://marb.cadclaw.io/pascal/",
   "https://marb.cadclaw.io/recap/",
@@ -282,12 +283,14 @@ foreach ($requiredUrl in $requiredSitemapUrls) {
   if ($sitemapUrls -notcontains $requiredUrl) { throw "Sitemap is missing required URL: $requiredUrl" }
 }
 if ($sitemapUrls.Count -ne $requiredSitemapUrls.Count) {
-  throw "Sitemap must enumerate exactly the five local HTML routes"
+  throw "Sitemap must enumerate exactly the six local HTML routes"
 }
 foreach ($node in $sitemapNodes) {
+  $route = $node.SelectSingleNode("./*[local-name()='loc']").InnerText
+  $expectedLastmod = if ($route -in @("https://marb.cadclaw.io/", "https://marb.cadclaw.io/astra-vs-grok/")) { "2026-09-17" } else { "2026-08-11" }
   $lastmod = $node.SelectSingleNode("./*[local-name()='lastmod']")
-  if ($null -eq $lastmod -or $lastmod.InnerText -ne "2026-08-11") {
-    throw "Every sitemap route must carry lastmod 2026-08-11"
+  if ($null -eq $lastmod -or $lastmod.InnerText -ne $expectedLastmod) {
+    throw "Sitemap route has an incorrect lastmod: $route"
   }
 }
 

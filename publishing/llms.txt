@@ -5,6 +5,7 @@
 ## Canonical pages
 
 - Benchmark home: https://marb.cadclaw.io/
+- Astra vs Grok Bot, provisional artifact comparison (not leaderboard entries): https://marb.cadclaw.io/astra-vs-grok/
 - First-results snapshot: https://marb.cadclaw.io/first-results/
 - Studies log: https://marb.cadclaw.io/studies/
 - MARB-A Pascal pilot: https://marb.cadclaw.io/pascal/

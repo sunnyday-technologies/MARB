@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Astra vs Grok Bot: M3-CRETE assembly results | MARB</title>
+  <meta name="description" content="Five M3-CRETE assembly exports compared: Astra Medium recorded lower placement errors; Grok Bot matched more reference solids. Provisional results, with test limitations disclosed.">
+  <link rel="canonical" href="https://marb.cadclaw.io/astra-vs-grok/">
+  <meta property="og:title" content="Astra vs Grok Bot: M3-CRETE assembly results">
+  <meta property="og:description" content="Five exports, one grading reference. Lower placement error and higher matching coverage did not coincide. Provisional results—not a model ranking.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://marb.cadclaw.io/astra-vs-grok/">
+  <meta property="og:image" content="https://marb.cadclaw.io/media/astra-vs-grok/position-and-coverage.png">
+  <meta property="og:image:width" content="2080">
+  <meta property="og:image:height" content="896">
+  <meta property="og:image:alt" content="Relative position errors and matching coverage for Grok A01–A03 and Astra A05–A06 at Medium effort; provisional measurements on different matched subsets.">
+  <meta property="article:published_time" content="2026-09-17">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/astra-vs-grok/story.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/" aria-label="MARB home"><img src="/CADCLAW_logo.jpg" alt="CADCLAW"></a>
+  <nav><a href="/">Benchmark</a><a href="/studies/">Studies</a><a href="/first-results/">First results</a><a href="/recap/">Recap</a><a class="ghost" href="https://github.com/sunnyday-technologies/MARB">GitHub →</a></nav>
+</header>
+<main><article class="story">
+  <p class="eyebrow">MARB research update · September 17, 2026 · Five exports</p>
+  <h1>Astra vs Grok Bot: M3-CRETE assembly results</h1>
+  <p class="lede">Astra placed its matched components closer to the reference. Grok Bot matched more of the reference assembly. Neither produced a verified, build-ready machine.</p>
+  <p>Astra's two <strong>Medium-effort</strong> runs recorded relative-position median errors of <strong>20.6 and 20.3 mm</strong>. Grok Bot's three exports recorded <strong>44.3, 53.9 and 79.3 mm</strong>. Astra's lower errors apply to smaller matched sets: 94 and 96 reference solids, compared with Grok's 101, 101 and 100.</p>
+  <aside class="scope"><strong>Provisional artifact comparison, not a leaderboard ranking.</strong> These runs differ in software, assistance and documented provenance. They do not establish overall model superiority or the effect of a product update.</aside>
+
+  <h2 id="task">The assembly task</h2>
+  <p>The M3-CRETE M3-2 task asks an agent to assemble a roughly two-metre gantry from 14 authored STEP components and four reference images. The target has about 100 placed instances, represented by 101 reference solids. Required returns include an assembly STEP, editable source, review images and a run log. The printhead payload and final tool interface are out of scope.</p>
+  <figure>
+    <div class="artifact-grid">
+      <div><h3>Grok A01</h3><a href="/media/astra-vs-grok/grok-a01.png"><img src="/media/astra-vs-grok/grok-a01.png" alt="Grok A01 submitted assembly" loading="lazy"></a></div>
+      <div><h3>Grok A02</h3><a href="/media/astra-vs-grok/grok-a02.png"><img src="/media/astra-vs-grok/grok-a02.png" alt="Grok A02 submitted assembly" loading="lazy"></a></div>
+      <div><h3>Grok A03</h3><a href="/media/astra-vs-grok/grok-a03.png"><img src="/media/astra-vs-grok/grok-a03.png" alt="Grok A03 submitted assembly" loading="lazy"></a></div>
+      <div><h3>Astra A05 · Medium</h3><a href="/media/astra-vs-grok/astra-a05.png"><img src="/media/astra-vs-grok/astra-a05.png" alt="Astra A05 submitted assembly" loading="lazy"></a></div>
+      <div><h3>Astra A06 · Medium</h3><a href="/media/astra-vs-grok/astra-a06.png"><img src="/media/astra-vs-grok/astra-a06.png" alt="Astra A06 submitted assembly" loading="lazy"></a></div>
+    </div>
+    <figcaption>Submitted review images. Image pixels are unchanged; camera angles and scales differ. Select an image for the full-resolution view.</figcaption>
+  </figure>
+
+  <h2 id="results">Results</h2>
+  <p>All five exported STEP files were measured against the same reference with frozen scoring code. The review did not execute the submitted scripts. These are Sunnyday Technologies' measurements, not third-party testing.</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Benchmark results; scroll horizontally on small screens">
+  <table><thead><tr><th scope="col">Artifact metric</th><th scope="col">Grok A01</th><th scope="col">Grok A02</th><th scope="col">Grok A03</th><th scope="col">Astra A05 · Medium</th><th scope="col">Astra A06 · Medium</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">Reference solids matched / 101</th><td>101</td><td>101</td><td>100</td><td>94</td><td>96</td></tr>
+    <tr><th scope="row">Interfaces evaluated / 207</th><td>207</td><td>207</td><td>203</td><td>169</td><td>191</td></tr>
+    <tr><th scope="row">Relative POS median error ↓</th><td>44.3 mm</td><td>53.9 mm</td><td>79.3 mm</td><td>20.6 mm</td><td>20.3 mm</td></tr>
+    <tr><th scope="row">Absolute POS median error ↓</th><td>84.2 mm</td><td>94.7 mm</td><td>88.5 mm</td><td>70.9 mm</td><td>64.3 mm</td></tr>
+    <tr><th scope="row">GAP median error ↓</th><td>0.0 mm</td><td>5.0 mm</td><td>5.0 mm</td><td>0.0 mm</td><td>0.0 mm</td></tr>
+    <tr><th scope="row">Evaluated GAP errors ≤1 mm ↑</th><td>55.1%</td><td>39.1%</td><td>42.4%</td><td>72.8%</td><td>75.9%</td></tr>
+    <tr><th scope="row">ORIENT aligned, asymmetric solids ↑</th><td>60.8% (31/51)</td><td>72.5% (37/51)</td><td>46.0% (23/50)</td><td>65.9% (29/44)</td><td>67.4% (31/46)</td></tr>
+  </tbody></table></div>
+  <figure><a href="/media/astra-vs-grok/position-and-coverage.png"><img src="/media/astra-vs-grok/position-and-coverage.png" alt="Relative position error paired with reference-solid matching coverage for all five exports" loading="lazy"></a><figcaption>Astra's lower position medians cover smaller matched subsets. Unmatched geometry is not automatically penalized in these medians.</figcaption></figure>
+  <figure><a href="/media/astra-vs-grok/gap-and-coverage.png"><img src="/media/astra-vs-grok/gap-and-coverage.png" alt="Median GAP error paired with evaluated-interface coverage for all five exports" loading="lazy"></a><figcaption>Interface coverage matters: the GAP medians cover 169–207 interfaces. Zero median error does not mean collision-free assembly.</figcaption></figure>
+
+  <h2 id="outcomes">Assembly outcomes</h2>
+  <p><strong>Astra:</strong> A06 matched two more reference solids and evaluated 22 more interfaces than A05, with a similar position median. Both exports include additional drive components and assumptions about extrusion lengths. Their agents reported unresolved fits, overlaps and mounting details. A05 leaves seven reference solids unmatched; A06 leaves five.</p>
+  <p><strong>Grok:</strong> A02 improved orientation alignment over A01 but increased position and GAP errors. A03 lost ground on relative placement and orientation. Its absolute-position error improved over A02, while its GAP median stayed at 5.0 mm. The slightly higher share of GAP errors within 1 mm covers fewer interfaces and does not establish an overall improvement.</p>
+  <p>A03's source replaces the supplied 1,000 mm spreader with a generated 1,920 mm rectangular bar, not the authored V-slot profile. We have not established whether that substitution explains its unmatched solid. Wheel seating, belt routing and plate orientation remain approximate in the agent's account.</p>
+
+  <h2 id="conditions">Test conditions and evidence</h2>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Test configuration">
+  <table><thead><tr><th scope="col">Runs</th><th scope="col">Driver / effort</th><th scope="col">Reported CAD runtime</th><th scope="col">Key limitation</th></tr></thead><tbody>
+    <tr><th scope="row">Grok A01–A03</th><td>Grok Bot; underlying model and effort unavailable</td><td>CadQuery 2.8.0 / Python 3.13.5</td><td>Incomplete execution evidence; A02 reports delegation; A03 has inconsistent metadata</td></tr>
+    <tr><th scope="row">Astra A05</th><td>GPT-6 Astra / Medium</td><td>CadQuery 2.7.0 / Python 3.11.15</td><td>Diagnostic/non-blind</td></tr>
+    <tr><th scope="row">Astra A06</th><td>GPT-6 Astra / Medium</td><td>CadQuery 2.6.1 / Python 3.11.9</td><td>Diagnostic/non-blind</td></tr>
+  </tbody></table></div>
+  <p>Astra's configured Medium effort is supported by local session records, not independent server-side verification. It received historical benchmark context. A06 also received an automated shell suggestion, but no placement guidance.</p>
+  <p>Grok received blind-kit instructions; isolation was not independently audited. A01's supplied conversation excerpts support CadQuery execution but are not authenticated host transcripts. A02's original assembly and rendering command records remain unavailable. Its reported executor delegation conflicts with the single-agent instructions.</p>
+  <p>A03's run log identifies the new attempt, but other fields retain earlier attempt labels. Its input-kit hash has not been linked to the retained handoff, and no shell transcript is included. Its return manifest verifies successfully. These limitations remain part of the result; original records were not rewritten.</p>
+
+  <h2 id="tools">CadQuery, Open CASCADE and setup</h2>
+  <p>Grok Bot's returned scripts import, place and export parts with CadQuery. <a href="https://cadquery.readthedocs.io/en/latest/intro.html">CadQuery uses Open CASCADE</a> through OCP bindings: an Open CASCADE STEP header does not indicate a separate CAD workflow. CADCLAW was reported as the review-rendering tool, not the assembly exporter.</p>
+  <p>Grok reports creating its own Python environment and installing dependencies during each attempt. The successful Astra runs used a separate automated preparation phase. Both products used a runtime; the distinction is how setup was handled. This evidence does not establish a public Grok tool API or a newly introduced capability.</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Reported timing; boundaries differ">
+  <table><thead><tr><th scope="col">Run</th><th scope="col">Preparation</th><th scope="col">Assembly benchmark</th><th scope="col">Reported total</th></tr></thead><tbody>
+    <tr><th scope="row">Grok A01</th><td>Included; not separated</td><td>Not separated</td><td>6.63 min</td></tr>
+    <tr><th scope="row">Grok A02</th><td>Included; not separated</td><td>Not separated</td><td>11.40 min</td></tr>
+    <tr><th scope="row">Grok A03</th><td>Included; not separated</td><td>Not separated</td><td>7.57 min</td></tr>
+    <tr><th scope="row">Astra A05</th><td>5m 40s</td><td>19m 55s</td><td>25m 36s</td></tr>
+    <tr><th scope="row">Astra A06</th><td>7m 52s</td><td>13m 36s</td><td>21m 29s</td></tr>
+  </tbody></table></div>
+  <p>Four earlier Astra attempts stopped during setup and produced no scored geometry. Totals include packaging; timing boundaries and rounding differ. Comparable token counts are unavailable. These records do not support a normalized speed or cost-efficiency ranking.</p>
+
+  <h2 id="interpretation">Comparison with earlier MARB results</h2>
+  <p>The three zero GAP medians equal the leading numerical value on the <a href="/recap/">June board</a>. Astra's roughly 20 mm position medians are below that board's 30.4 mm Fable ultra result. These are numerical comparisons only: historical conditions differ, matching coverage varies, and the new exports do not form qualified repeat-run cohorts. <strong>The official leaderboard is unchanged.</strong></p>
+
+  <h2 id="method">Method and limits</h2>
+  <p>Grading used a <a href="https://github.com/sunnyday-technologies/CADCLAW/commit/fad0dd552a49a0b32336f1845c2b82873ad6360a">frozen CADCLAW source revision</a>, CadQuery 2.7.0 and OCP 7.8.1.1.post1. A reference-against-itself control returned zero position and GAP errors and full orientation alignment. It checks the scoring setup, not equivalence with every historical environment.</p>
+  <ul>
+    <li><strong>POS</strong> measures placement disagreement among matched solids; a median is not a maximum error or fabrication tolerance.</li>
+    <li><strong>GAP</strong> measures error from the intended reference bounding-box gap. Touching or overlapping boxes have zero distance.</li>
+    <li><strong>ORIENT</strong> uses bounding-box axes, excludes symmetric shapes and does not fully test functional mating.</li>
+  </ul>
+  <p>Independent interference, floating-part and buildability checks were not rerun for this comparison. No physical validation is claimed. A reliable model comparison needs repeated runs with fixed model, effort, runtime, kit, prompt and scorer, reporting failures and variation alongside the best result.</p>
+</article></main>
+<footer><p><strong>CADCLAW / MARB · Sunnyday Technologies</strong><br>Publisher-run digital measurements, not physical certification. Product names identify tested tools without vendor endorsement. Component licenses remain separate from MARB's code license.</p></footer>
+</body>
+</html>
