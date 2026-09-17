@@ -50,6 +50,10 @@
     .restable tr.top td{background:rgba(151,215,0,.10);}
     .restable tr.ref td,.restable tr.ref td strong{color:var(--ink-faint);}
     .restable .th-sub{font-weight:400;text-transform:none;opacity:.75;}
+    .board-scroll{max-width:100%;overflow-x:auto;margin:20px 0;}
+    .board-scroll .restable{margin:0;min-width:760px;}
+    .board-scroll:focus-visible{outline:3px solid #739f00;outline-offset:4px;}
+    #board,#historical-board{scroll-margin-top:100px;}
   </style>
 </head>
 <body>
@@ -61,6 +65,7 @@
   <nav>
     <a href="#ladder">The ladder</a>
     <a href="#board">The board</a>
+    <a href="/robotic-hand/">Robotic hand</a>
     <a href="#results">First results</a>
     <a href="/studies/">Studies</a>
     <a href="/pascal/">Pascal lane</a>
@@ -77,7 +82,7 @@
       <h1>MARB — Mechanical Assembly Readiness Benchmark</h1>
       <p class="tag"><strong>How close can an AI workflow come to a declared assembly target?</strong> <strong>MARB</strong> compares exported artifacts under a versioned geometric method: the same recorded task and grader, with GAP, ORIENT, POS, and configured gate results reported separately. It measures the published run—not physical buildability, safety, or certified readiness.</p>
       <div class="cta-row">
-        <a class="cta primary" href="#board">See the dated board</a>
+        <a class="cta primary" href="#board">See the leaderboards</a>
         <a class="cta" href="/recap/">The Angry Millimeter (recap)</a>
         <a class="cta" href="https://github.com/sunnyday-technologies/MARB">MARB on GitHub</a>
         <a class="cta" href="https://huggingface.co/spaces/SunnydayTech/marb-leaderboard">On Hugging Face</a>
@@ -91,14 +96,14 @@
 
   <section class="strip">
     <div class="stat"><span class="num">L0–L7</span><span class="lbl">Capability ladder</span></div>
-    <div class="stat"><span class="num">0.0 mm</span><span class="lbl">Best GAP median (Claude · CadQuery)</span></div>
-    <div class="stat"><span class="num">~54%</span><span class="lbl">Interfaces within 1 mm (best run)</span></div>
+    <div class="stat"><span class="num">0.0 mm</span><span class="lbl">June board · lowest GAP median</span></div>
+    <div class="stat"><span class="num">~54%</span><span class="lbl">June board · interfaces within 1 mm (best run)</span></div>
     <div class="stat"><span class="num">~100</span><span class="lbl">Parts supplied in the founding task</span></div>
   </section>
 
   <section class="section" id="astra-grok-update">
     <h2>Astra vs Grok Bot · 2026-09-17</h2>
-    <p class="lede">Five M3-CRETE assembly exports: Astra Medium recorded lower placement errors on smaller matched sets; Grok Bot matched more reference solids. These provisional measurements are not new leaderboard entries.</p>
+    <p class="lede">Five M3-CRETE assembly exports: Astra Medium recorded lower placement errors on smaller matched sets; Grok Bot matched more reference solids. The <a href="#board">updated board</a> lists these provisional measurements separately from ranked results.</p>
     <p><a href="/astra-vs-grok/">Read the comparison, results and test limitations →</a></p>
   </section>
 
@@ -179,7 +184,30 @@
   </section>
 
   <section class="section" id="board">
-    <h2>The board, 2026-06-11</h2>
+    <h2>MARB leaderboards</h2>
+    <p class="lede">Updated September 17, 2026. Results are separated by task and evidence status. The new M3-CRETE measurements below do not change the historical rankings.</p>
+    <div class="cta-row"><a class="cta" href="#historical-board">M3-CRETE · historical rankings</a><a class="cta" href="/robotic-hand/">Robotic hand · in preparation</a></div>
+    <h3>Provisional results · not ranked</h3>
+    <p>Five individual M3-CRETE exports, measured against the same reference. Listed by run, not performance; they are not qualified repeat-run cohorts.</p>
+    <div class="board-scroll" tabindex="0" role="region" aria-label="Provisional M3-CRETE results; scroll horizontally on small screens">
+      <table class="restable" id="provisional-results">
+        <thead><tr><th scope="col">Run / effort</th><th scope="col">Matched solids / 101</th><th scope="col">Interfaces / 207</th><th scope="col">GAP median ↓</th><th scope="col">POS relative median ↓</th><th scope="col">ORIENT aligned ↑</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Grok A01 · unavailable</th><td>101</td><td>207</td><td>0.0 mm</td><td>44.3 mm</td><td>60.8% (31/51)</td></tr>
+          <tr><th scope="row">Grok A02 · unavailable</th><td>101</td><td>207</td><td>5.0 mm</td><td>53.9 mm</td><td>72.5% (37/51)</td></tr>
+          <tr><th scope="row">Grok A03 · unavailable</th><td>100</td><td>203</td><td>5.0 mm</td><td>79.3 mm</td><td>46.0% (23/50)</td></tr>
+          <tr><th scope="row">Astra A05 · Medium</th><td>94</td><td>169</td><td>0.0 mm</td><td>20.6 mm</td><td>65.9% (29/44)</td></tr>
+          <tr><th scope="row">Astra A06 · Medium</th><td>96</td><td>191</td><td>0.0 mm</td><td>20.3 mm</td><td>67.4% (31/46)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Coverage matters.</strong> Astra's lower position errors cover smaller matched sets. Unmatched geometry is not automatically penalized in these medians. Zero GAP does not establish a collision-free or buildable assembly.</p>
+    <p>Astra used GPT-6 Astra at Medium effort in diagnostic/non-blind runs. Grok Bot's underlying model and effort are unavailable; execution evidence and source provenance are incomplete. Runtime and assistance conditions differ. Independent interference, floating-part and buildability checks were not rerun.</p>
+    <p><a href="/astra-vs-grok/">Full comparison, software versions, timing and evidence limitations →</a></p>
+  </section>
+
+  <section class="section" id="historical-board">
+    <h2>M3-CRETE · historical rankings</h2>
     <p class="lede">This is the site snapshot dated 2026-06-11: eleven summarized cells for the mechanical task, ranked by the published primary metric. The repository <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_runs.json">run registry</a> may contain later or additional records, and the <a href="https://huggingface.co/spaces/SunnydayTech/marb-leaderboard">Hugging Face Space</a> is a separate publication surface that must be checked independently for freshness.</p>
     <div class="output-media">
       <img src="/media/marb_scoreboard.png" alt="MARB v0.9 scoreboard: eleven AI builds ranked by GAP median, from Claude Opus 4.7 at 0.0 mm down to the sighted 32B vision model at 873 mm" />
