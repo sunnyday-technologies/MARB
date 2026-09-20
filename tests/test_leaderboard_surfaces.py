@@ -52,16 +52,19 @@ class LeaderboardSurfaceTests(unittest.TestCase):
         registry = json.loads((ROOT / 'results/marb_runs.json').read_text(encoding='utf-8'))
         self.assertEqual(len(registry['runs']), 43)
 
-    def test_hand_board_is_empty_and_separate(self):
+    def test_hand_board_links_unranked_pilot_and_keeps_cases_separate(self):
         hand = (ROOT / 'publishing/robotic-hand/index.html').read_text(encoding='utf-8')
-        for text in ('Robotic hand leaderboard', 'No scored model runs', 'Amazing Hand', 'ORCA',
-                     'Kits and scoring are not yet frozen', 'not comparable with M3-CRETE',
+        for text in ('Robotic hand leaderboard', 'Initial results · unranked', 'Amazing Hand', 'ORCA',
+                     'five have placement measurements and one remains ungraded', 'not comparable with M3-CRETE',
                      'id="amazing-hand"', 'id="orca"'):
             self.assertIn(text, hand)
         self.assertNotRegex(hand, r'<td[^>]*>\s*0(?:\.0)?\s*(?:mm|%)')
         self.assertNotIn('<td>', hand)  # No synthetic model-result rows.
         self.assertIn('https://marb.cadclaw.io/robotic-hand/', hand)
-        self.assertEqual({p.name for p in (ROOT / 'publishing/robotic-hand').iterdir()}, {'index.html'})
+        self.assertEqual({p.name for p in (ROOT / 'publishing/robotic-hand').iterdir()}, {'index.html', 'handbench-baseline'})
+        self.assertIn('/robotic-hand/handbench-baseline/', hand)
+        self.assertIn('ORCA still needs a matching authored assembly', hand)
+        self.assertNotIn('No evaluation campaign has started', hand)
         for pattern in (r'(?i)(?<![a-z])[a-z]:[\\/]|file://|ssh://', r'\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b', r'(?i)localhost|/workspace/|/home/|\.zip|\.step|\.yaml|GX10'):
             self.assertIsNone(re.search(pattern, hand))
 

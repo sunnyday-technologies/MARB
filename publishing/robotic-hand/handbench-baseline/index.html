@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MARB HandBench: Some Assembly Required | Sunnyday Technologies</title>
+<meta name="description" content="Six initial Astra and Grok Bot robot-hand assembly attempts establish a constrained-budget baseline. Results, manufacturing economics and the path toward placement optimization.">
+<link rel="canonical" href="https://marb.cadclaw.io/robotic-hand/handbench-baseline/">
+<meta property="og:title" content="MARB HandBench: Some Assembly Required">
+<meta property="og:description" content="One run returned all 226 parts. Only the alignment reference matched. Six initial, unranked outcomes establish a baseline for future model updates.">
+<meta property="og:type" content="article"><meta property="og:url" content="https://marb.cadclaw.io/robotic-hand/handbench-baseline/">
+<meta property="og:image" content="https://marb.cadclaw.io/media/handbench/hero-visual-abstract.png">
+<meta property="og:image:width" content="1672"><meta property="og:image:height" content="941">
+<meta property="og:image:alt" content="Conceptual illustration: separate mechanical parts, a robotic hand and a future simulation loop.">
+<meta property="article:published_time" content="2026-09-19"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/astra-vs-grok/story.css"><link rel="stylesheet" href="/robotic-hand/handbench-baseline/article.css">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary"></head>
+<body><header class="nav"><a class="brand" href="/" aria-label="MARB home"><img src="/CADCLAW_logo.jpg" alt="CADCLAW"></a><nav><a href="/">Benchmark</a><a href="/robotic-hand/">Robotic hand</a><a href="/studies/">Studies</a><a class="ghost" href="https://github.com/sunnyday-technologies/MARB">GitHub →</a></nav></header><main><article class="story handbench"><h1>MARB HandBench: Some Assembly Required</h1>
+<p class="lede">Testing whether AI can put the pieces together</p>
+<p class="eyebrow">Sunnyday Technologies · September 19, 2026 · Initial results, unranked</p>
+<figure><a href="/media/handbench/hero-visual-abstract.png" aria-label="Open figure at full resolution"><img alt="Conceptual illustration: separate mechanical parts become a robotic hand, with a future simulation loop. This is not a benchmark return or an FEA result." src="/media/handbench/hero-visual-abstract.png" fetchpriority="high" /></a></figure>
+<p>One Grok Bot run returned all <strong>226 required parts</strong> of a robot hand. Only one matched the target placement: the part used to align the comparison.</p>
+<p>Astra Medium matched <strong>12 placements</strong>; Extra high matched <strong>20</strong>. The scores are low, which makes this a useful starting point. Sunnyday Technologies' <strong>MARB HandBench</strong> establishes a baseline for measuring improvement after model and tool updates.</p>
+<h2>Why a hand?</h2>
+<p>Holding a mug, picking up a washer and turning a key require different movements. A robot hand must produce them through joints, links, tendons or flexible elements packed into a small space.</p>
+<figure><a href="/media/handbench/figure-01-movement.png" aria-label="Open figure at full resolution"><img alt="Schematic movements: bending at a joint, spreading fingers, and flexing a spring-like element." src="/media/handbench/figure-01-movement.png" loading="lazy" /></a></figure>
+<p>Small details matter. Pins must line up with holes. Tight fits can restrict movement; loose fits can introduce play. Manufacturing variations can accumulate across several joints. Cables need clearance, and worn components need to be accessible for replacement. Some contact is intentional: a flexible latch may bend against another part and spring back.</p>
+<h2>Why the economics matter</h2>
+<p>Production ambitions make those details worth studying. Hyundai announced plans in January 2026 for capacity of <strong>30,000 robots a year by 2028</strong>. That is a target, not delivered production.</p>
+<p>A hypothetical program producing 100,000 two-handed robots would need <strong>200,000 hands</strong>. Separately, a fleet with 200,000 hands would need <strong>20,000 replacements annually</strong> if 10% were replaced each year. That replacement rate is an assumption; actual servicing may replace only a finger, tendon or sensor.</p>
+<figure><a href="/media/handbench/figure-02-quantities.png" aria-label="Open figure at full resolution"><img alt="Illustrative quantities, not forecasts: 100,000 new robots require 200,000 hands. A separate 200,000-hand fleet needs 10,000, 20,000 or 40,000 replacements at assumed annual rates of 5%, 10% or 20%." src="/media/handbench/figure-02-quantities.png" loading="lazy" /></a></figure>
+<p>A single design can reach many manufactured units. Better placement tools could speed design review, compare variants and expose problems before production. Cost savings were not measured.</p>
+<h2>The first results</h2>
+<p>The initial case uses Pollen Robotics' four-fingered <strong>Amazing Hand</strong>. The kit contains <strong>29 component designs used 226 times</strong>. Models must position those parts in CAD without altering their shapes or seeing the completed reference assembly.</p>
+<p>The target budget was <strong>30 minutes and 100 calls to execution tools</strong>; Grok's limits were operator-supervised. Time, tool-call and reasoning budgets were deliberately constrained to limit token use. Astra ran at <strong>Low (Lite), Medium and Extra high</strong>; <strong>Ultra was not tested</strong>. These results describe performance within those budgets. No higher-budget comparison establishes how much the limits affected the scores.</p>
+<p>The score counts placements matching one reference pose within a nominal <strong>0.1 mm</strong> threshold. The known-correct control matched <strong>226/226</strong>.</p>
+<figure><a href="/media/handbench/figure-03-results.png" aria-label="Open figure at full resolution"><img alt="Six attempts, submitted/matched: Astra Low unavailable/ungraded; Medium 98/12; Extra high 226/20; Grok 01 1/1; Grok 02 226/1; Grok 03 139/1. The denominator is 226 for every attempt." src="/media/handbench/figure-03-results.png" loading="lazy" /></a></figure>
+<p>Across all three Grok runs, the sole match was the alignment reference. No other placement matched the reference. Astra Low remains ungraded because its execution evidence was incomplete. Every attempt is retained; none was replaced.</p>
+<p>These are baseline observations, not a model ranking. All three Astra attempts timed out, their run-control software differed, and Medium retains a tool-call accounting qualification. Grok's underlying model version was unavailable and its activity records incomplete. A different, mechanically plausible hand pose can also miss this snapshot's target.</p>
+<p>The score measures geometry and placement. STEP export checks are separate; future cases can use any format that preserves the required information.</p>
+<h2>From placement to optimization</h2>
+<p>Reliable placement could support an automated engineering loop: adjust an allowed position, check movement and clearance, simulate the loads, and compare the result.</p>
+<p><strong>Finite element analysis (FEA)</strong> divides a digital part into small elements to estimate how it bends and carries force. With suitable materials, loads and contact definitions, it could help compare joint settings or mounting positions while preserving design constraints.</p>
+<figure><a href="/media/handbench/figure-04-optimization-loop.png" aria-label="Open figure at full resolution"><img alt="Current work: measure placement. Proposed next stages: check motion and fit, define materials and loads, run FEA, adjust allowed parameters and repeat. Engineering review and physical tests remain necessary." src="/media/handbench/figure-04-optimization-loop.png" loading="lazy" /></a></figure>
+<p>This loop is future work. The current pilot measures reconstruction, not optimized performance. Later candidates would face the same tasks and loading conditions, followed by engineering review and physical validation.</p>
+<p>Keep the task and scoring fixed, and the next comparison can answer a useful question: <strong>how much better did the systems get?</strong></p>
+<p>The study began with an additional usage-reset credit from OpenAI. Building the benchmark consumed the renewed weekly allowance in roughly a day. That was a substantial investment in time and compute. The aim is to make that work useful to others.</p></article></main>
+<footer><p>CADCLAW / MARB · Sunnyday Technologies</p></footer></body></html>

@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MARB studies, the running log of benchmark experiments | CADCLAW</title>
-  <meta name="description" content="A running log of MARB studies. Each study is a self-contained experiment on the same task, authored part kit, and automated CADCLAW grader. Includes the frontier-model first results, the Claude Fable 5 reasoning-effort sweep, and the graded local open-weight anchor study." />
+  <meta name="description" content="A running log of MARB studies across separately identified tasks, part kits and scoring methods, including the initial HandBench baseline. Includes the frontier-model first results, the Claude Fable 5 reasoning-effort sweep, and the graded local open-weight anchor study." />
   <meta property="og:title" content="MARB studies | CADCLAW" />
-  <meta property="og:description" content="A running log of MARB studies on the same task, kit, and grader: frontier models, a reasoning-effort sweep, and a graded local open-weight anchor." />
+  <meta property="og:description" content="MARB studies across distinct tasks and methods: HandBench, frontier models, a reasoning-effort sweep and a local open-weight anchor." />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://marb.cadclaw.io/studies/" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -46,6 +46,8 @@
     <h1>MARB studies</h1>
     <p class="lede">Each entry records its task, kit, driver, prompt or note, tool path, run count, scorer, and date. Shared conditions improve comparison, while seed count, model size, modality, tool interface, timeout behavior, and protocol changes remain visible confounders.</p>
     <p>A note on terms. <strong>Artifact-completion metrics</strong> record whether a run produced a loadable STEP and how many part instances it placed. “Loadable” does not mean physically buildable. The separate <strong>grade</strong> reports position, orientation, and answer-key gap metrics under the named scorer version.</p>
+
+    <p><a href="/robotic-hand/handbench-baseline/"><strong>New: HandBench — Some Assembly Required</strong></a> · September 19, 2026. Six initial robot-hand attempts, five placement measurements and one ungraded outcome. Unranked; task and scoring differ from M3-CRETE.</p>
 
     <table class="restable">
       <thead>

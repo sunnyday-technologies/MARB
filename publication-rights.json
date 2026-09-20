@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "site": "https://marb.cadclaw.io/",
-  "reviewed_on": "2026-09-17",
+  "reviewed_on": "2026-09-19",
   "release_authorized": true,
   "release_hold": "",
   "supported_by_repository_hash": [],
@@ -38,7 +38,12 @@
     "publishing/media/pascal_ph1_threeway.png",
     "publishing/media/pascal_ph1_trap_vs_pass.png",
     "publishing/media/sdt.png",
-    "publishing/media/trl_mrl_irl_chart.png"
+    "publishing/media/trl_mrl_irl_chart.png",
+    "publishing/media/handbench/hero-visual-abstract.png",
+    "publishing/media/handbench/figure-01-movement.png",
+    "publishing/media/handbench/figure-02-quantities.png",
+    "publishing/media/handbench/figure-03-results.png",
+    "publishing/media/handbench/figure-04-optimization-loop.png"
   ],
   "owner_or_counsel_review_required": [],
   "excluded_from_release": [
@@ -46,6 +51,7 @@
   ],
   "tracked_repository_hold": [],
   "notes": [
+    "2026-09-19: owner requested publication of the reviewed HandBench article (approved prose SHA-256 88f3387f2ae762c8db65e63240345a01e6af6fb185556aa49edd5640a7882e2d). Five visuals are cleared under this approval: one generated conceptual hero with no source geometry input, and four original Sunnyday explanatory/data figures. Three independent AI critics followed by an AI executive editor reviewed the copy. Nonessential PNG metadata is removed without altering image pixels. No raw CAD, answer keys, return archives, logs or internal editorial notes enter the release. Supporting authorization, source provenance and original image hashes remain privately retained.",
     "2026-09-17: owner authorized publication of the Astra vs Grok Bot story and its provisional measurements, excluding personal and unnecessary data. Seven retained visuals are two Sunnyday-generated metric charts and five submitted renders of the existing Sunnyday M3-CRETE task geometry. Cleared under the existing owner rule for benchmark figures and M3-CRETE renders; image pixels are unchanged and nonessential PNG metadata is removed. Supporting asset hashes and publication authorization are retained privately. No raw CAD, return archives or execution records enter the site artifact.",
     "Hash correspondence establishes repository provenance for a file, not copyright or trademark clearance.",
     "A production release requires every retained image, animation, logo, and SVG to appear in rights_cleared_for_release with retained supporting evidence.",
