@@ -8,6 +8,7 @@
 - M3-CRETE board, provisional measurements separate from historical rankings: https://marb.cadclaw.io/#board
 - Robotic hand board, initial Amazing Hand results unranked and ORCA in preparation: https://marb.cadclaw.io/robotic-hand/
 - HandBench baseline article: https://marb.cadclaw.io/robotic-hand/handbench-baseline/
+- HandBench technical report (internally reviewed pilot, unranked; actual assembly figures, PDF and component CSV): https://marb.cadclaw.io/robotic-hand/handbench-technical-report/
 - Astra vs Grok Bot, provisional artifact comparison (not leaderboard entries): https://marb.cadclaw.io/astra-vs-grok/
 - First-results snapshot: https://marb.cadclaw.io/first-results/
 - Studies log: https://marb.cadclaw.io/studies/
@@ -48,4 +49,4 @@
 
 - Search indexing and real-time AI input are allowed. Model training is not permitted by this site's Content Signal: search=yes, ai-input=yes, ai-train=no.
 - Content Signal communicates the publisher's machine-readable preference; applicable contracts, licenses, law, and third-party rights still govern use.
-- Updated: 2026-09-19.
+- Updated: 2026-09-20.

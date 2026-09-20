@@ -61,7 +61,7 @@ class LeaderboardSurfaceTests(unittest.TestCase):
         self.assertNotRegex(hand, r'<td[^>]*>\s*0(?:\.0)?\s*(?:mm|%)')
         self.assertNotIn('<td>', hand)  # No synthetic model-result rows.
         self.assertIn('https://marb.cadclaw.io/robotic-hand/', hand)
-        self.assertEqual({p.name for p in (ROOT / 'publishing/robotic-hand').iterdir()}, {'index.html', 'handbench-baseline'})
+        self.assertEqual({p.name for p in (ROOT / 'publishing/robotic-hand').iterdir()}, {'index.html', 'handbench-baseline', 'handbench-technical-report'})
         self.assertIn('/robotic-hand/handbench-baseline/', hand)
         self.assertIn('ORCA still needs a matching authored assembly', hand)
         self.assertNotIn('No evaluation campaign has started', hand)

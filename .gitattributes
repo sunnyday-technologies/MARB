@@ -47,3 +47,7 @@ scripts/hooks/* text eol=lf
 /publishing/**/*.jpeg -text
 /publishing/**/*.png -text
 /publishing/**/*.gif -text
+
+# Preserve reviewed report/download bytes across Windows and Linux checkouts.
+/publishing/robotic-hand/handbench-technical-report/HandBench-Assembly-Completeness-and-Pose-Recovery.pdf binary
+/publishing/robotic-hand/handbench-technical-report/component-results.csv -text whitespace=cr-at-eol

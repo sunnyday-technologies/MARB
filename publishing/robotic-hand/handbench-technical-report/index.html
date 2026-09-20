@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Sunnyday Technologies"><title>HandBench: assembly completeness and pose recovery | MARB</title>
+<meta name="description" content="Technical report on six initial Astra and Grok Bot robotic-hand assembly attempts: actual CAD figures, methods, calculations, source data and limitations.">
+<link rel="canonical" href="https://marb.cadclaw.io/robotic-hand/handbench-technical-report/"><meta property="og:url" content="https://marb.cadclaw.io/robotic-hand/handbench-technical-report/"><meta property="og:type" content="article">
+<meta property="og:title" content="HandBench: assembly completeness and pose recovery">
+<meta property="og:description" content="A descriptive pilot separating complete parts inventories from correct reference-pose placement. Six actual assembly figures and downloadable methods and data.">
+<meta property="og:image" content="https://marb.cadclaw.io/media/handbench-technical-report/all-retained-assemblies.png"><meta property="og:image:alt" content="Actual retained HandBench outcomes; one ungraded, five visualized. Post-hoc CAD renders.">
+<meta property="article:published_time" content="2026-09-20"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg"><link rel="stylesheet" href="/robotic-hand/handbench-technical-report/report.css">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary"></head>
+<body><header><strong><a href="/">MARB / HANDBENCH</a></strong><nav aria-label="Site"><a href="/robotic-hand/">Robotic hand</a><a href="/robotic-hand/handbench-baseline/">Overview article</a><a href="/studies/">Studies</a></nav></header>
+<main><div class="publication-bar"><strong>Research report · September 20, 2026</strong><br>Exploratory pilot · Internally reviewed · Results unranked<br><a href="HandBench-Assembly-Completeness-and-Pose-Recovery.pdf">Read the PDF (7 pages)</a><a href="component-results.csv" download>Download component data (CSV)</a></div><article id="research-manuscript"><h1 id="assembly-completeness-and-pose-recovery-in-a-robotic-hand-benchmark">Assembly completeness and pose recovery in a robotic hand benchmark</h1>
+<p>Sunnyday Technologies</p>
+<h2 id="abstract">Abstract</h2>
+<p>Automated CAD assembly requires both complete component coverage and correct spatial relationships. These properties can be obscured by a plausible overall appearance. This exploratory HandBench study examined six retained Astra and Grok Bot attempts to reconstruct one robotic-hand assembly containing 29 component designs and 226 occurrences, under a target budget of 30 minutes and 100 execution-tool calls. Five returns were gradeable. Astra Medium and Extra high matched 12 and 20 reference placements; each of three supervised Grok Bot returns matched only the coordinate-frame anchor. Two returns contained all 226 occurrences despite limited reference-pose agreement. A known-correct control matched 226/226. Direct renders and an audit of returned calculation artifacts distinguish component coverage, placement agreement and reproducibility. The observations do not establish a model ranking: configurations, execution controls and evidence completeness differed, and alternative mechanically plausible poses were not assessed. The study provides a descriptive baseline and motivates reporting geometry, calculations and visual evidence together.</p>
+<h2 id="introduction">Introduction</h2>
+<p>CAD assembly involves relationships between parts, including their relative positions and permitted movement. Learning-based joint prediction has been studied in systems such as JoinABLe, which uses parametric CAD information to assemble pairs of parts [1]. Reconstructing a complete arrangement from component geometry presents a related but distinct evaluation problem: a system can return every required part without recovering the specified assembly pose.</p>
+<p>HandBench examines that distinction using Pollen Robotics' four-fingered Amazing Hand [2]. The present case targets a single authored static snapshot. Its purpose is to retain an initial baseline for later system updates, with separate records of supplied components, matched placements and execution quality. It does not measure physical dexterity or assembly motion. Explicit computation records are also relevant: reproducibility depends on the availability of code and data, not solely on a final output [3].</p>
+<h2 id="results">Results</h2>
+<h3 id="coverage-and-reference-agreement">Coverage and reference agreement</h3>
+<p>The retained series comprises one Astra attempt at each of three reasoning settings and three supervised Grok Bot attempts. All six outcomes are reported; none was replaced. Five native CAD returns were graded. Astra Low lacked sufficient retained execution evidence and remains ungraded rather than receiving a geometric zero.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th style="text-align: right;">Supplied / 226</th>
+<th style="text-align: right;">Matched / 226</th>
+<th>Execution qualification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Astra Low (Lite)</td>
+<td style="text-align: right;">Unavailable</td>
+<td style="text-align: right;">Ungraded</td>
+<td>Timed out; incomplete evidence</td>
+</tr>
+<tr>
+<td>Astra Medium</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">12</td>
+<td>Timed out; not execution-qualified owing to call-accounting problems</td>
+</tr>
+<tr>
+<td>Astra Extra high</td>
+<td style="text-align: right;">226</td>
+<td style="text-align: right;">20</td>
+<td>Timed out; execution qualified</td>
+</tr>
+<tr>
+<td>Grok Bot 01</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td>Supervised; incomplete call accounting</td>
+</tr>
+<tr>
+<td>Grok Bot 02</td>
+<td style="text-align: right;">226</td>
+<td style="text-align: right;">1</td>
+<td>Supervised; incomplete call accounting</td>
+</tr>
+<tr>
+<td>Grok Bot 03</td>
+<td style="text-align: right;">139</td>
+<td style="text-align: right;">1</td>
+<td>Supervised; incomplete call accounting</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Table 1. Descriptive outcomes for the retained pilot. Execution qualification concerns run control, not assembly correctness. The denominator includes missing occurrences. Component-level counts accompany the manuscript as source data.</em></p>
+<p>Astra Extra high and Grok Bot 02 each supplied the complete inventory, but matched 20 and one placements, respectively. The common-frame anchor contributed one match to every graded return. Astra Medium and Extra high therefore matched 11 and 19 additional placements; no Grok return matched a non-anchor placement. These additional counts explain the original score and do not replace it. The known-correct native control matched 226/226.</p>
+<figure><a href="/media/handbench-technical-report/all-retained-assemblies.png" target="_blank"><img alt="All six retained outcomes, with an unavailable panel for Astra Low and actual submitted geometry for the five graded returns." src="/media/handbench-technical-report/all-retained-assemblies.png"/></a><figcaption>Figure 1. Post-hoc renders of the actual retained assemblies. Purple marks the alignment anchor, teal other matched placements and orange unmatched placements. Camera direction and magnification are shared; each return is centered separately. Orange denotes disagreement with the reference snapshot, not mechanical invalidity. No component was individually repositioned or repaired for display.</figcaption></figure>
+<h3 id="visual-and-calculation-evidence">Visual and calculation evidence</h3>
+<p>The Astra returns had recognizable hand-like arrangements, whereas Grok Bot 02 formed a more compact grouping (Extended Data Figures 1–5). These are visual observations, not collision measurements. A separate post-hoc inspection found three pairs of identical components in Grok Bot 02 sharing exactly repeated native placements. They were required copies, not excess inventory; this observation did not alter the score.</p>
+<p>Inspection without executing candidate code found that returned artifacts did not consistently include the procedures and dependencies needed to reproduce the placement process. Astra Medium's export script depended on a placement file absent from its returned folder. Extra high returned no build script. Grok Bot 01 and 02 supplied short stubs; Grok Bot 03 described a registration procedure, but its returned code only loaded the final placement record and counted entries. This audit concerns collected artifacts rather than every computation performed during a run. Build code and images were optional in the original task, so these omissions are not retroactive failures.</p>
+<h3 id="export-fidelity-is-a-separate-outcome">Export fidelity is a separate outcome</h3>
+<p>Native placement and STEP export fidelity measured different properties. The known-correct control passed placement measurement but had 199 passing STEP comparisons, 26 discrepancies and one inconclusive mass comparison. Consequently, export discrepancies alone cannot establish model-caused damage. The primary placement results are independent of these export diagnostics. Future representations require an adapter that preserves the geometry, units, identities and placements needed by the chosen metric.</p>
+<h2 id="discussion">Discussion</h2>
+<p>The retained outputs demonstrate a distinction between inventory completeness and reference-pose agreement within this case. The figures also show why apparent assembly quality cannot substitute for measurement: large matched surfaces can dominate a view even when many small components remain unmatched. Each required occurrence receives one unit of placement credit, irrespective of size or visibility.</p>
+<p>The principal limitation is interpretive. A static snapshot is narrower than a set of mechanically valid configurations. The study did not establish that every withheld joint angle was uniquely recoverable from the supplied geometry. An unmatched placement therefore cannot, by itself, diagnose incorrect mating, nonfunctionality or the cause of an error. Joint connectivity, clearance, motion and strength require separately validated measurements.</p>
+<p>The series is also too limited and heterogeneous for a model or reasoning-effort ranking. There was one Astra observation per setting, its controllers changed between attempts, and Grok's backend identity and complete call accounting were unavailable. Fresh Grok conversations shared account storage without verified isolation. No controlled higher-budget or Ultra comparison was performed. The low counts cannot be attributed causally to reasoning settings or resource restrictions.</p>
+<p>The practical contribution is a documented baseline with inspectable outputs, not evidence of general robotic-hand capability. Future comparisons should retain the task and primary metric, disclose changes in models and execution tools, and preserve unsuccessful outcomes. Additional tasks and repeated runs would be needed to assess repeatability and broader applicability.</p>
+<h2 id="methods">Methods</h2>
+<h3 id="task-and-execution">Task and execution</h3>
+<p>The frozen worker kit contained 29 component definitions and 226 required occurrences drawn from the reviewed Amazing Hand case. An occurrence denotes one required copy. Astra and Grok received identical component inputs and inventories, without the solved reference placements. The design was publicly available upstream; withholding the benchmark reference does not establish absence from model training data.</p>
+<p>The target limits were 1,800 seconds and 100 execution-tool calls. Astra's time cap included a five-second shutdown reserve; collection and grading followed output freezing. Astra used the requested Low (menu Lite), Medium and Extra high settings. Grok used a managed-default Bot configuration with operator-supervised stopping and an instructed call ceiling. Hard remote enforcement and complete Grok call accounting were not established. A tool call may perform many numerical operations; it is not equivalent to a solver iteration, conversational turn or token count.</p>
+<h3 id="geometry-and-placement-checks">Geometry and placement checks</h3>
+<p>The native evaluator checked inventory identities, valid rigid transforms and preserved component geometry. Actual CAD transforms had to agree with the declared transforms within an elementwise tolerance of <code>1e-9</code>; scoring used the actual CAD placements. Local-geometry preservation was checked through corresponding serialized component data with bounded floating-point differences. All five graded returns passed the relevant native-geometry checks.</p>
+<p>For submitted transforms <code>S_i</code>, reference transforms <code>R_j</code> and anchor <code>a</code>, comparison used:</p>
+<pre><code class="language-text">submitted relative transform = inverse(S_a) × S_i
+reference relative transform = inverse(R_a) × R_j
+</code></pre>
+<p>This removes a common rigid movement of the assembly. The eligible anchor becomes identity in both frames and therefore does not demonstrate an inferred relationship between different components. Copies of the same component were assigned to reference slots through maximum-cardinality one-to-one matching.</p>
+<p>The method, <code>marb.amazing_native_sampled_coverage.v1</code>, uses each template's fixed <code>Shape.Center()</code> reference point and the maximum sampled point-to-boundary distance in each direction. A pair qualified when its reference-point separation and both directional maxima were at most <strong>0.100001 mm</strong>: a nominal 0.1 mm cutoff plus an explicit 0.000001 mm numerical guard. The reference point was not treated as a validated physical center of mass. Raw distances were compared without rounding; no retained result depended on guard-band credit.</p>
+<p>The reviewed template sample set covered 1,109 faces with 5,125 points across the 29 definitions. Sampling used all vertices and up to three strictly interior points per trimmed face, with a bounded fallback for initially missed faces. Each sample's minimum distance to the opposite CAD boundary was measured, and the maximum was taken separately in each direction. A shortcut assigned zero deviation to accepted identical templates whose relative matrices agreed within <code>1e-12</code> elementwise. These are finite sampled checks, not a full-surface bound or manufacturing tolerance. Retained pair-distance records cover candidates passing the initial proximity filter and cannot support a complete error-distance distribution for unmatched parts.</p>
+<h3 id="controls-and-descriptive-analysis">Controls and descriptive analysis</h3>
+<p>The known-correct native control tested recognition of the accepted assembly. Additional controls covered global rigid movement, interchangeable copies, symmetry, displacement, geometry alteration and disagreement between declared and actual transforms. These controls support the specified digital measurement, not the unique inferability of the target or physical functionality.</p>
+<p>The unit of observation was an attempt on this single assembly. Its 226 occurrences are coupled parts and were not treated as independent experimental replicates. Analysis was descriptive: no significance tests, population confidence intervals or estimated model effects were calculated. The unavailable Low outcome was not imputed. Anchor breakdowns, repeated-placement inspection, returned-code audit and reviewer renders were post-hoc analyses of unchanged results.</p>
+<h3 id="inspectable-calculations-and-images">Inspectable calculations and images</h3>
+<p>A rigid transform specifies rotation and translation, but does not alone reproduce how the placement was selected. For example, one actual Grok Bot 02 placement was:</p>
+<pre><code class="language-text">T = [ 0.067638  -0.230287   0.970769  -33.216116 ]
+    [ 0.517321  -0.823889  -0.231488  -26.659567 ]
+    [ 0.853115   0.517856   0.063406  -38.708297 ]
+    [ 0          0          0           1        ]
+
+For an illustrative local point p = (10, 0, 0) mm:
+world point = rotation × p + translation
+            ≈ (-32.539737, -21.486361, -30.177151) mm
+</code></pre>
+<p>Values are rounded for display; full-precision coordinates were used for the check. The test point is illustrative rather than an identified physical feature. This is candidate output, not a target transform, and the occurrence did not match the reference.</p>
+<p>Figures were rendered from frozen native solids after the runs. Input file fingerprints were checked against retained grading records. Each return received one inverse-anchor viewing transform, preserving all relative placements. The overview shares magnification across runs; each three-view plate is fitted separately. CadQuery 2.7 produced display meshes using a tolerance argument of 0.07 in relative-deflection mode and an angular argument of 0.2 radians; existing triangulations may be reused. This is not an absolute mesh-error bound. Display meshes were separate from the CAD-boundary scoring procedure.</p>
+<p>Future cohorts will require geometry, complete calculation dependencies, three documented assembly views and verification records linked to the same frozen output. This is a prospective reporting requirement; automated collection enforcement is not yet integrated. Candidate-generated images consume the candidate budget. Post-freeze reviewer rendering must not change placements or provide feedback to an active candidate.</p>
+<h2 id="data-availability">Data availability</h2>
+<p>The accompanying source-data table provides required, supplied and matched counts for all component definitions across the five graded returns. All six assembly figures are included. Underlying CAD returns, evaluation records and reference placements are retained separately and are not openly deposited. Access requires review of source rights and benchmark-confidentiality restrictions; this limits independent reproduction from the reader package alone.</p>
+<h2 id="code-availability">Code availability</h2>
+<p>Evaluation, rendering and analysis code are retained internally and have not been deposited in a public release. The method and numerical example are described here; the package does not claim to provide a complete executable reproduction environment. The candidate-code omissions reported above remain unresolved.</p>
+<h2 id="competing-interests-and-ai-assistance">Competing interests and AI assistance</h2>
+<p>Sunnyday Technologies develops CADCLAW and operates MARB, the software and benchmark associated with this study. AI tools assisted software development, analysis scripting, manuscript preparation and internal review. The assembly figures are direct CAD renders. Internal AI review does not constitute external journal peer review.</p>
+<h2 id="references">References</h2>
+<ol>
+<li>Willis, K. D. D. et al. JoinABLe: Learning Bottom-Up Assembly of Parametric CAD Joints. <em>Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</em>, 15849–15860 (2022). <a href="https://openaccess.thecvf.com/content/CVPR2022/html/Willis_JoinABLe_Learning_Bottom-Up_Assembly_of_Parametric_CAD_Joints_CVPR_2022_paper.html">Publisher record</a>.</li>
+<li>Pollen Robotics. <em>AmazingHand: code and model to control the AH!</em> <a href="https://github.com/pollen-robotics/AmazingHand">Project repository</a>. The benchmark uses its separately frozen case inputs.</li>
+<li>Pineau, J. et al. Improving Reproducibility in Machine Learning Research (A Report from the NeurIPS 2019 Reproducibility Program). <em>Journal of Machine Learning Research</em> <strong>22</strong>, 1–20 (2021). <a href="https://www.jmlr.org/papers/v22/20-303.html">Journal record</a>.</li>
+</ol>
+<h2 id="extended-assembly-views">Extended assembly views</h2>
+<h3 id="extended-data-figure-1-astra-medium">Extended Data Figure 1 | Astra Medium</h3>
+<figure><a href="/media/handbench-technical-report/astra-medium-views.png" target="_blank"><img alt="Three views of the actual Astra Medium return." src="/media/handbench-technical-report/astra-medium-views.png"/></a><figcaption>98 occurrences supplied; 12 matched, including the anchor. Another 128 occurrences are absent. Directions are defined in the anchor-local frame, not anatomically. Scale bars are in millimetres. All extended figures use the color convention in Figure 1 and identify their post-hoc origin.</figcaption></figure>
+<h3 id="extended-data-figure-2-astra-extra-high">Extended Data Figure 2 | Astra Extra high</h3>
+<figure><a href="/media/handbench-technical-report/astra-xhigh-views.png" target="_blank"><img alt="Three views of the actual Astra Extra high return." src="/media/handbench-technical-report/astra-xhigh-views.png"/></a><figcaption>All 226 occurrences supplied; 20 matched. Large teal surfaces do not receive more credit than small matched parts. Each occurrence contributes at most one match.</figcaption></figure>
+<h3 id="extended-data-figure-3-grok-bot-01">Extended Data Figure 3 | Grok Bot 01</h3>
+<figure><a href="/media/handbench-technical-report/grok-01-views.png" target="_blank"><img alt="Three views of the single component returned by Grok Bot 01." src="/media/handbench-technical-report/grok-01-views.png"/></a><figcaption>Only the alignment component was returned. Its match supplies no evidence of another recovered component relationship.</figcaption></figure>
+<h3 id="extended-data-figure-4-grok-bot-02">Extended Data Figure 4 | Grok Bot 02</h3>
+<figure><a href="/media/handbench-technical-report/grok-02-views.png" target="_blank"><img alt="Three views of the actual Grok Bot 02 return." src="/media/handbench-technical-report/grok-02-views.png"/></a><figcaption>All 226 occurrences supplied; only the anchor matched. The compact grouping is visible in three directions. No collision or mechanical-function claim is inferred from these views.</figcaption></figure>
+<h3 id="extended-data-figure-5-grok-bot-03">Extended Data Figure 5 | Grok Bot 03</h3>
+<figure><a href="/media/handbench-technical-report/grok-03-views.png" target="_blank"><img alt="Three views of the actual Grok Bot 03 return." src="/media/handbench-technical-report/grok-03-views.png"/></a><figcaption>139 occurrences supplied; one matched and 87 absent. The arrangement differs from Grok Bot 02 despite the same matched count.</figcaption></figure>
+</article></main>
+<footer>Hand design: <a href="https://github.com/pollen-robotics/AmazingHand">Pollen Robotics, Amazing Hand</a>. Figures: Sunnyday Technologies, rendered from retained benchmark returns. <a href="AmazingHand-project-license.txt">Upstream project license</a>.</footer></body></html>

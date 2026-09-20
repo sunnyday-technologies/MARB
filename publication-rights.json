@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "site": "https://marb.cadclaw.io/",
-  "reviewed_on": "2026-09-19",
+  "reviewed_on": "2026-09-20",
   "release_authorized": true,
   "release_hold": "",
   "supported_by_repository_hash": [],
@@ -43,7 +43,13 @@
     "publishing/media/handbench/figure-01-movement.png",
     "publishing/media/handbench/figure-02-quantities.png",
     "publishing/media/handbench/figure-03-results.png",
-    "publishing/media/handbench/figure-04-optimization-loop.png"
+    "publishing/media/handbench/figure-04-optimization-loop.png",
+    "publishing/media/handbench-technical-report/all-retained-assemblies.png",
+    "publishing/media/handbench-technical-report/astra-medium-views.png",
+    "publishing/media/handbench-technical-report/astra-xhigh-views.png",
+    "publishing/media/handbench-technical-report/grok-01-views.png",
+    "publishing/media/handbench-technical-report/grok-02-views.png",
+    "publishing/media/handbench-technical-report/grok-03-views.png"
   ],
   "owner_or_counsel_review_required": [],
   "excluded_from_release": [
@@ -51,6 +57,7 @@
   ],
   "tracked_repository_hold": [],
   "notes": [
+    "2026-09-20: owner authorized publication of the internally reviewed HandBench technical report and its six actual-assembly figures. Manuscript SHA-256 6abeb17e6f26f4e707c30c18f4d26c4cc277bba4987555efd794308467a28e26; PDF SHA-256 cd1745100e2b8755e0f5399bf5687b48a950791d64016ae8d100f45f1d3cac3f. Figures are Sunnyday-created post-hoc renders of retained candidate arrangements of the Pollen Robotics Amazing Hand case; they are cleared for this technical reporting use, with project attribution and the upstream Apache-2.0 license included. This record does not clear distribution of raw third-party CAD or withheld reference placements. Independent scientific, methods and privacy critics followed by an executive editor accepted the report. Figure hashes, source provenance, reviewed scope and authorization are retained privately. Only the report, six PNGs, PDF, component counts and license notice are added; no candidate archives, raw CAD, answer keys, logs or internal reviews enter the site artifact.",
     "2026-09-19: owner requested publication of the reviewed HandBench article (approved prose SHA-256 88f3387f2ae762c8db65e63240345a01e6af6fb185556aa49edd5640a7882e2d). Five visuals are cleared under this approval: one generated conceptual hero with no source geometry input, and four original Sunnyday explanatory/data figures. Three independent AI critics followed by an AI executive editor reviewed the copy. Nonessential PNG metadata is removed without altering image pixels. No raw CAD, answer keys, return archives, logs or internal editorial notes enter the release. Supporting authorization, source provenance and original image hashes remain privately retained.",
     "2026-09-17: owner authorized publication of the Astra vs Grok Bot story and its provisional measurements, excluding personal and unnecessary data. Seven retained visuals are two Sunnyday-generated metric charts and five submitted renders of the existing Sunnyday M3-CRETE task geometry. Cleared under the existing owner rule for benchmark figures and M3-CRETE renders; image pixels are unchanged and nonessential PNG metadata is removed. Supporting asset hashes and publication authorization are retained privately. No raw CAD, return archives or execution records enter the site artifact.",
     "Hash correspondence establishes repository provenance for a file, not copyright or trademark clearance.",
