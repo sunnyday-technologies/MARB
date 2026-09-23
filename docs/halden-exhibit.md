@@ -13,13 +13,15 @@ from the demo. The existing benchmark registry and report remain unchanged.
 ## Artifact and release boundary
 
 - The supplied static HTML was exported from the user's Cursor project. The
-  displayed revision is `c0219c4`; its SHA-256 is
-  `5c6a769e48ae89658ec1ff689b456a2b958479a2e506d64fdaaab4f7cb31d3e5`.
-- The embedded CSS is extracted byte-for-byte. JavaScript has four bounded
-  corrections: explicit PCF shadows, a 50-degree desktop field of view (mobile
+  displayed revision is `aa48ce6`; its SHA-256 is
+  `83ebfb22c74896276860911e13f66d93e5fced19548663948c67ddb491edb2df`.
+- The embedded CSS is extracted byte-for-byte. JavaScript retains four bounded
+  display corrections: explicit PCF shadows, a 50-degree desktop field of view (mobile
   remains 52 degrees), the label "HAND CONCEPT", and a description
-  of modeled components without asserting physical function.
-  `scripts/patch_halden_thumb.py` reproduces extraction and corrections from the
+  of modeled components without asserting physical function. Three additional
+  wording changes identify price/material allowances and bench time as estimates
+  and avoid asserting that the proposed supply supports simultaneous servo loads.
+  `scripts/patch_halden_bom.py` reproduces extraction and corrections from the
   exact original HTML. Geometry, transforms, pose values and
   motion logic are unchanged.
 - The publication wrapper adds MARB navigation, context, metadata and a
@@ -46,6 +48,29 @@ previous export and extraction script remain in the release history.
 This is a correction to a concept animation. Tendons remain simplified rigid
 segments; their orientation and continuity limitations are not resolved by this
 thumb update. No physical or collision validation is claimed.
+
+## Shopping list revision
+
+Revision `aa48ce6` adds 15 purchase/material lines grouped as Buy, Print and
+Machine, totaling $162.22 from the supplied quantities and price allowances.
+The 59 modeled components now expand to show their associated purchase line.
+The shopping list is accessible at `#build`; its markers switch hides the black
+fiber-path overlays. Corrected thumb transforms and all eight poses are retained.
+
+This is an unbuilt concept shopping list, not a manufacturing-validated BOM.
+The 195-minute bench allowance is an estimate, excludes labor cost from the
+parts subtotal, and is not a measured build. Generic hardware/material allowances
+are not verified vendor quotes. The source orders 16 M3 pin/nut sets for 15
+modeled pin occurrences; that authored quantity is preserved, not silently
+reconciled. Electrical integration and completeness require engineering review.
+
+The linked WowRobo C018 listing was checked on 2026-09-23 and showed $15.99,
+sold out. The Mean Well LRS-100-12 specification supports the 12 V, 8.5 A rating;
+it does not validate this hand's load budget. The runtime library prefix is
+byte-identical to the previous release, so existing software notices apply.
+
+References: [servo listing](https://shop.wowrobo.com/products/feetech-sts3215-servo-12v-30kg-high-torque-servo-for-so-arm100),
+[power-supply specification](https://www.meanwell.com/Upload/PDF/LRS-100/LRS-100-SPEC.PDF).
 
 ## Executable content policy
 

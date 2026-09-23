@@ -345,10 +345,10 @@ $jsonLdHashes = @()
 # One reviewed, self-contained interactive exhibit. This exact-byte exception
 # does not permit scripts on any other page or broaden CSP to arbitrary files.
 $exhibitRoute = "robotic-hand/halden-mkiii/index.html"
-$exhibitModule = Join-Path $Target "robotic-hand/halden-mkiii/assets/halden-mkiv-9ba81bca4ef3.js"
-$exhibitSha256 = "9ba81bca4ef3f52cea36f6c1f78b215b39ee219bd7e3c707fbdebebcf5f5cee2"
-$exhibitHashToken = "sha256-m6gbyk7z9SzqNvbB94shWznuIZvX48cH+96+vPX1zuI="
-$exhibitScriptTag = '<script type="module" src="./assets/halden-mkiv-9ba81bca4ef3.js" integrity="sha256-m6gbyk7z9SzqNvbB94shWznuIZvX48cH+96+vPX1zuI=" crossorigin="anonymous"></script>'
+$exhibitModule = Join-Path $Target "robotic-hand/halden-mkiii/assets/halden-mkiv-bcc0fe68823a.js"
+$exhibitSha256 = "bcc0fe68823a3811a3947c55c041c138bf41c2d5386e33702f7f34559b7b1c9e"
+$exhibitHashToken = "sha256-vMD+aII6OBGjlHxVwEHBOL9BwtU4bjNwL380VZt7HJ4="
+$exhibitScriptTag = '<script type="module" src="./assets/halden-mkiv-bcc0fe68823a.js" integrity="sha256-vMD+aII6OBGjlHxVwEHBOL9BwtU4bjNwL380VZt7HJ4=" crossorigin="anonymous"></script>'
 if ((Get-FileHash -LiteralPath $exhibitModule -Algorithm SHA256).Hash.ToLowerInvariant() -ne $exhibitSha256) {
   throw "Unreviewed Halden module bytes"
 }
