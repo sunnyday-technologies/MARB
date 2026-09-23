@@ -13,13 +13,13 @@ from the demo. The existing benchmark registry and report remain unchanged.
 ## Artifact and release boundary
 
 - The supplied static HTML was exported from the user's Cursor project. The
-  displayed revision is `967ba6e`; its SHA-256 is
-  `c564cb03c7c7c071246300504b6f3213df3a9c1bbb9685ab244b1d52062a1c66`.
+  displayed revision is `c0219c4`; its SHA-256 is
+  `5c6a769e48ae89658ec1ff689b456a2b958479a2e506d64fdaaab4f7cb31d3e5`.
 - The embedded CSS is extracted byte-for-byte. JavaScript has four bounded
   corrections: explicit PCF shadows, a 50-degree desktop field of view (mobile
   remains 52 degrees), the label "HAND CONCEPT", and a description
   of modeled components without asserting physical function.
-  `scripts/patch_halden_mkiv.py` reproduces extraction and corrections from the
+  `scripts/patch_halden_thumb.py` reproduces extraction and corrections from the
   exact original HTML. Geometry, transforms, pose values and
   motion logic are unchanged.
 - The publication wrapper adds MARB navigation, context, metadata and a
@@ -35,6 +35,17 @@ from the demo. The existing benchmark registry and report remain unchanged.
   collecting those notices; supplemental upstream notices identify their pinned
   source. The earlier extraction and display script remains as historical
   reproduction support.
+
+## Thumb revision
+
+The source update relocates the thumb base from `[-62, 120, 0]` to
+`[-76, 64, 22]`, updates its support and tendon endpoint, expands the opposition
+sweep, and retunes grip presets. These authored changes are preserved. The
+previous export and extraction script remain in the release history.
+
+This is a correction to a concept animation. Tendons remain simplified rigid
+segments; their orientation and continuity limitations are not resolved by this
+thumb update. No physical or collision validation is claimed.
 
 ## Executable content policy
 

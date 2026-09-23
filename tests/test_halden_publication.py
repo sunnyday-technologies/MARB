@@ -9,7 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which('pwsh') or os.environ.get('MARB_TEST_PWSH')
 PAGE = 'publishing/robotic-hand/halden-mkiii/index.html'
-MODULE = 'publishing/robotic-hand/halden-mkiii/assets/halden-mkiv-633d59699c4a.js'
+MODULE = 'publishing/robotic-hand/halden-mkiii/assets/halden-mkiv-9ba81bca4ef3.js'
 
 
 @unittest.skipUnless(PWSH, 'PowerShell 7 required for release-gate integration')
@@ -60,7 +60,7 @@ class HaldenReleaseGateTests(unittest.TestCase):
 
     def test_module_on_other_route_is_rejected(self):
         self.change('publishing/robotic-hand/index.html', '</head>',
-                    '<script src="/robotic-hand/halden-mkiii/assets/halden-mkiv-633d59699c4a.js"></script></head>')
+                    '<script src="/robotic-hand/halden-mkiii/assets/halden-mkiv-9ba81bca4ef3.js"></script></head>')
         self.gate('Unapproved executable script')
 
     def test_broad_csp_allowance_is_rejected(self):
