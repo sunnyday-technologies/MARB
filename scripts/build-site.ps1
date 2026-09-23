@@ -291,7 +291,7 @@ if ($sitemapUrls.Count -ne $requiredSitemapUrls.Count) {
 }
 foreach ($node in $sitemapNodes) {
   $route = $node.SelectSingleNode("./*[local-name()='loc']").InnerText
-  $expectedLastmod = if ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/halden-mkiii/")) { "2026-09-22" } elseif ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/handbench-baseline/", "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/", "https://marb.cadclaw.io/studies/")) { "2026-09-20" } elseif ($route -eq "https://marb.cadclaw.io/") { "2026-09-19" } elseif ($route -eq "https://marb.cadclaw.io/astra-vs-grok/") { "2026-09-17" } else { "2026-08-11" }
+  $expectedLastmod = if ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/halden-mkiii/")) { "2026-09-23" } elseif ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/handbench-baseline/", "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/", "https://marb.cadclaw.io/studies/")) { "2026-09-20" } elseif ($route -eq "https://marb.cadclaw.io/") { "2026-09-19" } elseif ($route -eq "https://marb.cadclaw.io/astra-vs-grok/") { "2026-09-17" } else { "2026-08-11" }
   $lastmod = $node.SelectSingleNode("./*[local-name()='lastmod']")
   if ($null -eq $lastmod -or $lastmod.InnerText -ne $expectedLastmod) {
     throw "Sitemap route has an incorrect lastmod: $route"
@@ -345,10 +345,10 @@ $jsonLdHashes = @()
 # One reviewed, self-contained interactive exhibit. This exact-byte exception
 # does not permit scripts on any other page or broaden CSP to arbitrary files.
 $exhibitRoute = "robotic-hand/halden-mkiii/index.html"
-$exhibitModule = Join-Path $Target "robotic-hand/halden-mkiii/assets/halden-27c86ba84a86.js"
-$exhibitSha256 = "27c86ba84a86ef59da13e58688b90620aa7d7f1b728946cde6f3ecb856366273"
-$exhibitHashToken = "sha256-J8hrqEqG71naE+WGiLkGIKp9fxtyiUbN5vPsuFY2YnM="
-$exhibitScriptTag = '<script type="module" src="./assets/halden-27c86ba84a86.js" integrity="sha256-J8hrqEqG71naE+WGiLkGIKp9fxtyiUbN5vPsuFY2YnM=" crossorigin="anonymous"></script>'
+$exhibitModule = Join-Path $Target "robotic-hand/halden-mkiii/assets/halden-mkiv-633d59699c4a.js"
+$exhibitSha256 = "633d59699c4af469ce60764287bbc2826748e15a2531a3a2dd720f67d6bd8a54"
+$exhibitHashToken = "sha256-Yz1ZaZxK9GnOYHZCh7vCgmdI4VolMaOi3XIPZ9a9ilQ="
+$exhibitScriptTag = '<script type="module" src="./assets/halden-mkiv-633d59699c4a.js" integrity="sha256-Yz1ZaZxK9GnOYHZCh7vCgmdI4VolMaOi3XIPZ9a9ilQ=" crossorigin="anonymous"></script>'
 if ((Get-FileHash -LiteralPath $exhibitModule -Algorithm SHA256).Hash.ToLowerInvariant() -ne $exhibitSha256) {
   throw "Unreviewed Halden module bytes"
 }

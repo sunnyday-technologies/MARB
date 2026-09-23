@@ -1,6 +1,6 @@
-Halden Mk-III: third-party software notices
+Halden Mk-IV: third-party software notices
 
-The supplied compiled bundle has two display-only corrections: wider camera field of view and an explicit supported shadow-map type. This conservative list includes all non-development dependencies from its supplied lockfile; some may be removed by bundling. Packaged license texts were read from exact npm archives after SHA-512 integrity verification; supplemental notices identify their upstream sources.
+The supplied compiled bundle uses an explicit supported shadow-map type, wider desktop camera framing and two description corrections to identify the hand as a concept. Geometry and motion logic are unchanged. This conservative list includes all non-development dependencies from its supplied lockfile; some may be removed by bundling. Packaged license texts were read from exact npm archives after SHA-512 integrity verification; supplemental notices identify their upstream sources.
 
 ========================================================================
 @babel/runtime 7.29.7

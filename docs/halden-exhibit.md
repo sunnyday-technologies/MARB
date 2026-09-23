@@ -1,29 +1,40 @@
-# Halden Mk-III interactive exhibit
+# Halden Mk-IV interactive exhibit
 
-Published route: `/robotic-hand/halden-mkiii/`.
+Published route: `/robotic-hand/halden-mkiii/` (retained for existing links).
 
-This is the user-supplied procedural 30-part visualization, published as an
-unscored exhibit. It is separate from the Amazing Hand benchmark, which uses
+This is the user-supplied 59-part hand concept, published as an unscored exhibit.
+The inventory includes modeled servos, capstans, tendons, return elastics,
+pins and pads; it is not a validated manufacturing bill of materials.
+It is separate from the Amazing Hand benchmark, which uses
 29 component designs in 226 occurrences. No runtime, model attribution,
 reconstruction score, collision validation or physical performance is inferred
 from the demo. The existing benchmark registry and report remain unchanged.
 
 ## Artifact and release boundary
 
-- Supplied ZIP SHA-256: `9e11031ef6c480c4877c06b2314b0ba3f43de81a700d82768e1437ba84786caf`.
-- The supplied CSS is preserved byte-for-byte. JavaScript has two bounded display
-  corrections: a 65-degree camera field of view and explicit PCF shadows.
-  `scripts/patch_halden_display.py` reproduces the changes from the exact original
-  bundle. Hand geometry and motion logic are unchanged.
+- The supplied static HTML was exported from the user's Cursor project. The
+  displayed revision is `967ba6e`; its SHA-256 is
+  `c564cb03c7c7c071246300504b6f3213df3a9c1bbb9685ab244b1d52062a1c66`.
+- The embedded CSS is extracted byte-for-byte. JavaScript has four bounded
+  corrections: explicit PCF shadows, a 50-degree desktop field of view (mobile
+  remains 52 degrees), the label "HAND CONCEPT", and a description
+  of modeled components without asserting physical function.
+  `scripts/patch_halden_mkiv.py` reproduces extraction and corrections from the
+  exact original HTML. Geometry, transforms, pose values and
+  motion logic are unchanged.
 - The publication wrapper adds MARB navigation, context, metadata and a
   responsive frame. External font requests are removed; system fallbacks apply.
 - This repository reproduces the publication by copying the compiled assets;
   it does not claim to reproduce the original application compilation.
-- The ZIP's LinkedIn draft, development files and deployment suggestions are
-  outside this website release.
+- LinkedIn, development files and suggested hardware documentation are outside
+  this website release.
 - Third-party notices accompany the bundle. The conservative dependency list
-  comes from the supplied lockfile. npm archive hashes are checked before
-  collecting notices; supplemental upstream notices identify their pinned source.
+  comes from the supplied lockfile. All 66 non-development dependency names,
+  versions and integrity hashes match the preceding Mk-III release, so its
+  verified notices are retained. npm archive hashes were checked before
+  collecting those notices; supplemental upstream notices identify their pinned
+  source. The earlier extraction and display script remains as historical
+  reproduction support.
 
 ## Executable content policy
 
