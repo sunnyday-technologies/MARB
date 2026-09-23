@@ -277,6 +277,7 @@ $requiredSitemapUrls = @(
   "https://marb.cadclaw.io/robotic-hand/",
   "https://marb.cadclaw.io/robotic-hand/handbench-baseline/",
   "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/",
+  "https://marb.cadclaw.io/robotic-hand/halden-mkiii/",
   "https://marb.cadclaw.io/first-results/",
   "https://marb.cadclaw.io/pascal/",
   "https://marb.cadclaw.io/recap/",
@@ -286,11 +287,11 @@ foreach ($requiredUrl in $requiredSitemapUrls) {
   if ($sitemapUrls -notcontains $requiredUrl) { throw "Sitemap is missing required URL: $requiredUrl" }
 }
 if ($sitemapUrls.Count -ne $requiredSitemapUrls.Count) {
-  throw "Sitemap must enumerate exactly the nine local HTML routes"
+  throw "Sitemap must enumerate exactly the ten local HTML routes"
 }
 foreach ($node in $sitemapNodes) {
   $route = $node.SelectSingleNode("./*[local-name()='loc']").InnerText
-  $expectedLastmod = if ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/handbench-baseline/", "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/", "https://marb.cadclaw.io/studies/")) { "2026-09-20" } elseif ($route -eq "https://marb.cadclaw.io/") { "2026-09-19" } elseif ($route -eq "https://marb.cadclaw.io/astra-vs-grok/") { "2026-09-17" } else { "2026-08-11" }
+  $expectedLastmod = if ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/halden-mkiii/")) { "2026-09-22" } elseif ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/handbench-baseline/", "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/", "https://marb.cadclaw.io/studies/")) { "2026-09-20" } elseif ($route -eq "https://marb.cadclaw.io/") { "2026-09-19" } elseif ($route -eq "https://marb.cadclaw.io/astra-vs-grok/") { "2026-09-17" } else { "2026-08-11" }
   $lastmod = $node.SelectSingleNode("./*[local-name()='lastmod']")
   if ($null -eq $lastmod -or $lastmod.InnerText -ne $expectedLastmod) {
     throw "Sitemap route has an incorrect lastmod: $route"
@@ -341,6 +342,17 @@ $htmlFiles = @($publishFiles | Where-Object { $_.Extension.ToLowerInvariant() -e
 $linkCount = 0
 $jsonLdCount = 0
 $jsonLdHashes = @()
+# One reviewed, self-contained interactive exhibit. This exact-byte exception
+# does not permit scripts on any other page or broaden CSP to arbitrary files.
+$exhibitRoute = "robotic-hand/halden-mkiii/index.html"
+$exhibitModule = Join-Path $Target "robotic-hand/halden-mkiii/assets/halden-27c86ba84a86.js"
+$exhibitSha256 = "27c86ba84a86ef59da13e58688b90620aa7d7f1b728946cde6f3ecb856366273"
+$exhibitHashToken = "sha256-J8hrqEqG71naE+WGiLkGIKp9fxtyiUbN5vPsuFY2YnM="
+$exhibitScriptTag = '<script type="module" src="./assets/halden-27c86ba84a86.js" integrity="sha256-J8hrqEqG71naE+WGiLkGIKp9fxtyiUbN5vPsuFY2YnM=" crossorigin="anonymous"></script>'
+if ((Get-FileHash -LiteralPath $exhibitModule -Algorithm SHA256).Hash.ToLowerInvariant() -ne $exhibitSha256) {
+  throw "Unreviewed Halden module bytes"
+}
+$exhibitScriptCount = 0
 $attributePattern = '(?i)\b(?:href|src)\s*=\s*["'']([^"'']+)["'']'
 $jsonLdPattern = '(?is)<script\s+type=["'']application/ld\+json["'']>([\s\S]*?)</script>'
 foreach ($htmlFile in $htmlFiles) {
@@ -377,8 +389,14 @@ foreach ($htmlFile in $htmlFiles) {
 
   $allScriptCount = [regex]::Matches($raw, '(?is)<script\b').Count
   $jsonLdMatches = [regex]::Matches($raw, $jsonLdPattern)
-  if ($allScriptCount -ne $jsonLdMatches.Count) {
-    throw "Only application/ld+json script blocks are permitted: $(Get-PublishRelativePath $htmlFile.FullName)"
+  $moduleCount = 0
+  if ((Get-PublishRelativePath $htmlFile.FullName) -eq $exhibitRoute) {
+    $moduleCount = [regex]::Matches($raw, [regex]::Escape($exhibitScriptTag)).Count
+    if ($moduleCount -ne 1) { throw "Halden must load exactly one reviewed module with SRI" }
+    $exhibitScriptCount += $moduleCount
+  }
+  if ($allScriptCount -ne ($jsonLdMatches.Count + $moduleCount)) {
+    throw "Unapproved executable script: $(Get-PublishRelativePath $htmlFile.FullName)"
   }
   foreach ($jsonLdMatch in $jsonLdMatches) {
     $jsonLd = $jsonLdMatch.Groups[1].Value
@@ -395,15 +413,21 @@ foreach ($htmlFile in $htmlFiles) {
   }
 }
 
+if ($exhibitScriptCount -ne 1) { throw "Missing reviewed Halden exhibit" }
 if ($jsonLdCount -lt 1) { throw "No JSON-LD found in published HTML" }
 if ($headersText -match "script-src\s+'none'" -or $headersText -match "script-src[^;]*'unsafe-inline'" -or $headersText -match "script-src[^;]*'unsafe-eval'") {
-  throw "CSP script policy must allow only reviewed JSON-LD hashes"
+  throw "CSP script policy must allow only reviewed script hashes"
 }
 $cspHashMatches = @([regex]::Matches($headersText, "'sha256-[A-Za-z0-9+/=]+'") | ForEach-Object { $_.Value.Trim("'") } | Sort-Object -Unique)
-$expectedHashes = @($jsonLdHashes | Sort-Object -Unique)
+$expectedHashes = @(($jsonLdHashes + $exhibitHashToken) | Sort-Object -Unique)
 if ($cspHashMatches.Count -ne $expectedHashes.Count) { throw "CSP contains stale or missing script hashes" }
 foreach ($hash in $expectedHashes) {
-  if ($cspHashMatches -notcontains $hash) { throw "CSP hash set does not match embedded JSON-LD" }
+  if ($cspHashMatches -notcontains $hash) { throw "CSP hash set does not match reviewed scripts" }
+}
+
+$scriptPolicy = [regex]::Match($headersText, '(?m)script-src\s+([^;]+);')
+if (-not $scriptPolicy.Success -or [regex]::Replace($scriptPolicy.Groups[1].Value, "'sha256-[A-Za-z0-9+/=]+'|\s+", '').Length -ne 0) {
+  throw "CSP script-src must contain only the reviewed hashes"
 }
 
 $styleFiles = @($publishFiles | Where-Object { $_.Extension.ToLowerInvariant() -eq ".css" })

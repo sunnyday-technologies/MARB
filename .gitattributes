@@ -39,6 +39,8 @@ scripts/hooks/* text eol=lf
 # Public site source is parsed byte-for-byte by the release gate. Pin text to
 # LF so a clean Windows checkout reproduces the same crawler and CSP checks.
 /publishing/** text eol=lf
+# Keep the user-supplied executable bundle byte-identical for SRI.
+/publishing/robotic-hand/halden-mkiii/assets/** -text -whitespace
 /publishing/*.jpg -text
 /publishing/*.jpeg -text
 /publishing/*.png -text

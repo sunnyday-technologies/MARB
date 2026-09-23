@@ -1,0 +1,11 @@
+/* MARB context without changing the supplied hand geometry or controls. */
+body { height: 100dvh; display: flex; flex-direction: column; }
+.marb-context { flex: 0 0 auto; padding: 10px 20px; border-bottom: 1px solid #efe7d626; background: #17181b; font-size: 12px; line-height: 1.4; }
+.marb-context nav { display: flex; align-items: center; flex-wrap: wrap; column-gap: 18px; row-gap: 3px; }
+.marb-context a { color: #e6a15c; text-decoration: underline; text-underline-offset: 3px; }
+.marb-context p { margin: 5px 0 0; color: #c4bdae; }
+.marb-context span { color: #efe7d6; }
+#root { flex: 1 1 auto; height: auto; min-height: 0; }
+#root > .h-dvh { height: 100%; }
+noscript { padding: 20px; }
+@media (max-width: 767px) { .marb-context { padding: 8px 14px; font-size: 11px; } }
