@@ -1,8 +1,8 @@
-# Dexter: from an assembly benchmark to a manufacturing design brief
+# Halden Mk-IV: from an assembly benchmark to a manufacturing design brief
 
 **Sunnyday Technologies · Design review · September 27, 2026**
 
-Dexter is an AI-assisted robotic-hand design project with human direction and review. Its current public exhibit is labelled **Halden Mk-IV**, the latest revision of a name introduced by the design agent. It remains an unbuilt concept, separate from the scored or unranked reconstruction attempts in MARB HandBench.
+Halden Mk-IV is an AI-assisted robotic-hand design project with human direction and review. The name originated with the design agent. It remains an unbuilt concept, separate from the scored or unranked reconstruction attempts in MARB HandBench.
 
 ![Actual published hand in its rest pose.](/media/dexter/dexter-rest.png)
 
@@ -14,7 +14,7 @@ The original HandBench work asked models to reconstruct existing hands. The sour
 
 An exploratory assembly request then produced an independently generated visual hand rather than the requested Amazing Hand. That was not a successful reconstruction. Sunnyday subsequently changed the objective: develop a hand around economic value, considering useful motion, accessible components, fabrication and assembly.
 
-The build history contains repeated human interventions, including thumb corrections, material questions and bill-of-materials revisions. It does not support a one-prompt or fully autonomous engineering claim. The earlier [HandBench technical report](https://marb.cadclaw.io/robotic-hand/handbench-technical-report/) documents the reconstruction pilot; its scores and budgets do not measure Dexter’s design quality.
+The build history contains repeated human interventions, including thumb corrections, material questions and bill-of-materials revisions. It does not support a one-prompt or fully autonomous engineering claim. The earlier [HandBench technical report](https://marb.cadclaw.io/robotic-hand/handbench-technical-report/) documents the reconstruction pilot; its scores and budgets do not measure Halden Mk-IV’s design quality.
 
 ## What the current concept contains
 

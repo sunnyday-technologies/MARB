@@ -17,7 +17,7 @@
 - MARB v0.9 recap: https://marb.cadclaw.io/recap/
 - CADCLAW engine: https://cadclaw.io/
 
-- Dexter design review (unbuilt concept, separate from benchmark scores): https://marb.cadclaw.io/robotic-hand/dexter/
+- Halden Mk-IV design review (unbuilt concept, separate from benchmark scores): https://marb.cadclaw.io/robotic-hand/dexter/
 
 ## Machine-readable resources
 
