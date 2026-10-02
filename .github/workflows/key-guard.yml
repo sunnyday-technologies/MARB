@@ -11,6 +11,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   no-answer-keys:
     runs-on: ubuntu-latest
