@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import contextlib
 import datetime as dt
+import base64
 import hashlib
 import inspect
 import io
@@ -21,11 +22,43 @@ from unittest import mock
 
 from harness import cohort_executor as EXECUTOR
 from harness import cohort_runner as RUNNER
+from harness import local_model_adapter as ADAPTER
 from tests.test_cohort_runner import SyntheticRepo
 
 
 FIXED_NOW = dt.datetime(2026, 8, 28, 12, 0, 0, tzinfo=dt.timezone.utc)
 IMAGE = "ghcr.io/sunnyday-technologies/marb-worker@sha256:" + "a" * 64
+MODEL_SERVER_IMAGE = "nvcr.io/nvidia/vllm@sha256:" + "d" * 64
+MODEL_PROFILE_PATH = "approved/model-profile.json"
+MODEL_REVISION = "c" * 40
+MODEL_LAUNCH_CONFIG = {
+    "schema": ADAPTER.LAUNCH_CONFIG_SCHEMA,
+    "model_revision": MODEL_REVISION,
+    "tokenizer_revision": MODEL_REVISION,
+    "offline": True,
+    "trust_remote_code": False,
+    "max_model_len": 32_768,
+    "max_num_seqs": 1,
+    "gpu_memory_utilization": "0.80",
+    "dtype": "auto",
+    "quantization": "nvfp4",
+    "tool_call_parser": "qwen3_coder",
+    "reasoning_parser": "nemotron_v3",
+    "chat_template_sha256": None,
+    "container_port": 8_000,
+}
+MODEL_LAUNCH_SHA256 = hashlib.sha256(
+    json.dumps(
+        MODEL_LAUNCH_CONFIG,
+        ensure_ascii=True,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+).hexdigest()
+MODEL_ID = ADAPTER.expected_served_model_id(
+    "nvidia/example-model", MODEL_REVISION, MODEL_LAUNCH_SHA256
+)
 ATTEMPT_UUID = uuid.UUID("11111111-1111-4111-8111-111111111111")
 CONTINUITY_UUID = uuid.UUID("22222222-2222-4222-8222-222222222222")
 
@@ -144,13 +177,13 @@ class FakeProvider:
                     ),
                 ),
                 usage=usage,
-                response_model="synthetic-model-v1",
+                response_model=MODEL_ID,
             )
         return EXECUTOR.ProviderResponse(
             content="done",
             tool_calls=(),
             usage=usage,
-            response_model="synthetic-model-v1",
+            response_model=MODEL_ID,
         )
 
 
@@ -241,6 +274,10 @@ class CohortExecutorTests(unittest.TestCase):
             Path(EXECUTOR.__file__).resolve().with_name("runtime_smoke_probes.py").read_bytes(),
         )
         self.fixture._write_bytes(
+            "harness/local_model_adapter.py",
+            Path(ADAPTER.__file__).resolve().read_bytes(),
+        )
+        self.fixture._write_bytes(
             "harness/container/run_limited.py",
             (
                 Path(EXECUTOR.__file__).resolve().parent
@@ -274,12 +311,54 @@ class CohortExecutorTests(unittest.TestCase):
         self.git_sha256 = hashlib.sha256(self.git_bytes).hexdigest()
         self.git_process_calls: list[tuple[list[str], dict[str, object]]] = []
         self.trace: list[str] = []
+        self.model_profile_payload = {
+            "source": {
+                "kind": "huggingface",
+                "repository_id": "nvidia/example-model",
+                "revision": MODEL_REVISION,
+            },
+            "provider": {
+                "protocol": ADAPTER.PROVIDER_PROTOCOL,
+                "served_model_id": MODEL_ID,
+                "endpoint": "http://127.0.0.1:8000/v1",
+                "credential_env": None,
+                "billing_mode": "local-no-charge",
+            },
+            "runtime": {
+                "kind": "docker",
+                "engine": "vllm",
+                "engine_version": "0.27.1",
+                "hardware_class": ADAPTER.HARDWARE_CLASS,
+                "topology": {
+                    "mode": "single-node",
+                    "node_count": 1,
+                    "tensor_parallel_size": 1,
+                    "pipeline_parallel_size": 1,
+                    "nodes": [
+                        {
+                            "ordinal": 1,
+                            "role": "api",
+                            "host_label": "gx10-1",
+                            "container_name": "marb-model-fixture",
+                            "container_image": MODEL_SERVER_IMAGE,
+                        }
+                    ],
+                },
+                "launch_config": copy.deepcopy(MODEL_LAUNCH_CONFIG),
+                "launch_config_sha256": MODEL_LAUNCH_SHA256,
+            },
+        }
+        model_profile = ADAPTER.make_profile_envelope(self.model_profile_payload)
+        self.model_profile_raw = canonical(model_profile)
+        self.model_profile_sha256 = model_profile["profile_sha256"]
+        self.fixture._write_bytes(MODEL_PROFILE_PATH, self.model_profile_raw)
 
     def executing_module_paths(self) -> dict[str, Path]:
         return {
             "planner": self.fixture.path("harness/cohort_runner.py"),
             "executor": self.fixture.path("harness/cohort_executor.py"),
             "isolated_container": self.fixture.path("harness/isolated_container.py"),
+            "local_model_adapter": self.fixture.path("harness/local_model_adapter.py"),
             "provider_transport": self.fixture.path("harness/provider_transport.py"),
             "runtime_smoke_probes": self.fixture.path(
                 "harness/runtime_smoke_probes.py"
@@ -296,6 +375,14 @@ class CohortExecutorTests(unittest.TestCase):
             ),
         }
 
+    def build_plan(self, task_id: str) -> dict[str, object]:
+        return self.fixture.build(
+            task_id,
+            model_id=MODEL_ID,
+            model_name="NVIDIA Example Model",
+            model_profile_sha256=self.model_profile_sha256,
+        )
+
     def ready_plan(self, task_id: str = "L2-RESOLVE") -> dict[str, object]:
         tasks = self.fixture.registry["tasks"]
         task = tasks[task_id]
@@ -305,14 +392,14 @@ class CohortExecutorTests(unittest.TestCase):
             task["gated_distribution_revision"] = "f" * 64
             task.update(EXECUTOR.SUPPORTED_L4_GRADE_CONTRACT)
         self.fixture.write_registry()
-        return self.fixture.build(task_id)
+        return self.build_plan(task_id)
 
     def authorization(
         self,
         plan: dict[str, object],
         *,
         run_id: str | None = None,
-        endpoint: str = "https://api.example.test/v1",
+        endpoint: str = "http://127.0.0.1:8000/v1",
         expires: str = "2026-08-28T13:00:00Z",
     ) -> tuple[bytes, str, str]:
         body = plan["plan"]
@@ -334,6 +421,11 @@ class CohortExecutorTests(unittest.TestCase):
                 "model_calls": True,
                 "provider_access": True,
                 "spend_authorized": True,
+            },
+            "model_profile": {
+                "path": MODEL_PROFILE_PATH,
+                "schema": ADAPTER.PROFILE_SCHEMA,
+                "sha256": self.model_profile_sha256,
             },
             "provider": {
                 "protocol": EXECUTOR.PROVIDER_PROTOCOL,
@@ -375,6 +467,11 @@ class CohortExecutorTests(unittest.TestCase):
                     Path(EXECUTOR.__file__).with_name("isolated_container.py"),
                     "harness/isolated_container.py",
                     "isolated container source",
+                )["sha256"],
+                "local_model_adapter_sha256": EXECUTOR._text_source_identity(
+                    self.fixture.path("harness/local_model_adapter.py"),
+                    "harness/local_model_adapter.py",
+                    "local model adapter source",
                 )["sha256"],
                 "provider_transport_sha256": EXECUTOR._text_source_identity(
                     self.fixture.path("harness/provider_transport.py"),
@@ -436,6 +533,9 @@ class CohortExecutorTests(unittest.TestCase):
             expected_plan_sha256=plan["plan_sha256"],
             expected_run_id=body["runs"][0]["run_id"],
             expected_model_id=body["cohort"]["model"]["id"],
+            model_profile_raw=self.model_profile_raw,
+            expected_model_profile_path=MODEL_PROFILE_PATH,
+            expected_model_profile_sha256=self.model_profile_sha256,
             now=FIXED_NOW,
         )
 
@@ -462,9 +562,10 @@ class CohortExecutorTests(unittest.TestCase):
         provider = provider or FakeProvider(self.trace, marker)
         sandbox = sandbox or FakeSandbox(self.repo / "placeholder", self.trace)
 
-        def provider_factory(config, credential):
+        def provider_factory(config, credential, model_profile_sha256):
             self.trace.append("provider-created")
             self.assertIsNone(credential)
+            self.assertEqual(model_profile_sha256, self.model_profile_sha256)
             return provider
 
         def sandbox_factory(workspace, input_root, config, attempt_id):
@@ -489,6 +590,8 @@ class CohortExecutorTests(unittest.TestCase):
                 expected_authorization_sha256=auth_digest,
                 authorization_literal=literal,
                 planned_run_id=run_id,
+                model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
                 provider_factory=provider_factory,
                 sandbox_factory=sandbox_factory,
                 now=lambda: FIXED_NOW,
@@ -517,8 +620,31 @@ class CohortExecutorTests(unittest.TestCase):
             {"baseline_step", "baseline_editable_source", "changed_step", "changed_editable_source"},
             set(log["artifacts"]),
         )
-        self.assertEqual(log["provider"]["endpoint"], "https://api.example.test")
+        self.assertEqual(log["provider"]["endpoint"], "http://127.0.0.1:8000")
         self.assertEqual(log["provider"]["credential"], {"env_name": None, "status": "not_required"})
+        self.assertEqual(
+            log["model_server"]["profile"],
+            {
+                "path": MODEL_PROFILE_PATH,
+                "schema": ADAPTER.PROFILE_SCHEMA,
+                "sha256": self.model_profile_sha256,
+            },
+        )
+        self.assertEqual(log["model_server"]["source"], self.model_profile_payload["source"])
+        self.assertEqual(log["model_server"]["runtime"], self.model_profile_payload["runtime"])
+        self.assertIsNone(log["model_server"]["runtime_attestation"])
+        self.assertEqual(
+            log["source"]["implementation"]["local_model_adapter"]["sha256"],
+            EXECUTOR._text_source_identity(
+                self.fixture.path("harness/local_model_adapter.py"),
+                "harness/local_model_adapter.py",
+                "local model adapter source",
+            )["sha256"],
+        )
+        self.assertEqual(
+            log["identity_semantics"]["model_id"],
+            "huggingface_revision_and_launch_config_bound_provider_response_identity",
+        )
         self.assertEqual(log["usage"]["tokens"]["status"], "reported")
         self.assertEqual(log["usage"]["tokens"]["total_tokens"], 60)
         self.assertEqual(log["usage"]["cost"]["status"], "not_billed_attested")
@@ -560,7 +686,7 @@ class CohortExecutorTests(unittest.TestCase):
             self.assertEqual(log["container"]["attestation"][key], value)
 
     def test_l1_routes_baseline_only_with_null_request(self) -> None:
-        plan = self.fixture.build("L1-ASSEMBLE")
+        plan = self.build_plan("L1-ASSEMBLE")
         result, provider, _sandbox = self.execute_ready(plan)
         log = result["run_log"]
         self.assertEqual(log["task"]["id"], "L1-ASSEMBLE")
@@ -584,6 +710,8 @@ class CohortExecutorTests(unittest.TestCase):
                 expected_authorization_sha256=auth_digest,
                 authorization_literal="",
                 planned_run_id=run_id,
+                model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
                 provider_factory=bomb,
                 sandbox_factory=bomb,
                 now=lambda: FIXED_NOW,
@@ -603,6 +731,9 @@ class CohortExecutorTests(unittest.TestCase):
                 expected_plan_sha256=plan["plan_sha256"],
                 expected_run_id=run_id,
                 expected_model_id=plan["plan"]["cohort"]["model"]["id"],
+                model_profile_raw=self.model_profile_raw,
+                expected_model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
                 now=FIXED_NOW,
             )
         expired, expired_digest, _ = self.authorization(plan, expires="2026-08-28T11:59:59Z")
@@ -613,6 +744,9 @@ class CohortExecutorTests(unittest.TestCase):
                 expected_plan_sha256=plan["plan_sha256"],
                 expected_run_id=run_id,
                 expected_model_id=plan["plan"]["cohort"]["model"]["id"],
+                model_profile_raw=self.model_profile_raw,
+                expected_model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
                 now=FIXED_NOW,
             )
         for endpoint in (
@@ -628,6 +762,9 @@ class CohortExecutorTests(unittest.TestCase):
                     expected_plan_sha256=plan["plan_sha256"],
                     expected_run_id=run_id,
                     expected_model_id=plan["plan"]["cohort"]["model"]["id"],
+                    model_profile_raw=self.model_profile_raw,
+                    expected_model_profile_path=MODEL_PROFILE_PATH,
+                    expected_model_profile_sha256=self.model_profile_sha256,
                     now=FIXED_NOW,
                 )
         self.assertFalse((self.repo / "runs").exists())
@@ -724,6 +861,142 @@ class CohortExecutorTests(unittest.TestCase):
                 EXECUTOR.ExecutorError, "historical contract"
             ):
                 EXECUTOR._assert_execution_ready(changed)
+    def test_model_profile_mismatches_reject_before_git_allocation_provider_or_sandbox(
+        self,
+    ) -> None:
+        plan = self.ready_plan()
+        run_id = plan["plan"]["runs"][0]["run_id"]
+        auth_raw, auth_digest, literal = self.authorization(plan)
+        construction_bomb = mock.Mock(
+            side_effect=AssertionError("provider or sandbox must not be constructed")
+        )
+        git_bomb = mock.Mock(side_effect=AssertionError("Git must not be spawned"))
+
+        def rejected(
+            *,
+            authorization_raw: bytes = auth_raw,
+            authorization_sha256: str = auth_digest,
+            profile_path: str = MODEL_PROFILE_PATH,
+            profile_sha256: str = self.model_profile_sha256,
+        ) -> None:
+            with mock.patch.object(
+                EXECUTOR.subprocess, "Popen", side_effect=git_bomb
+            ), self.assertRaises(EXECUTOR.ExecutorError):
+                EXECUTOR.execute_plan(
+                    self.repo,
+                    plan_raw=canonical(plan),
+                    expected_plan_sha256=plan["plan_sha256"],
+                    authorization_raw=authorization_raw,
+                    expected_authorization_sha256=authorization_sha256,
+                    authorization_literal=literal,
+                    planned_run_id=run_id,
+                    model_profile_path=profile_path,
+                    expected_model_profile_sha256=profile_sha256,
+                    provider_factory=construction_bomb,
+                    sandbox_factory=construction_bomb,
+                    now=lambda: FIXED_NOW,
+                    environ={},
+                )
+
+        with self.subTest(case="plan-digest-argument"):
+            rejected(profile_sha256="0" * 64)
+
+        profile_file = self.fixture.path(MODEL_PROFILE_PATH)
+        original_profile = profile_file.read_bytes()
+        try:
+            profile_file.write_bytes(b"{}\n")
+            with self.subTest(case="profile-file-drift"):
+                rejected()
+        finally:
+            profile_file.write_bytes(original_profile)
+
+        alternate_path = "approved/model-profile-copy.json"
+        self.fixture._write_bytes(alternate_path, original_profile)
+        with self.subTest(case="profile-path"):
+            rejected(profile_path=alternate_path)
+
+        auth_payload = json.loads(auth_raw)["authorization"]
+        for key, value in (
+            ("profile-digest", ("model_profile", "sha256", "0" * 64)),
+            (
+                "provider-endpoint",
+                ("provider", "endpoint", "http://127.0.0.1:8001/v1"),
+            ),
+        ):
+            changed = copy.deepcopy(auth_payload)
+            owner, field, replacement = value
+            changed[owner][field] = replacement
+            changed_raw, changed_digest = self.reseal_authorization_payload(changed)
+            with self.subTest(case=key):
+                rejected(
+                    authorization_raw=changed_raw,
+                    authorization_sha256=changed_digest,
+                )
+
+        self.assertFalse((self.repo / "runs").exists())
+        construction_bomb.assert_not_called()
+        git_bomb.assert_not_called()
+
+    def test_provider_transport_request_binds_profile_model_and_loopback_policy(self) -> None:
+        request_raw = canonical({"model": MODEL_ID, "messages": []})
+        response = canonical(
+            {
+                "status": "ok",
+                "response_url": "http://127.0.0.1:8000/v1/chat/completions",
+                "request_id": None,
+                "response_body_b64": base64.b64encode(b"{}").decode("ascii"),
+            }
+        )
+
+        class CaptureInput(io.BytesIO):
+            def __init__(self, owner) -> None:
+                super().__init__()
+                self.owner = owner
+
+            def close(self) -> None:
+                if not self.closed:
+                    self.owner.input_bytes = self.getvalue()
+                super().close()
+
+        class ProviderProcess:
+            def __init__(self) -> None:
+                self.input_bytes = b""
+                self.stdin = CaptureInput(self)
+                self.stdout = io.BytesIO(response)
+                self.returncode = 0
+
+            def poll(self):
+                return self.returncode
+
+            def kill(self):
+                self.returncode = -9
+
+            def wait(self, timeout=None):
+                return self.returncode
+
+        process = ProviderProcess()
+        with mock.patch.object(EXECUTOR.subprocess, "Popen", return_value=process):
+            _url, _request_id, raw = EXECUTOR._subprocess_provider_transport(
+                "http://127.0.0.1:8000/v1/chat/completions",
+                "http://127.0.0.1:8000",
+                {"Content-Type": "application/json"},
+                request_raw,
+                30,
+                MODEL_ID,
+                self.model_profile_sha256,
+                True,
+            )
+        self.assertEqual(raw, b"{}")
+        transport_input = json.loads(process.input_bytes)
+        self.assertEqual(transport_input["expected_model_id"], MODEL_ID)
+        self.assertEqual(
+            transport_input["model_profile_sha256"], self.model_profile_sha256
+        )
+        self.assertIs(transport_input["loopback_only"], True)
+        self.assertEqual(
+            base64.b64decode(transport_input["request_body_b64"], validate=True),
+            request_raw,
+        )
 
     def test_git_authorization_rejects_bare_relative_wrong_basename_and_digest(self) -> None:
         plan = self.ready_plan()
@@ -982,7 +1255,7 @@ class CohortExecutorTests(unittest.TestCase):
             )
 
     def test_current_task_blocker_prevents_run_and_provider_activity(self) -> None:
-        plan = self.fixture.build("L4-ECO")
+        plan = self.build_plan("L4-ECO")
         auth_raw, auth_digest, literal = self.authorization(plan)
         run_id = plan["plan"]["runs"][0]["run_id"]
         bomb = mock.Mock(side_effect=AssertionError("must not be constructed"))
@@ -999,6 +1272,8 @@ class CohortExecutorTests(unittest.TestCase):
                 expected_authorization_sha256=auth_digest,
                 authorization_literal=literal,
                 planned_run_id=run_id,
+                model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
                 provider_factory=bomb,
                 sandbox_factory=bomb,
                 now=lambda: FIXED_NOW,
@@ -1029,6 +1304,8 @@ class CohortExecutorTests(unittest.TestCase):
                 expected_authorization_sha256=auth_digest,
                 authorization_literal=literal,
                 planned_run_id=run_id,
+                model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
                 provider_factory=bomb,
                 sandbox_factory=bomb,
                 now=lambda: FIXED_NOW,
@@ -1076,7 +1353,7 @@ class CohortExecutorTests(unittest.TestCase):
                 return EXECUTOR.ProviderResponse(
                     content="done",
                     tool_calls=(),
-                    response_model="synthetic-model-v1",
+                    response_model=MODEL_ID,
                 )
 
         plan = self.ready_plan()
@@ -1089,7 +1366,7 @@ class CohortExecutorTests(unittest.TestCase):
         self.assertNotIn("changed_step", log["artifacts"])
 
     def test_step_replacement_after_discovery_retains_artifact_failure(self) -> None:
-        plan = self.fixture.build("L1-ASSEMBLE")
+        plan = self.build_plan("L1-ASSEMBLE")
         original_find = EXECUTOR._find_step_output
 
         def replace_after_discovery(workspace, deadline_check=None):
@@ -1564,6 +1841,8 @@ class CohortExecutorTests(unittest.TestCase):
                     "--expected-plan-sha256", "a" * 64,
                     "--authorization", str(auth_path),
                     "--expected-authorization-sha256", "b" * 64,
+                    "--model-profile", MODEL_PROFILE_PATH,
+                    "--expected-model-profile-sha256", self.model_profile_sha256,
                     "--authorize-execution", "synthetic",
                     "--slot", "cli-test",
                     "--repo-root", str(self.repo),
@@ -1614,6 +1893,44 @@ class CohortExecutorTests(unittest.TestCase):
                 expected_authorization_sha256=auth_digest,
                 authorization_literal=literal,
                 planned_run_id=run_id,
+                model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
+                provider_factory=bomb,
+                sandbox_factory=bomb,
+                now=lambda: FIXED_NOW,
+                environ={},
+            )
+        bomb.assert_not_called()
+        self.assertFalse((self.repo / "runs").exists())
+
+    def test_authorized_local_model_adapter_source_drift_rejects_before_allocation(
+        self,
+    ) -> None:
+        plan = self.ready_plan()
+        auth_raw, _auth_digest, literal = self.authorization(plan)
+        payload = json.loads(auth_raw)["authorization"]
+        payload["implementation"]["local_model_adapter_sha256"] = "0" * 64
+        changed_raw, changed_digest = self.reseal_authorization_payload(payload)
+        run_id = plan["plan"]["runs"][0]["run_id"]
+        bomb = mock.Mock(side_effect=AssertionError("must not be constructed"))
+        with mock.patch.object(
+            EXECUTOR, "_executing_module_paths", side_effect=self.executing_module_paths
+        ), mock.patch.object(
+            EXECUTOR.subprocess, "Popen", side_effect=self.fake_git_popen
+        ), self.assertRaisesRegex(
+            EXECUTOR.ExecutorError,
+            "authorized local_model_adapter implementation is not the exact committed blob",
+        ):
+            EXECUTOR.execute_plan(
+                self.repo,
+                plan_raw=canonical(plan),
+                expected_plan_sha256=plan["plan_sha256"],
+                authorization_raw=changed_raw,
+                expected_authorization_sha256=changed_digest,
+                authorization_literal=literal,
+                planned_run_id=run_id,
+                model_profile_path=MODEL_PROFILE_PATH,
+                expected_model_profile_sha256=self.model_profile_sha256,
                 provider_factory=bomb,
                 sandbox_factory=bomb,
                 now=lambda: FIXED_NOW,
@@ -1643,7 +1960,7 @@ class CohortExecutorTests(unittest.TestCase):
             EXECUTOR.ProviderResponse(
                 content="done",
                 tool_calls=(),
-                response_model="synthetic-model-v1",
+                response_model=MODEL_ID,
                 transport_request_sha256="not-a-digest",
             )
         )

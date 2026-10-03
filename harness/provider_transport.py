@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -24,7 +25,7 @@ class _RejectRedirects(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def _origin(value: str) -> tuple[str, str]:
+def _origin(value: str, *, loopback_only: bool) -> tuple[str, str]:
     parsed = urllib.parse.urlsplit(value)
     if (
         parsed.scheme not in {"http", "https"}
@@ -33,10 +34,14 @@ def _origin(value: str) -> tuple[str, str]:
         or parsed.password is not None
         or parsed.query
         or parsed.fragment
+        or (loopback_only and parsed.scheme != "http")
+        or (loopback_only and parsed.port is None)
     ):
         raise ValueError("unsafe endpoint")
     host = parsed.hostname.lower()
-    if parsed.scheme == "http" and host not in {"127.0.0.1", "::1", "localhost"}:
+    if loopback_only and host not in {"127.0.0.1", "::1"}:
+        raise ValueError("endpoint is not the approved loopback literal")
+    if parsed.scheme == "http" and host not in {"127.0.0.1", "::1"}:
         raise ValueError("plaintext endpoint is not loopback")
     if ":" in host and not host.startswith("["):
         host = f"[{host}]"
@@ -56,6 +61,9 @@ def _load_request() -> dict[str, Any]:
         "approved_origin",
         "headers",
         "request_body_b64",
+        "expected_model_id",
+        "model_profile_sha256",
+        "loopback_only",
     }:
         raise ValueError("malformed request")
     if not isinstance(value["headers"], dict) or not all(
@@ -63,18 +71,35 @@ def _load_request() -> dict[str, Any]:
         for key, item in value["headers"].items()
     ):
         raise ValueError("malformed headers")
+    if (
+        not isinstance(value["expected_model_id"], str)
+        or not value["expected_model_id"]
+        or len(value["expected_model_id"]) > 256
+        or not value["expected_model_id"].isascii()
+        or not re.fullmatch(r"[0-9a-f]{64}", value["model_profile_sha256"])
+        or value["loopback_only"] is not True
+    ):
+        raise ValueError("malformed local model identity")
     return value
 
 
 def main() -> int:
     try:
         value = _load_request()
-        endpoint, origin = _origin(value["endpoint"])
+        endpoint, origin = _origin(
+            value["endpoint"], loopback_only=value["loopback_only"]
+        )
         if origin != value["approved_origin"]:
             raise ValueError("origin mismatch")
-        if "Authorization" in value["headers"] and not endpoint.startswith("https://"):
-            raise ValueError("credentialed plaintext endpoint")
+        if "Authorization" in value["headers"]:
+            raise ValueError("credentialed local endpoint")
         body = base64.b64decode(value["request_body_b64"], validate=True)
+        body_value = json.loads(body.decode("utf-8"))
+        if (
+            not isinstance(body_value, dict)
+            or body_value.get("model") != value["expected_model_id"]
+        ):
+            raise ValueError("request model identity mismatch")
         opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({}), _RejectRedirects()
         )
@@ -85,7 +110,9 @@ def main() -> int:
             method="POST",
         )
         with opener.open(request) as response:
-            response_url, response_origin = _origin(response.geturl())
+            response_url, response_origin = _origin(
+                response.geturl(), loopback_only=value["loopback_only"]
+            )
             if response_origin != origin:
                 raise ValueError("response origin mismatch")
             response_raw = response.read(MAX_RESPONSE_BYTES + 1)

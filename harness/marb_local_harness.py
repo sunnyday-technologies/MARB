@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""MARB local/anchor-track builder harness.
+"""Legacy exploratory MARB local/anchor-track builder harness.
+
+This script predates the H2a/H2b/Nightwatch authorization and provenance
+contracts. Its outputs are not official H2b run evidence and must not be used
+for a scored, registered, or published MARB cell. New local-model work starts
+with ``local_model_adapter.py`` and proceeds only through the reviewed H2a plan,
+per-slot H2b authorization, and (for repeats) Nightwatch campaign path.
 
 Drives a local open-weight model (served by Ollama on a local AI supercomputer, OpenAI-compatible
 API) to build the M3-CRETE assembly in CadQuery, working only from the staged blind

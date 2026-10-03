@@ -7,12 +7,19 @@ site, or deployment action.
 
 ## Current qualification boundary
 
-- Execution is opt-in and **local-no-charge only**. Metered calls are rejected
-  before provider access until a frozen provider-specific pre-call price/token
-  policy exists. A local-no-charge authorization uses `max_cost_usd: null` and
-  `zero_cost_attested: true`. A credential may be named, but a credentialed
-  endpoint must be HTTPS; transport is direct with ambient proxies disabled,
-  redirects are rejected, and only the sanitized origin is journaled.
+- Execution is opt-in and **Hugging Face-first, local-no-charge only**. H2b v3
+  requires a canonical `marb_hf_local_model_profile.v1` whose independently
+  retained digest agrees with the H2a plan and authorization. The profile binds
+  a full Hugging Face commit, structured launch digest, exact vLLM version,
+  immutable model-server OCI RepoDigest, revision/config-derived served-model
+  ID, and a credential-free literal-loopback HTTP endpoint. See
+  [`HF_LOCAL_MODELS.md`](HF_LOCAL_MODELS.md).
+- The profile's provider must use `credential_env: null`,
+  `billing_mode: local-no-charge`, `max_cost_usd: null`, and
+  `zero_cost_attested: true`. External, credentialed, and metered providers are
+  rejected before provider access. They are not an automatic fallback; any
+  future external-provider path requires a separately versioned and explicitly
+  approved provider-specific pre-call price/token policy.
 - The authorized model ID must equal the response model identity. No alias
   policy is declared. Provider seeds are bound to `provider-seed` plans;
   `independent-run-ordinal` plans require a null provider seed.
@@ -51,11 +58,16 @@ site, or deployment action.
   bytes may be inspected only through model-authored Python, and
   `vision_attested` is `false`. These runs must not be labeled or compared as
   sighted/vision cells.
-- The implementation is currently restricted to Windows Docker Desktop host
-  semantics. One exact private source/image/runtime binding passed the tracked
-  mandatory nine-case R8 runtime smoke; any replacement source, image, or host
-  requires a fresh qualification. Linux and rootless-host bind/file ownership
-  behavior for container UID/GID `65532:65532` remains unqualified.
+- The sandbox implementation is currently restricted to Windows Docker Desktop
+  host semantics. One exact private source/image/runtime binding passed the
+  tracked mandatory nine-case R8 runtime smoke; any replacement source, image,
+  or host requires a fresh qualification. Linux and rootless-host sandbox
+  bind/file ownership behavior for container UID/GID `65532:65532` remains
+  unqualified.
+- The local-model profile v1 instead describes one same-host DGX Spark
+  Docker/vLLM server. Joining those two identities into a qualified end-to-end
+  host path remains an explicit integration gate; neither a remote hostname nor
+  an operator declaration is a runtime attestation.
 - No real runtime image digest is shipped or implied by this repository. An
   operator must build or obtain the versioned image, record its registry
   `RepoDigest`, and complete the provider-free, network-none runtime smoke in
@@ -66,32 +78,42 @@ site, or deployment action.
   actual CPython load roots, 412-of-420 member reachability, a separate
   analysis-only `.libs` check, and fresh clean OCP/CadQuery/VTK imports; see the public-safe
   [`native runtime repair ledger`](container/NATIVE_RUNTIME_REPAIR_LEDGER.md).
+- The adapter contains a same-host runtime-attestation primitive and bounded
+  `/v1/models` identity probe, but the trusted Docker observer/re-attestation
+  path is still being integrated and operationally qualified. No model has been
+  downloaded or called through this path, and no real model server or H2b
+  attempt through a local-model profile is claimed as qualified.
 
 ## Required authorization boundary
 
 A saved plan is not authorization. Before the provider object can be created,
 the executor requires all of the following to agree exactly:
 
-1. canonical plan bytes and an independently supplied plan SHA-256;
-2. one unexpired `marb_execution_authorization.v3` payload naming the exact
-   plan digest and planned run ID;
-3. the authorization's independently supplied SHA-256;
-4. the exact literal
+1. canonical `marb_cohort_plan.v2` bytes and an independently supplied plan
+   SHA-256;
+2. one canonical `marb_hf_local_model_profile.v1` at a safe
+   repository-relative path, plus its independently supplied SHA-256; the plan's
+   model ID/profile digest and the profile's derived served-model ID must agree;
+3. one unexpired `marb_execution_authorization.v3` payload naming the exact
+   profile, plan digest, and planned run ID;
+4. the authorization's independently supplied SHA-256;
+5. the exact literal
    `EXECUTE_MARB_MODEL_CALLS:<plan-sha256>:<planned-run-id>`;
-5. explicit grants for execution, model calls, provider access, and the
+6. explicit grants for execution, model calls, provider access, and the
    authorized zero-cost policy;
-6. the exact provider protocol/model/endpoint/settings, optional credential
-   environment-variable **name**, immutable container RepoDigest, active H2b
-   runtime-contract identity and SHA-256, CADCLAW commit/gate/source-manifest/
-   calibration identities, normalized absolute `docker.exe` path plus its file
-   SHA-256, normalized absolute Git executable path plus its file SHA-256, and
-   exact run-limiter SHA-256;
-7. the exact MARB source commit and SHA-256 identities of
+7. the exact provider protocol/model/endpoint/settings, credential-free model
+   profile, immutable sandbox container RepoDigest, active H2b runtime-contract
+   identity and SHA-256, CADCLAW commit/gate/source-manifest/calibration
+   identities, normalized absolute `docker.exe` path plus its file SHA-256,
+   normalized absolute Git executable path plus its file SHA-256, and exact
+   run-limiter SHA-256;
+8. the exact MARB source commit and SHA-256 identities of
    `harness/cohort_runner.py`, `harness/cohort_executor.py`,
-   `harness/provider_transport.py`, `harness/isolated_container.py`, the fixed
-   committed `harness/runtime_smoke_probes.py` identity used by executor
-   preflight, and `harness/container/run_limited.py`; and
-8. commit-blob readback of every frozen plan input and implementation file.
+   `harness/local_model_adapter.py`, `harness/provider_transport.py`,
+   `harness/isolated_container.py`, the fixed committed
+   `harness/runtime_smoke_probes.py` identity used by executor preflight, and
+   `harness/container/run_limited.py`; and
+9. commit-blob readback of every frozen plan input and implementation file.
 
 The v3 authorization and schema validation bind the normalized absolute Git
 path plus its file SHA-256 independently of the repository being authenticated.
@@ -112,47 +134,52 @@ timeout, failing closed on any breach. Run-log provenance does not expose the ab
 path: `source.git_executable` records only a neutral executable basename/label
 and the verified SHA-256.
 
-The authorization records a credential key name and presence status only. It
-must never contain the credential value. The executor scans retained artifacts
-for the configured credential and common secret patterns before finalization.
+The current model profile and authorization require a null credential name.
+The executor still scans retained artifacts for common secret patterns before
+finalization. No credential value belongs in a profile, authorization, plan,
+campaign, run log, or retained artifact.
 
 ## Nightwatch relationship
 
 Nightwatch does not replace or weaken this one-slot protocol. Its canonical
-`marb_nightwatch_campaign.v1` envelope binds a campaign UUID, approval and
-execution window, MARB source revision, exact LF-normalized controller source
-identity, explicit execution and safety policies, aggregate slot/failure
-limits, and an ordered set of repository-relative plan and authorization files.
-Each slot binds its ordinal, plan and authorization digests, planned run ID,
-and exact H2b literal
+`marb_nightwatch_campaign.v2` envelope binds a campaign UUID, approval and
+execution window, MARB source revision, exact LF-normalized Nightwatch and
+local-model-adapter source identities, explicit execution and safety policies,
+aggregate slot/failure limits, and an ordered set of repository-relative model
+profile, plan, and authorization files. Each slot binds its ordinal, profile,
+plan and authorization digests, planned run ID, and exact H2b literal
 `EXECUTE_MARB_MODEL_CALLS:<plan-sha256>:<planned-run-id>`. Before every
-dispatch, all normal H2b plan, authorization, implementation, input, runtime,
-endpoint, expiry, and exact confirmation checks still apply.
+dispatch, all normal adapter/H2a/H2b profile, plan, authorization,
+implementation, input, runtime, endpoint, expiry, and exact confirmation checks
+still apply.
 
 Normal cohort slots may reuse one plan path only when every reuse binds the
-same plan digest. Authorization paths remain unique, a conflicting digest for a
-reused plan path is rejected, and plan and authorization path identities may
-not alias each other.
+same plan and profile digests. A model-profile path may be reused only with the
+same digest. Authorization paths remain unique; profile, plan, and authorization
+path identities may not alias each other.
 
 The automated Nightwatch policy is narrower than H2b: the `status` command and
 `run_campaign(..., execute=False)` API path are read-only, execution is serial
-with `max_concurrency: 1`, and only a loopback, `local-no-charge`
-authorization with `credential_env: null` and spend exactly `currency: USD`,
+with `max_concurrency: 1`, and only the profile's exact canonical
+`http://127.0.0.1:<port>/v1` or `http://[::1]:<port>/v1` endpoint with
+`credential_env: null` and spend exactly `currency: USD`,
 `max_cost_usd: null`, and `zero_cost_attested: true` is eligible. Nightwatch
 passes an empty environment to H2b. External, credentialed, metered, and
-otherwise potentially paid providers are manual-only and are rejected before
-the campaign writer lock or provider construction.
+otherwise potentially paid providers are rejected before the campaign writer
+lock or provider construction.
 
-The controller owns only a checkout-local `marb_nightwatch_ledger.v1` and
-`marb_nightwatch_event.v1` journal under
+The controller owns only a checkout-local `marb_nightwatch_ledger.v2` and
+`marb_nightwatch_event.v2` journal under
 `runs/.nightwatch/<campaign-uuid>/`. One OS-backed writer lock guards serial
 reconciliation and dispatch. Ledger snapshots use a unique temporary file,
 `fsync`, and atomic replacement; events are appended and `fsync`ed first.
 Reconciliation treats H2b's permanent slot claim and sealed `run_log.json` plus
-digest as authoritative. Any claimed, failed, partial, timed-out, cancelled,
-or otherwise retained attempt consumes the logical slot and is never retried
-automatically. A claim with missing or contradictory sealed evidence requires
-manual review.
+digest as authoritative. A `completed_ungraded` log must repeat the exact model
+profile/source/provider/runtime identities and carry a passing
+`marb_local_model_runtime_attestation.v1` bound to that profile. Any claimed,
+failed, partial, timed-out, cancelled, or otherwise retained attempt consumes
+the logical slot and is never retried automatically. A claim with missing or
+contradictory sealed evidence requires manual review.
 
 Nightwatch's strongest success state is still `completed_ungraded`. It never
 runs graders, mutates `results/marb_runs.json` or board data, rebuilds site
@@ -169,8 +196,10 @@ campaign, public cohort, or model-performance claim.
 
 ## No-call authorization workflow
 
-The three preparation commands below read local files only. They do not create
-a provider session, invoke Docker, or call a model. First, write a complete
+First create, review, seal, and independently digest the model profile using
+[`HF_LOCAL_MODELS.md`](HF_LOCAL_MODELS.md). The three H2b preparation commands
+below then read local files only. They do not create a provider session, invoke
+Docker, probe the endpoint, or call a model. First, write a complete
 local-no-charge payload to a new path (existing outputs are rejected):
 
 ```powershell
@@ -182,11 +211,12 @@ $gitExecutableSha = (Get-FileHash -LiteralPath $gitExecutable -Algorithm SHA256)
 python harness/cohort_executor.py authorization-template `
   --plan <canonical-plan.json> `
   --expected-plan-sha256 <plan-sha256> `
+  --model-profile <repository-relative-sealed-profile.json> `
+  --expected-model-profile-sha256 <profile-sha256> `
   --slot <planned-run-id> `
   --approved-by <operator-identity> `
   --issued-utc <issued-utc> `
   --expires-utc <expires-utc> `
-  --provider-endpoint "http://127.0.0.1:<port>/v1" `
   --container-image "<approved-repository>@sha256:<64-lowercase-hex>" `
   --docker-executable $dockerExecutable `
   --docker-executable-sha256 $dockerExecutableSha `
@@ -203,12 +233,13 @@ python harness/cohort_executor.py authorization-template `
   --output <authorization-payload.json>
 ```
 
-Use `--credential-env <DEDICATED_API_KEY_NAME>` only when separately approved;
-it records a variable name, never its value, and requires an HTTPS endpoint.
-The template hashes the currently executing H2b sources but is not approval or
-proof that they belong to the authorized commit. Review every canonical payload
-field out of band, then seal that unchanged reviewed payload to another new
-path:
+The provider protocol, derived model ID, loopback endpoint, null credential,
+and local-no-charge mode come only from the verified model profile. There is no
+credential or external-endpoint override in this workflow. The template hashes
+the currently executing H2b sources, including the local-model adapter, but is
+not approval or proof that they belong to the authorized commit. Review every
+canonical payload field out of band, then seal that unchanged reviewed payload
+to another new path:
 
 ```powershell
 python harness/cohort_executor.py seal-authorization `
@@ -227,6 +258,8 @@ python harness/cohort_executor.py validate-authorization `
   --expected-authorization-sha256 <authorization-sha256> `
   --plan <canonical-plan.json> `
   --expected-plan-sha256 <plan-sha256> `
+  --model-profile <repository-relative-sealed-profile.json> `
+  --expected-model-profile-sha256 <profile-sha256> `
   --slot <planned-run-id> `
   --at-utc <trusted-current-utc>
 ```
@@ -242,6 +275,8 @@ python harness/cohort_executor.py execute `
   --expected-plan-sha256 <plan-sha256> `
   --authorization <sealed-authorization.json> `
   --expected-authorization-sha256 <authorization-sha256> `
+  --model-profile <repository-relative-sealed-profile.json> `
+  --expected-model-profile-sha256 <profile-sha256> `
   --authorize-execution "EXECUTE_MARB_MODEL_CALLS:<plan-sha256>:<planned-run-id>" `
   --slot <planned-run-id>
 ```
@@ -323,9 +358,10 @@ and their commit and staged hashes are checked again during execution. STEP and
 deterministic editable-source ZIP artifacts are journaled when created; failed
 and partial attempts are retained rather than overwritten. Run logs use
 `marb_executor_run_log.v2` and bind the plan, authorization, implementation,
-committed inputs, request/response and
-transcript hashes, actual provider response identity where available, timing,
-usage status, container attestation, events, and the final retained inventory.
+committed inputs, exact model-profile, source, provider, and runtime identity,
+runtime attestation where required, request/response and transcript hashes,
+actual provider response identity where available, timing, usage status,
+sandbox-container attestation, events, and the final retained inventory.
 Failed or timed-out provider attempts are `attempted_not_reported`; they are
 never reported as `not_incurred`.
 
@@ -409,10 +445,11 @@ passed this prerequisite.
 ## CI and manual gates
 
 Board-policy CI runs `tests.test_cohort_runner`, `tests.test_cohort_executor`,
-`tests.test_nightwatch`, `tests.test_provider_transport`,
+`tests.test_local_model_adapter`, `tests.test_nightwatch`,
+`tests.test_provider_transport`,
 `tests.test_isolated_container`, `tests.test_run_limiter`, and the static
 `tests.test_container_recipe` contract checks with fake/local provider, HTTP,
-sandbox, controller, and Docker command runners. The separately runnable
+sandbox, model-observer, controller, and Docker command runners. The separately runnable
 `tests.test_runtime_smoke_runner` module exercises the tracked nine-case runner
 with local fakes. `tests.test_container_policy_probe` separately exercises the
 host-only policy-readback diagnostic with fakes. Board-policy CI runs both
@@ -466,3 +503,8 @@ but never carries an observed Docker value or inspection document. These
 controls do not change the operator boundary: fake/local tests remain
 non-qualifying, and the smoke neither authorizes a provider/model call nor
 qualifies an image without a separate exact runtime approval and real pass.
+
+Before the first actual attempt through a local-model profile, an operator must
+also record the approved model-server RepoDigest and satisfy the same-host
+model-server runtime identity gate; the sandbox smoke alone does not qualify a
+model server.

@@ -19,6 +19,36 @@ from harness import nightwatch as NIGHTWATCH
 
 NOW = dt.datetime(2026, 8, 29, 12, 0, 0, tzinfo=dt.timezone.utc)
 REVISION = "a" * 40
+MODEL_REVISION = "b" * 40
+MODEL_IMAGE = "nvcr.io/nvidia/vllm:26.05-py3@sha256:" + "c" * 64
+MODEL_LAUNCH_CONFIG = {
+    "schema": NIGHTWATCH.local_model_adapter.LAUNCH_CONFIG_SCHEMA,
+    "model_revision": MODEL_REVISION,
+    "tokenizer_revision": MODEL_REVISION,
+    "offline": True,
+    "trust_remote_code": False,
+    "max_model_len": 32_768,
+    "max_num_seqs": 1,
+    "gpu_memory_utilization": "0.80",
+    "dtype": "auto",
+    "quantization": "nvfp4",
+    "tool_call_parser": "qwen3_coder",
+    "reasoning_parser": None,
+    "chat_template_sha256": None,
+    "container_port": 8_000,
+}
+MODEL_LAUNCH_SHA256 = hashlib.sha256(
+    json.dumps(
+        MODEL_LAUNCH_CONFIG,
+        ensure_ascii=True,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+).hexdigest()
+MODEL_ID = NIGHTWATCH.local_model_adapter.expected_served_model_id(
+    "fixture/model", MODEL_REVISION, MODEL_LAUNCH_SHA256
+)
 
 
 def canonical(value: object) -> bytes:
@@ -62,9 +92,52 @@ class NightwatchTests(unittest.TestCase):
         authorization_sha256 = hashlib.sha256(authorization_raw).hexdigest()
         plan_path = f"approved/plan-{ordinal}.json"
         authorization_path = f"approved/authorization-{ordinal}.json"
+        profile_payload = {
+            "source": {
+                "kind": "huggingface",
+                "repository_id": "fixture/model",
+                "revision": MODEL_REVISION,
+            },
+            "provider": {
+                "protocol": NIGHTWATCH.cohort_executor.PROVIDER_PROTOCOL,
+                "served_model_id": MODEL_ID,
+                "endpoint": "http://127.0.0.1:8000/v1",
+                "credential_env": None,
+                "billing_mode": "local-no-charge",
+            },
+            "runtime": {
+                "kind": "docker",
+                "engine": "vllm",
+                "engine_version": "0.27.1",
+                "hardware_class": NIGHTWATCH.local_model_adapter.HARDWARE_CLASS,
+                "topology": {
+                    "mode": "single-node",
+                    "node_count": 1,
+                    "tensor_parallel_size": 1,
+                    "pipeline_parallel_size": 1,
+                    "nodes": [
+                        {
+                            "ordinal": 1,
+                            "role": "api",
+                            "host_label": "gx10-1",
+                            "container_name": "marb-model-fixture",
+                            "container_image": MODEL_IMAGE,
+                        }
+                    ],
+                },
+                "launch_config": copy.deepcopy(MODEL_LAUNCH_CONFIG),
+                "launch_config_sha256": MODEL_LAUNCH_SHA256,
+            },
+        }
+        profile_envelope = NIGHTWATCH.local_model_adapter.make_profile_envelope(
+            profile_payload
+        )
+        profile_raw = canonical(profile_envelope)
+        profile_path = "approved/model-profile.json"
         for relative, raw in (
             (plan_path, plan_raw),
             (authorization_path, authorization_raw),
+            (profile_path, profile_raw),
         ):
             target = self.repo / relative
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -73,6 +146,8 @@ class NightwatchTests(unittest.TestCase):
             "ordinal": ordinal,
             "plan_path": plan_path,
             "plan_sha256": plan_sha256,
+            "model_profile_path": profile_path,
+            "model_profile_sha256": profile_envelope["profile_sha256"],
             "planned_run_id": run_id,
             "authorization_path": authorization_path,
             "authorization_sha256": authorization_sha256,
@@ -86,7 +161,15 @@ class NightwatchTests(unittest.TestCase):
             "plan": {
                 "source": {"revision": REVISION},
                 "runs": [{"run_id": run_id, "seed": f"seed-{ordinal}"}],
-                "cohort": {"model": {"id": "local-fixture-model"}},
+                "cohort": {
+                    "model": {
+                        "id": MODEL_ID,
+                        "profile": {
+                            "schema": NIGHTWATCH.local_model_adapter.PROFILE_SCHEMA,
+                            "sha256": profile_envelope["profile_sha256"],
+                        },
+                    }
+                },
             }
         }
         return slot
@@ -141,10 +224,17 @@ class NightwatchTests(unittest.TestCase):
         except KeyError:
             raise NIGHTWATCH.cohort_runner.PlanError("unknown plan") from None
 
-    @staticmethod
-    def local_authorization() -> dict[str, object]:
+    def local_authorization(self) -> dict[str, object]:
+        profile_sha256 = self.slot_specs[-1]["model_profile_sha256"]
         return {
+            "model_profile": {
+                "path": "approved/model-profile.json",
+                "schema": NIGHTWATCH.local_model_adapter.PROFILE_SCHEMA,
+                "sha256": profile_sha256,
+            },
             "provider": {
+                "protocol": NIGHTWATCH.cohort_executor.PROVIDER_PROTOCOL,
+                "model_id": MODEL_ID,
                 "billing_mode": "local-no-charge",
                 "credential_env": None,
                 "endpoint": "http://127.0.0.1:8000/v1",
@@ -200,6 +290,17 @@ class NightwatchTests(unittest.TestCase):
         failure = None
         if status in {"failed", "partial"}:
             failure = {"category": f"synthetic_{status}"}
+        profile = json.loads(
+            (self.repo / str(slot["model_profile_path"])).read_bytes()
+        )["profile"]
+        runtime_attestation = None
+        if status == "completed_ungraded":
+            runtime_attestation = {
+                "schema": NIGHTWATCH.local_model_adapter.RUNTIME_ATTESTATION_SCHEMA,
+                "status": "passed",
+                "profile_sha256": slot["model_profile_sha256"],
+                "model_call_performed": False,
+            }
         run_log = {
             "schema": NIGHTWATCH.cohort_executor.RUN_LOG_SCHEMA,
             "logical_run_id": run_id,
@@ -211,6 +312,17 @@ class NightwatchTests(unittest.TestCase):
             },
             "authorization": {
                 "authorization_sha256": slot["authorization_sha256"]
+            },
+            "model_server": {
+                "profile": {
+                    "path": slot["model_profile_path"],
+                    "schema": NIGHTWATCH.local_model_adapter.PROFILE_SCHEMA,
+                    "sha256": slot["model_profile_sha256"],
+                },
+                "source": profile["source"],
+                "provider": profile["provider"],
+                "runtime": profile["runtime"],
+                "runtime_attestation": runtime_attestation,
             },
             "journal": {"status": "sealed"},
             "publication": {
@@ -228,6 +340,26 @@ class NightwatchTests(unittest.TestCase):
             (hashlib.sha256(log_raw).hexdigest() + "\n").encode("ascii")
         )
         return run_dir
+
+    def pending_ledger_slot(self, slot: dict[str, object]) -> dict[str, object]:
+        return {
+            "ordinal": slot["ordinal"],
+            "planned_run_id": slot["planned_run_id"],
+            "plan_path": slot["plan_path"],
+            "plan_sha256": slot["plan_sha256"],
+            "model_profile_path": slot["model_profile_path"],
+            "model_profile_sha256": slot["model_profile_sha256"],
+            "authorization_path": slot["authorization_path"],
+            "authorization_sha256": slot["authorization_sha256"],
+            "source_revision": REVISION,
+            "seed": f"seed-{slot['ordinal']}",
+            "model_id": MODEL_ID,
+            "status": "pending",
+            "attempt_id": None,
+            "run_dir": None,
+            "run_log_sha256": None,
+            "failure_category": None,
+        }
 
     def campaign_call(
         self,
@@ -358,6 +490,39 @@ class NightwatchTests(unittest.TestCase):
                 expected_sha256=conflicting_envelope["campaign_sha256"],
             )
 
+    def test_shared_model_profile_requires_one_immutable_digest(self) -> None:
+        first = self.make_slot(1)
+        second = self.make_slot(2)
+        self.assertEqual(first["model_profile_path"], second["model_profile_path"])
+        self.assertEqual(first["model_profile_sha256"], second["model_profile_sha256"])
+        campaign, raw, digest = self.make_campaign([first, second])
+
+        verified = NIGHTWATCH.verify_campaign_envelope(raw, expected_sha256=digest)
+
+        self.assertEqual(len(verified["campaign"]["slots"]), 2)
+        conflicting = copy.deepcopy(campaign)
+        conflicting["slots"][1]["model_profile_sha256"] = "f" * 64
+        envelope = NIGHTWATCH.make_campaign_envelope(conflicting)
+        with self.assertRaises(NIGHTWATCH.NightwatchError):
+            NIGHTWATCH.verify_campaign_envelope(
+                canonical(envelope), expected_sha256=envelope["campaign_sha256"]
+            )
+
+    def test_model_profile_path_cannot_alias_plan_or_authorization(self) -> None:
+        slot = self.make_slot(1)
+        campaign, _raw, _digest = self.make_campaign([slot])
+        for aliased_path in (slot["plan_path"], slot["authorization_path"]):
+            changed = copy.deepcopy(campaign)
+            changed["slots"][0]["model_profile_path"] = aliased_path
+            envelope = NIGHTWATCH.make_campaign_envelope(changed)
+            with self.subTest(path=aliased_path), self.assertRaises(
+                NIGHTWATCH.NightwatchError
+            ):
+                NIGHTWATCH.verify_campaign_envelope(
+                    canonical(envelope),
+                    expected_sha256=envelope["campaign_sha256"],
+                )
+
     def test_nonlocal_authorizations_reject_before_executor_or_ledger_write(self) -> None:
         slot = self.make_slot(1)
         _campaign, raw, digest = self.make_campaign([slot])
@@ -381,6 +546,21 @@ class NightwatchTests(unittest.TestCase):
                     self.campaign_call(raw, digest, execute=True, executor=executor)
                 executor.assert_not_called()
                 self.assertFalse((self.repo / "runs" / ".nightwatch").exists())
+
+    def test_model_profile_mismatch_rejects_before_executor_or_ledger_write(self) -> None:
+        slot = self.make_slot(1)
+        _campaign, raw, digest = self.make_campaign([slot])
+        mismatched = self.local_authorization()
+        mismatched["provider"]["endpoint"] = "http://127.0.0.1:9000/v1"
+        executor = mock.Mock(side_effect=AssertionError("executor must not run"))
+
+        with self.mocked_verifiers(authorization_side_effect=mismatched), self.assertRaises(
+            NIGHTWATCH.NightwatchError
+        ):
+            self.campaign_call(raw, digest, execute=True, executor=executor)
+
+        executor.assert_not_called()
+        self.assertFalse((self.repo / "runs" / ".nightwatch").exists())
 
     def test_unsafe_campaign_policy_rejects_before_verifiers_executor_or_ledger(self) -> None:
         slot = self.make_slot(1)
@@ -492,11 +672,13 @@ class NightwatchTests(unittest.TestCase):
                 "planned_run_id": slot["planned_run_id"],
                 "plan_path": slot["plan_path"],
                 "plan_sha256": slot["plan_sha256"],
+                "model_profile_path": slot["model_profile_path"],
+                "model_profile_sha256": slot["model_profile_sha256"],
                 "authorization_path": slot["authorization_path"],
                 "authorization_sha256": slot["authorization_sha256"],
                 "source_revision": REVISION,
                 "seed": "seed-1",
-                "model_id": "local-fixture-model",
+                "model_id": MODEL_ID,
                 "status": "pending",
                 "attempt_id": None,
                 "run_dir": None,
@@ -593,6 +775,102 @@ class NightwatchTests(unittest.TestCase):
         executor.assert_not_called()
         self.assertEqual(result["status"], "completed_ungraded")
         self.assertEqual(result["ledger"]["slots"][0]["status"], "completed_ungraded")
+
+    def test_completed_attempt_requires_valid_runtime_attestation(self) -> None:
+        mutations = (
+            ("missing", None),
+            (
+                "wrong_schema",
+                {
+                    "schema": "marb_local_model_runtime_attestation.v0",
+                    "status": "passed",
+                    "profile_sha256": None,
+                    "model_call_performed": False,
+                },
+            ),
+            (
+                "wrong_status",
+                {
+                    "schema": NIGHTWATCH.local_model_adapter.RUNTIME_ATTESTATION_SCHEMA,
+                    "status": "failed",
+                    "profile_sha256": None,
+                    "model_call_performed": False,
+                },
+            ),
+            (
+                "wrong_profile",
+                {
+                    "schema": NIGHTWATCH.local_model_adapter.RUNTIME_ATTESTATION_SCHEMA,
+                    "status": "passed",
+                    "profile_sha256": "f" * 64,
+                    "model_call_performed": False,
+                },
+            ),
+            (
+                "model_call_claimed",
+                {
+                    "schema": NIGHTWATCH.local_model_adapter.RUNTIME_ATTESTATION_SCHEMA,
+                    "status": "passed",
+                    "profile_sha256": None,
+                    "model_call_performed": True,
+                },
+            ),
+        )
+        for ordinal, (name, replacement) in enumerate(mutations, start=1):
+            slot = self.make_slot(ordinal)
+            run_dir = self.write_attempt(slot, "completed_ungraded")
+            log_path = run_dir / "run_log.json"
+            run_log = json.loads(log_path.read_bytes())
+            if isinstance(replacement, dict):
+                replacement = copy.deepcopy(replacement)
+                if replacement["profile_sha256"] is None:
+                    replacement["profile_sha256"] = slot["model_profile_sha256"]
+            run_log["model_server"]["runtime_attestation"] = replacement
+            log_raw = canonical(run_log)
+            log_path.write_bytes(log_raw)
+            (run_dir / "run_log.sha256").write_bytes(
+                (hashlib.sha256(log_raw).hexdigest() + "\n").encode("ascii")
+            )
+
+            with self.subTest(mutation=name):
+                reconciled = NIGHTWATCH._reconcile_slot(
+                    self.repo, self.pending_ledger_slot(slot)
+                )
+                self.assertEqual(reconciled["status"], "manual_review")
+                self.assertEqual(
+                    reconciled["failure_category"],
+                    "claimed_attempt_requires_manual_review",
+                )
+
+    def test_ledger_model_profile_identity_tampering_fails_closed(self) -> None:
+        slot = self.make_slot(1)
+        campaign, raw, digest = self.make_campaign([slot])
+
+        def executor(_repo_root, **_kwargs):
+            self.write_attempt(slot, "completed_ungraded")
+            return {"status": "completed_ungraded"}
+
+        with self.mocked_verifiers():
+            completed = self.campaign_call(
+                raw, digest, execute=True, executor=executor
+            )
+        self.assertEqual(completed["status"], "completed_ungraded")
+
+        state_root = (
+            self.repo / "runs" / ".nightwatch" / str(campaign["campaign_id"])
+        )
+        ledger_path = state_root / "ledger.json"
+        ledger = json.loads(ledger_path.read_bytes())
+        ledger["slots"][0]["model_profile_sha256"] = "f" * 64
+        ledger_path.write_bytes(canonical(ledger))
+
+        with self.mocked_verifiers(), self.assertRaises(NIGHTWATCH.NightwatchError):
+            self.campaign_call(
+                raw,
+                digest,
+                execute=False,
+                executor=mock.Mock(side_effect=AssertionError("must not execute")),
+            )
 
     def test_claim_without_valid_sealed_log_requires_manual_review(self) -> None:
         slot = self.make_slot(1)
@@ -699,6 +977,34 @@ class NightwatchTests(unittest.TestCase):
             result = self.campaign_call(
                 raw, digest, execute=True, executor=executor, now=clock
             )
+        executor.assert_not_called()
+        self.assertEqual(result["status"], "manual_review")
+        self.assertEqual(
+            result["ledger"]["slots"][0]["failure_category"],
+            "authorization_or_input_drift_requires_review",
+        )
+
+    def test_model_profile_drift_is_rejected_before_executor(self) -> None:
+        slot = self.make_slot(1)
+        _campaign, raw, digest = self.make_campaign([slot])
+        executor = mock.Mock(side_effect=AssertionError("drifted profile must not execute"))
+        clock_calls = 0
+
+        def clock() -> dt.datetime:
+            nonlocal clock_calls
+            clock_calls += 1
+            if clock_calls == 3:
+                profile_path = self.repo / str(slot["model_profile_path"])
+                profile = json.loads(profile_path.read_bytes())
+                profile["profile"]["runtime"]["engine_version"] = "drifted"
+                profile_path.write_bytes(canonical(profile))
+            return NOW
+
+        with self.mocked_verifiers():
+            result = self.campaign_call(
+                raw, digest, execute=True, executor=executor, now=clock
+            )
+
         executor.assert_not_called()
         self.assertEqual(result["status"], "manual_review")
         self.assertEqual(

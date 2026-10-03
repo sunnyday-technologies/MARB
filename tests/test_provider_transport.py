@@ -11,10 +11,19 @@ from unittest import mock
 from harness import cohort_executor as EXECUTOR
 
 
+REVISION = "a" * 40
+LAUNCH_SHA256 = "b" * 64
+PROFILE_SHA256 = "c" * 64
+MODEL_ID = EXECUTOR.local_model_adapter.expected_served_model_id(
+    "nvidia/example-model", REVISION, LAUNCH_SHA256
+)
+ENDPOINT = "http://127.0.0.1:8000/v1"
+
+
 def response_bytes(**changes: object) -> bytes:
     value: dict[str, object] = {
         "id": "response-1",
-        "model": "synthetic-model-v1",
+        "model": MODEL_ID,
         "system_fingerprint": "fingerprint-1",
         "choices": [
             {
@@ -44,7 +53,16 @@ class ProviderTransportTests(unittest.TestCase):
     def test_session_binds_seed_headers_origin_and_transport_hashes(self) -> None:
         observed: dict[str, object] = {}
 
-        def runner(endpoint, origin, headers, request_raw, timeout):
+        def runner(
+            endpoint,
+            origin,
+            headers,
+            request_raw,
+            timeout,
+            expected_model_id,
+            model_profile_sha256,
+            loopback_only,
+        ):
             observed.update(
                 endpoint=endpoint,
                 origin=origin,
@@ -52,25 +70,33 @@ class ProviderTransportTests(unittest.TestCase):
                 bearer_present=headers.get("Authorization", "").startswith("Bearer "),
                 request=json.loads(request_raw),
                 timeout=timeout,
+                expected_model_id=expected_model_id,
+                model_profile_sha256=model_profile_sha256,
+                loopback_only=loopback_only,
             )
             raw = response_bytes()
-            return "https://api.example.test/v1/chat/completions", "request-1", raw
+            return ENDPOINT + "/chat/completions", "request-1", raw
 
         session = EXECUTOR.OpenAICompatibleSession(
-            "https://API.EXAMPLE.TEST:443/v1",
-            "synthetic-model-v1",
-            "x" * 24,
+            ENDPOINT,
+            MODEL_ID,
+            None,
+            PROFILE_SHA256,
             transport_runner=runner,
         )
         result = session.complete(
             [{"role": "user", "content": "hello"}], [], settings()
         )
-        self.assertEqual(observed["endpoint"], "https://API.EXAMPLE.TEST:443/v1/chat/completions")
-        self.assertEqual(observed["origin"], "https://api.example.test")
+        self.assertEqual(observed["endpoint"], ENDPOINT + "/chat/completions")
+        self.assertEqual(observed["origin"], "http://127.0.0.1:8000")
         self.assertEqual(observed["request"]["seed"], 17)
-        self.assertTrue(observed["bearer_present"])
-        self.assertEqual(observed["header_names"], ["Authorization", "Content-Type"])
-        self.assertEqual(result.response_model, "synthetic-model-v1")
+        self.assertFalse(observed["bearer_present"])
+        self.assertEqual(observed["header_names"], ["Content-Type"])
+        self.assertEqual(observed["request"]["model"], MODEL_ID)
+        self.assertEqual(observed["expected_model_id"], MODEL_ID)
+        self.assertEqual(observed["model_profile_sha256"], PROFILE_SHA256)
+        self.assertTrue(observed["loopback_only"])
+        self.assertEqual(result.response_model, MODEL_ID)
         self.assertEqual(result.request_id, "request-1")
         self.assertEqual(result.cost_usd, "0")
         self.assertRegex(result.transport_request_sha256 or "", r"^[0-9a-f]{64}$")
@@ -81,11 +107,12 @@ class ProviderTransportTests(unittest.TestCase):
 
     def test_origin_change_and_oversized_response_fail_closed(self) -> None:
         changed = EXECUTOR.OpenAICompatibleSession(
-            "https://api.example.test/v1",
-            "synthetic-model-v1",
+            ENDPOINT,
+            MODEL_ID,
             None,
+            PROFILE_SHA256,
             transport_runner=lambda *_args: (
-                "https://other.example.test/v1/chat/completions",
+                "http://127.0.0.1:9000/v1/chat/completions",
                 None,
                 response_bytes(),
             ),
@@ -94,11 +121,12 @@ class ProviderTransportTests(unittest.TestCase):
             changed.complete([], [], settings())
 
         oversized = EXECUTOR.OpenAICompatibleSession(
-            "https://api.example.test/v1",
-            "synthetic-model-v1",
+            ENDPOINT,
+            MODEL_ID,
             None,
+            PROFILE_SHA256,
             transport_runner=lambda *_args: (
-                "https://api.example.test/v1/chat/completions",
+                ENDPOINT + "/chat/completions",
                 None,
                 b"x" * 16_000_001,
             ),
@@ -131,11 +159,12 @@ class ProviderTransportTests(unittest.TestCase):
         for changes in cases:
             with self.subTest(changes=changes):
                 session = EXECUTOR.OpenAICompatibleSession(
-                    "https://api.example.test/v1",
-                    "synthetic-model-v1",
+                    ENDPOINT,
+                    MODEL_ID,
                     None,
+                    PROFILE_SHA256,
                     transport_runner=lambda *_args, value=changes: (
-                        "https://api.example.test/v1/chat/completions",
+                        ENDPOINT + "/chat/completions",
                         None,
                         response_bytes(**value),
                     ),
@@ -150,6 +179,19 @@ class ProviderTransportTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(EXECUTOR.ExecutorError, "loopback"):
             EXECUTOR.sanitize_endpoint("http://example.test/v1")
+        for endpoint in (
+            "http://localhost:8000/v1",
+            "http://127.0.0.2:8000/v1",
+            "https://127.0.0.1:8000/v1",
+            "http://127.0.0.1/v1",
+            "http://127.0.0.1:8000/v1/",
+        ):
+            with self.subTest(endpoint=endpoint), self.assertRaises(
+                EXECUTOR.ProviderCallError
+            ):
+                EXECUTOR.OpenAICompatibleSession(
+                    endpoint, MODEL_ID, None, PROFILE_SHA256
+                )
 
     def test_transport_child_is_killed_and_waited_on_base_exception(self) -> None:
         class FakeProcess:
@@ -179,11 +221,14 @@ class ProviderTransportTests(unittest.TestCase):
         with mock.patch.object(EXECUTOR.subprocess, "Popen", return_value=process):
             with self.assertRaises(KeyboardInterrupt):
                 EXECUTOR._subprocess_provider_transport(
-                    "https://api.example.test/v1/chat/completions",
-                    "https://api.example.test",
+                    ENDPOINT + "/chat/completions",
+                    "http://127.0.0.1:8000",
                     {"Content-Type": "application/json"},
-                    b"{}",
+                    json.dumps({"model": MODEL_ID}).encode("ascii"),
                     1.0,
+                    MODEL_ID,
+                    PROFILE_SHA256,
+                    True,
                 )
         self.assertTrue(process.killed)
         self.assertGreaterEqual(process.waits, 2)
@@ -208,11 +253,14 @@ class ProviderTransportTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(EXECUTOR.ProviderCallError, "rejected"):
                 EXECUTOR._subprocess_provider_transport(
-                    "https://api.example.test/v1/chat/completions",
-                    "https://api.example.test",
+                    ENDPOINT + "/chat/completions",
+                    "http://127.0.0.1:8000",
                     {"Content-Type": "application/json"},
-                    b"{}",
+                    json.dumps({"model": MODEL_ID}).encode("ascii"),
                     1.0,
+                    MODEL_ID,
+                    PROFILE_SHA256,
+                    True,
                 )
 
 

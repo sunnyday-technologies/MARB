@@ -19,7 +19,8 @@ from pathlib import Path, PurePosixPath
 from typing import Any, NoReturn, Sequence
 
 
-PLAN_SCHEMA = "marb_cohort_plan.v1"
+PLAN_SCHEMA = "marb_cohort_plan.v2"
+MODEL_PROFILE_SCHEMA = "marb_hf_local_model_profile.v1"
 CANONICAL_PROMPT_VARIANT = "frozen-core"
 REGISTRY_PATH = "results/marb_runs.json"
 L1_CONTRACT_PATH = "harness/l1_execution_contract.json"
@@ -39,7 +40,7 @@ FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 IMMUTABLE_REVISION = re.compile(r"[0-9a-f]{40}(?:[0-9a-f]{24})?")
 SAFE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,62}[a-z0-9]|[a-z0-9]")
 SAFE_SEED = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,31}")
-SAFE_MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,126}[A-Za-z0-9]|[A-Za-z0-9]")
+SAFE_MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}[A-Za-z0-9]|[A-Za-z0-9]")
 SAFE_VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+()-]{0,62}[A-Za-z0-9)]|[A-Za-z0-9]")
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 WINDOWS_RESERVED_NAMES = {
@@ -776,6 +777,7 @@ def _existing_run_checks(
     cohort_id: str,
     model_id: str,
     model_name: str,
+    model_profile_sha256: str,
     driver: dict[str, str],
     driver_version: str,
     prompt_variant: str,
@@ -836,6 +838,8 @@ def _existing_run_checks(
             "cohort_id": cohort_id,
             "model.id": model_id,
             "model.name": model_name,
+            "model.profile.schema": MODEL_PROFILE_SCHEMA,
+            "model.profile.sha256": model_profile_sha256,
             "driver.tool": driver["tool"],
             "driver.version": driver_version,
             "kit": driver["kit"],
@@ -917,6 +921,7 @@ def build_plan(
     cohort_id: str,
     model_id: str,
     model_name: str,
+    model_profile_sha256: str,
     driver_id: str,
     driver_version: str,
     prompt_variant: str,
@@ -942,6 +947,11 @@ def build_plan(
     model_name = _safe_display(model_name, "model name")
     if not isinstance(model_id, str) or not SAFE_MODEL_ID.fullmatch(model_id) or "://" in model_id:
         _fail("model_id must be a safe inert public identifier")
+    if (
+        not isinstance(model_profile_sha256, str)
+        or not MIN_SHA256.fullmatch(model_profile_sha256)
+    ):
+        _fail("model_profile_sha256 must be a lowercase SHA-256 digest")
     if not isinstance(driver_version, str) or not SAFE_VERSION.fullmatch(driver_version):
         _fail("driver version must be a safe public version label")
     if seed_basis not in {"provider-seed", "independent-run-ordinal"}:
@@ -1012,6 +1022,7 @@ def build_plan(
         cohort_id=cohort_id,
         model_id=model_id,
         model_name=model_name,
+        model_profile_sha256=model_profile_sha256,
         driver=driver,
         driver_version=driver_version,
         prompt_variant=prompt_variant,
@@ -1123,7 +1134,14 @@ def build_plan(
             "cell_label": cell_label,
             "cohort_id": cohort_id,
             "track": "frontier",
-            "model": {"id": model_id, "name": model_name},
+            "model": {
+                "id": model_id,
+                "name": model_name,
+                "profile": {
+                    "schema": MODEL_PROFILE_SCHEMA,
+                    "sha256": model_profile_sha256,
+                },
+            },
             "driver": {
                 "id": driver_id,
                 "tool": driver["tool"],
@@ -1372,7 +1390,9 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
     _safe_display(cohort.get("cell_label"), "cohort plan cell label")
     if cohort.get("track") != "frontier":
         _fail("cohort plan track must be frontier")
-    model = _exact_keys(cohort.get("model"), {"id", "name"}, "cohort plan model")
+    model = _exact_keys(
+        cohort.get("model"), {"id", "name", "profile"}, "cohort plan model"
+    )
     if (
         not isinstance(model.get("id"), str)
         or not SAFE_MODEL_ID.fullmatch(model["id"])
@@ -1380,6 +1400,15 @@ def _verify_plan_schema(plan: dict[str, Any]) -> None:
     ):
         _fail("cohort plan model id is unsafe")
     _safe_display(model.get("name"), "cohort plan model name")
+    model_profile = _exact_keys(
+        model.get("profile"), {"schema", "sha256"}, "cohort plan model profile"
+    )
+    if (
+        model_profile.get("schema") != MODEL_PROFILE_SCHEMA
+        or not isinstance(model_profile.get("sha256"), str)
+        or not MIN_SHA256.fullmatch(model_profile["sha256"])
+    ):
+        _fail("cohort plan model profile identity is malformed")
     driver = _exact_keys(
         cohort.get("driver"), {"id", "tool", "version"}, "cohort plan driver"
     )
@@ -1621,6 +1650,7 @@ def _parser() -> argparse.ArgumentParser:
     plan.add_argument("--cohort-id", required=True)
     plan.add_argument("--model-id", required=True)
     plan.add_argument("--model-name", required=True)
+    plan.add_argument("--model-profile-sha256", required=True)
     plan.add_argument("--driver", required=True, choices=sorted(DRIVERS))
     plan.add_argument("--driver-version", required=True)
     plan.add_argument("--prompt-variant", required=True)
@@ -1647,6 +1677,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             cohort_id=args.cohort_id,
             model_id=args.model_id,
             model_name=args.model_name,
+            model_profile_sha256=args.model_profile_sha256,
             driver_id=args.driver,
             driver_version=args.driver_version,
             prompt_variant=args.prompt_variant,
