@@ -34,10 +34,11 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Callable, Iterator, Mapping, NoReturn, Protocol, Sequence
 
 try:  # package import in tests; script import for the CLI
-    from . import cohort_runner
+    from . import cohort_runner, local_model_adapter
     from .runtime_smoke_probes import POSITIVE_PROVENANCE_AND_IMPORT_SOURCE
 except ImportError:  # pragma: no cover - exercised by CLI smoke tests
     import cohort_runner  # type: ignore[no-redef]
+    import local_model_adapter  # type: ignore[no-redef]
     from runtime_smoke_probes import (  # type: ignore[no-redef]
         POSITIVE_PROVENANCE_AND_IMPORT_SOURCE,
     )
@@ -160,7 +161,7 @@ WINDOWS_DOCKER_EXECUTABLE = re.compile(
     re.IGNORECASE,
 )
 SAFE_TOOL_PATH = re.compile(r"[A-Za-z0-9][A-Za-z0-9._ /+-]{0,239}")
-SAFE_PROVIDER_MODEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,126}[A-Za-z0-9]|[A-Za-z0-9]")
+SAFE_PROVIDER_MODEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}[A-Za-z0-9]|[A-Za-z0-9]")
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 SECRET_LITERAL = re.compile(
     rb"(?i)(?:api[_-]?key|access[_-]?token|auth[_-]?token|password|secret)"
@@ -199,6 +200,17 @@ MAX_RETAINED_BYTES = (
     + 2 * MAX_EDITABLE_SOURCE_TOTAL_BYTES
     + 64 * 1024 * 1024
 )
+MODEL_MOUNT_TARGET = "/models"
+MODEL_RUNTIME_LABELS = {
+    "profile_sha256": "io.marb.model.profile-sha256",
+    "engine": "io.marb.model.engine",
+    "engine_version": "io.marb.model.engine-version",
+    "hardware_class": "io.marb.model.hardware-class",
+    "repository_id": "io.marb.model.repository-id",
+    "revision": "io.marb.model.revision",
+    "launch_config_sha256": "io.marb.model.launch-config-sha256",
+    "server_command_sha256": "io.marb.model.server-command-sha256",
+}
 
 
 def _contains_exact_forbidden_secret(
@@ -287,16 +299,22 @@ def _exact_keys(value: Any, expected: set[str], label: str) -> dict[str, Any]:
     return value
 
 
-def _stable_read(path: Path, label: str) -> bytes:
+def _stable_read(
+    path: Path, label: str, *, max_bytes: int | None = None
+) -> bytes:
     try:
         before = path.lstat()
         if not stat.S_ISREG(before.st_mode) or _is_link_like(path):
             _fail(f"{label} is not a regular unlinked file")
+        if max_bytes is not None and before.st_size > max_bytes:
+            _fail(f"{label} exceeds its byte limit")
         with path.open("rb") as handle:
-            raw = handle.read()
+            raw = handle.read() if max_bytes is None else handle.read(max_bytes + 1)
         after = path.lstat()
     except OSError:
         _fail(f"{label} cannot be read")
+    if max_bytes is not None and len(raw) > max_bytes:
+        _fail(f"{label} exceeds its byte limit")
     if (
         before.st_dev,
         before.st_ino,
@@ -698,6 +716,43 @@ def _safe_relative(value: Any, label: str) -> PurePosixPath:
     return path
 
 
+def _repository_input_file(repo_root: Path, relative: Any, label: str) -> Path:
+    """Resolve one public repository input without traversing links."""
+    rel = _safe_relative(relative, label)
+    try:
+        root = repo_root.resolve(strict=True)
+    except OSError:
+        _fail("repository root is unavailable")
+    candidate = root.joinpath(*rel.parts)
+    cursor = root
+    for part in rel.parts:
+        cursor = cursor / part
+        if cursor.exists() or cursor.is_symlink():
+            if _is_link_like(cursor):
+                _fail(f"{label} must not traverse a symlink or junction")
+    try:
+        resolved = candidate.resolve(strict=True)
+        mode = candidate.lstat().st_mode
+    except OSError:
+        _fail(f"{label} is unavailable")
+    if (root != resolved and root not in resolved.parents) or not stat.S_ISREG(mode):
+        _fail(f"{label} must be a regular repository file")
+    try:
+        cohort_runner._repo_relative_parts(rel.as_posix(), label)
+    except cohort_runner.PlanError as exc:
+        _fail(str(exc))
+    return candidate
+
+
+def _verified_model_profile(raw: bytes, expected_sha256: str) -> dict[str, Any]:
+    try:
+        return local_model_adapter.verify_profile_envelope(
+            raw, expected_sha256=expected_sha256
+        )
+    except local_model_adapter.ModelProfileError as exc:
+        _fail(str(exc))
+
+
 def _workspace_path(workspace: Path, relative: Any, label: str) -> Path:
     rel = _safe_relative(relative, label)
     root = workspace.resolve(strict=True)
@@ -863,10 +918,23 @@ def verify_authorization(
     expected_plan_sha256: str,
     expected_run_id: str,
     expected_model_id: str,
+    model_profile_raw: bytes,
+    expected_model_profile_path: str,
+    expected_model_profile_sha256: str,
     now: dt.datetime,
 ) -> dict[str, Any]:
     """Verify the externally digest-bound execution authorization envelope."""
     _validate_runtime_contract_sources()
+    profile_path = _safe_relative(
+        expected_model_profile_path, "expected model profile path"
+    ).as_posix()
+    profile_envelope = _verified_model_profile(
+        model_profile_raw, expected_model_profile_sha256
+    )
+    profile_payload = profile_envelope["profile"]
+    profile_provider = profile_payload["provider"]
+    if profile_provider["served_model_id"] != expected_model_id:
+        _fail("local model profile identity does not match the plan")
     try:
         value, _ = cohort_runner._decode_json(raw, "execution authorization")
     except cohort_runner.PlanError as exc:
@@ -902,6 +970,7 @@ def verify_authorization(
             "planned_run_id",
             "execution",
             "provider",
+            "model_profile",
             "container",
             "spend",
             "implementation",
@@ -940,6 +1009,18 @@ def verify_authorization(
     }:
         _fail("execution authorization grants are not explicit")
 
+    model_profile = _exact_keys(
+        payload.get("model_profile"),
+        {"path", "schema", "sha256"},
+        "execution authorization model profile",
+    )
+    if model_profile != {
+        "path": profile_path,
+        "schema": local_model_adapter.PROFILE_SCHEMA,
+        "sha256": expected_model_profile_sha256,
+    }:
+        _fail("execution authorization model profile identity does not match")
+
     provider = _exact_keys(
         payload.get("provider"),
         {
@@ -952,6 +1033,15 @@ def verify_authorization(
         },
         "execution authorization provider",
     )
+    expected_profile_provider = {
+        "protocol": profile_provider["protocol"],
+        "model_id": profile_provider["served_model_id"],
+        "endpoint": profile_provider["endpoint"],
+        "credential_env": profile_provider["credential_env"],
+        "billing_mode": profile_provider["billing_mode"],
+    }
+    if any(provider.get(key) != value for key, value in expected_profile_provider.items()):
+        _fail("authorized provider identity does not match the local model profile")
     if provider.get("protocol") != PROVIDER_PROTOCOL:
         _fail("provider protocol is unsupported")
     if provider.get("model_id") != expected_model_id:
@@ -1056,6 +1146,7 @@ def verify_authorization(
             "planner_sha256",
             "executor_sha256",
             "isolated_container_sha256",
+            "local_model_adapter_sha256",
             "provider_transport_sha256",
             "run_limiter_sha256",
             "runtime_contract_sha256",
@@ -1074,6 +1165,7 @@ def verify_authorization(
         "planner_sha256",
         "executor_sha256",
         "isolated_container_sha256",
+        "local_model_adapter_sha256",
         "provider_transport_sha256",
         "run_limiter_sha256",
         "runtime_contract_sha256",
@@ -1144,6 +1236,7 @@ def _rebuild_plan(repo_root: Path, envelope: dict[str, Any]) -> None:
         cohort_id=cohort["cohort_id"],
         model_id=cohort["model"]["id"],
         model_name=cohort["model"]["name"],
+        model_profile_sha256=cohort["model"]["profile"]["sha256"],
         driver_id=cohort["driver"]["id"],
         driver_version=cohort["driver"]["version"],
         prompt_variant=cohort["prompt_variant"],
@@ -2083,6 +2176,259 @@ def _verify_host_docker_executable(container: dict[str, Any]) -> dict[str, str]:
     return {"path": text, "sha256": digest}
 
 
+def _docker_json_readback(
+    argv: Sequence[str],
+    *,
+    command_runner: Callable[..., Any],
+    host_environment: Mapping[str, str],
+    label: str,
+) -> dict[str, Any]:
+    """Read one bounded Docker JSON object without surfacing command output."""
+    try:
+        result = command_runner(
+            list(argv), timeout=15.0, env=dict(host_environment)
+        )
+        stdout = result.stdout
+        if isinstance(stdout, str):
+            raw = stdout.encode("utf-8")
+        elif isinstance(stdout, bytes):
+            raw = stdout
+        else:
+            raise ValueError
+        if (
+            result.returncode != 0
+            or getattr(result, "stdout_truncated", False)
+            or getattr(result, "stderr_truncated", False)
+            or len(raw) > 4 * 1024 * 1024
+        ):
+            raise ValueError
+        value = json.loads(raw.decode("utf-8"))
+        if not isinstance(value, dict):
+            raise ValueError
+        return value
+    except (OSError, subprocess.SubprocessError, UnicodeError, json.JSONDecodeError, ValueError):
+        _fail(f"{label} could not be read back safely")
+
+
+def _validate_model_snapshot_mount(
+    value: Any, repository_id: str, revision: str
+) -> None:
+    if not isinstance(value, str) or not value or CONTROL.search(value):
+        _fail("local model snapshot mount source is malformed")
+    path = Path(value)
+    try:
+        if not path.is_absolute():
+            raise OSError
+        cursor = Path(path.anchor)
+        if _is_link_like(cursor):
+            raise OSError
+        for part in path.parts[1:]:
+            cursor = cursor / part
+            info = cursor.lstat()
+            if not stat.S_ISDIR(info.st_mode) or _is_link_like(cursor):
+                raise OSError
+        resolved = path.resolve(strict=True)
+    except OSError:
+        _fail("local model snapshot mount source is unavailable or linked")
+    expected_tail = (
+        "models--" + repository_id.replace("/", "--"),
+        "snapshots",
+        revision,
+    )
+    actual_tail = resolved.parts[-3:]
+    normalize = (lambda item: item.casefold()) if os.name == "nt" else (lambda item: item)
+    if tuple(normalize(item) for item in actual_tail) != tuple(
+        normalize(item) for item in expected_tail
+    ):
+        _fail("local model snapshot mount does not match the approved revision")
+
+
+def _observe_same_host_model_container(
+    expected: dict[str, Any],
+    *,
+    docker_executable: str,
+    command_runner: Callable[..., Any] | None = None,
+    host_environ: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Inspect the exact running model container through the authorized Docker CLI."""
+    expected_keys = {
+        "profile_sha256",
+        "container_name",
+        "container_image",
+        "engine",
+        "engine_version",
+        "hardware_class",
+        "repository_id",
+        "revision",
+        "launch_config_sha256",
+        "server_command_sha256",
+        "host_ip",
+        "host_port",
+        "container_port",
+        "served_model_id",
+        "model_mount_target",
+    }
+    if set(expected) != expected_keys or expected["model_mount_target"] != MODEL_MOUNT_TARGET:
+        _fail("local model runtime observer received an inconsistent expectation")
+    try:
+        from . import isolated_container
+    except ImportError:  # pragma: no cover - exercised by CLI smoke tests
+        import isolated_container  # type: ignore[no-redef]
+    runner = command_runner or isolated_container._default_command_runner
+    environment = isolated_container._minimal_host_environment(
+        os.environ if host_environ is None else host_environ
+    )
+    container = _docker_json_readback(
+        [
+            docker_executable,
+            "container",
+            "inspect",
+            "--format",
+            "{{json .}}",
+            expected["container_name"],
+        ],
+        command_runner=runner,
+        host_environment=environment,
+        label="local model container",
+    )
+    config = container.get("Config")
+    state = container.get("State")
+    host = container.get("HostConfig")
+    network = container.get("NetworkSettings")
+    if not all(isinstance(item, dict) for item in (config, state, host, network)):
+        _fail("local model container readback is malformed")
+    labels = config.get("Labels")
+    if not isinstance(labels, dict):
+        _fail("local model container labels are unavailable")
+    expected_labels = {
+        MODEL_RUNTIME_LABELS[key]: expected[key] for key in MODEL_RUNTIME_LABELS
+    }
+    if any(labels.get(key) != value for key, value in expected_labels.items()):
+        _fail("local model container labels do not match the approved profile")
+
+    container_id = container.get("Id")
+    image_id = container.get("Image")
+    if (
+        not isinstance(container_id, str)
+        or not re.fullmatch(r"[0-9a-f]{64}", container_id)
+        or container.get("Name") != "/" + expected["container_name"]
+        or state.get("Running") is not True
+        or state.get("Status") != "running"
+        or config.get("Image") != expected["container_image"]
+        or not isinstance(image_id, str)
+        or not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id)
+    ):
+        _fail("local model container identity or state is inconsistent")
+    effective_command = [container.get("Path"), *(container.get("Args") or [])]
+    if (
+        not all(isinstance(item, str) and item for item in effective_command)
+        or hashlib.sha256(_canonical_json(effective_command)).hexdigest()
+        != expected["server_command_sha256"]
+    ):
+        _fail("local model container command does not match the approved profile")
+
+    image = _docker_json_readback(
+        [
+            docker_executable,
+            "image",
+            "inspect",
+            "--format",
+            "{{json .}}",
+            expected["container_image"],
+        ],
+        command_runner=runner,
+        host_environment=environment,
+        label="local model image",
+    )
+    repo_digests = image.get("RepoDigests")
+    if (
+        image.get("Id") != image_id
+        or not isinstance(repo_digests, list)
+        or expected["container_image"] not in repo_digests
+    ):
+        _fail("local model image does not match the approved immutable digest")
+
+    mounts = container.get("Mounts")
+    if not isinstance(mounts, list) or len(mounts) != 1:
+        _fail("local model container must have exactly one model snapshot mount")
+    mount = mounts[0]
+    if (
+        not isinstance(mount, dict)
+        or mount.get("Type") != "bind"
+        or mount.get("Destination") != MODEL_MOUNT_TARGET
+        or mount.get("RW") is not False
+        or mount.get("Propagation") not in {None, "", "rprivate"}
+    ):
+        _fail("local model snapshot mount policy is inconsistent")
+    _validate_model_snapshot_mount(
+        mount.get("Source"), expected["repository_id"], expected["revision"]
+    )
+
+    port_key = f'{expected["container_port"]}/tcp'
+    expected_binding = [
+        {
+            "HostIp": expected["host_ip"],
+            "HostPort": str(expected["host_port"]),
+        }
+    ]
+    if (
+        host.get("PublishAllPorts") is not False
+        or host.get("PortBindings") != {port_key: expected_binding}
+        or network.get("Ports") != {port_key: expected_binding}
+        or config.get("ExposedPorts") != {port_key: {}}
+    ):
+        _fail("local model loopback port binding is inconsistent")
+
+    environment_entries = config.get("Env")
+    if not isinstance(environment_entries, list) or len(environment_entries) > 256:
+        _fail("local model environment metadata is malformed")
+    environment_keys: list[str] = []
+    for entry in environment_entries:
+        if not isinstance(entry, str) or "=" not in entry:
+            _fail("local model environment metadata is malformed")
+        key, _discarded_value = entry.split("=", 1)
+        environment_keys.append(key)
+    return {
+        "container_id": container_id,
+        "profile_sha256": labels[MODEL_RUNTIME_LABELS["profile_sha256"]],
+        "container_name": container["Name"].removeprefix("/"),
+        "running": True,
+        "image_repo_digest": expected["container_image"],
+        "image_id": image_id,
+        "engine": labels[MODEL_RUNTIME_LABELS["engine"]],
+        "engine_version": labels[MODEL_RUNTIME_LABELS["engine_version"]],
+        "hardware_class": labels[MODEL_RUNTIME_LABELS["hardware_class"]],
+        "repository_id": labels[MODEL_RUNTIME_LABELS["repository_id"]],
+        "revision": labels[MODEL_RUNTIME_LABELS["revision"]],
+        "launch_config_sha256": labels[
+            MODEL_RUNTIME_LABELS["launch_config_sha256"]
+        ],
+        "server_command_sha256": labels[
+            MODEL_RUNTIME_LABELS["server_command_sha256"]
+        ],
+        "model_mount_read_only": True,
+        "host_ip": expected["host_ip"],
+        "host_port": expected["host_port"],
+        "container_port": expected["container_port"],
+        "environment_keys": environment_keys,
+    }
+
+
+def _default_model_runtime_attestor(
+    profile_raw: bytes,
+    expected_profile_sha256: str,
+    container: dict[str, Any],
+) -> dict[str, Any]:
+    docker_identity = _verify_host_docker_executable(container)
+    return local_model_adapter.attest_runtime(
+        profile_raw,
+        expected_profile_sha256=expected_profile_sha256,
+        observer=lambda expected: _observe_same_host_model_container(
+            expected, docker_executable=docker_identity["path"]
+        ),
+    )
+
+
 def _verify_host_git_executable(implementation: Mapping[str, Any]) -> dict[str, str]:
     text = _validated_git_executable_text(implementation.get("git_executable"))
     path = Path(text)
@@ -2435,6 +2781,7 @@ def _executing_module_paths() -> dict[str, Path]:
         "planner": Path(cohort_runner.__file__).resolve(strict=True),
         "executor": Path(__file__).resolve(strict=True),
         "isolated_container": Path(executing_isolation.__file__).resolve(strict=True),
+        "local_model_adapter": Path(local_model_adapter.__file__).resolve(strict=True),
         "provider_transport": Path(executing_transport.__file__).resolve(strict=True),
         "runtime_smoke_probes": Path(executing_smoke_probes.__file__).resolve(strict=True),
         "run_limiter": Path(__file__).resolve(strict=True).parent / "container" / "run_limited.py",
@@ -2460,6 +2807,11 @@ def _verify_committed_implementation(
         "isolated_container": (
             "harness/isolated_container.py",
             approved["isolated_container_sha256"],
+            "utf8-lf",
+        ),
+        "local_model_adapter": (
+            "harness/local_model_adapter.py",
+            approved["local_model_adapter_sha256"],
             "utf8-lf",
         ),
         "provider_transport": (
@@ -2998,7 +3350,8 @@ class Sandbox(Protocol):
 
 
 ProviderTransportRunner = Callable[
-    [str, str, dict[str, str], bytes, float], tuple[str, str | None, bytes]
+    [str, str, dict[str, str], bytes, float, str, str, bool],
+    tuple[str, str | None, bytes],
 ]
 MAX_PROVIDER_HELPER_STDOUT_BYTES = 24_000_000
 
@@ -3073,6 +3426,9 @@ def _subprocess_provider_transport(
     headers: dict[str, str],
     request_raw: bytes,
     timeout_seconds: float,
+    expected_model_id: str,
+    model_profile_sha256: str,
+    loopback_only: bool,
 ) -> tuple[str, str | None, bytes]:
     helper = Path(__file__).resolve().with_name("provider_transport.py")
     payload = _canonical_json(
@@ -3081,6 +3437,9 @@ def _subprocess_provider_transport(
             "approved_origin": approved_origin,
             "headers": headers,
             "request_body_b64": base64.b64encode(request_raw).decode("ascii"),
+            "expected_model_id": expected_model_id,
+            "model_profile_sha256": model_profile_sha256,
+            "loopback_only": loopback_only,
         }
     )
     process: subprocess.Popen[bytes] | None = None
@@ -3155,12 +3514,28 @@ class OpenAICompatibleSession:
         endpoint: str,
         model_id: str,
         credential: str | None,
+        model_profile_sha256: str,
         *,
         transport_runner: ProviderTransportRunner | None = None,
     ) -> None:
+        try:
+            canonical_endpoint = local_model_adapter.canonical_loopback_endpoint(
+                endpoint
+            )
+        except local_model_adapter.ModelProfileError:
+            raise ProviderCallError("local model endpoint is not an approved loopback URL") from None
+        if endpoint != canonical_endpoint or credential is not None:
+            raise ProviderCallError(
+                "local model sessions require an exact credential-free loopback endpoint"
+            )
+        if not isinstance(model_profile_sha256, str) or not HEX64.fullmatch(
+            model_profile_sha256
+        ):
+            raise ProviderCallError("local model profile identity is malformed")
         self._url = endpoint if endpoint.endswith("/chat/completions") else endpoint + "/chat/completions"
         _raw, self._approved_origin = sanitize_endpoint(endpoint)
         self._model_id = model_id
+        self._model_profile_sha256 = model_profile_sha256
         self._credential = credential
         self._transport_runner = transport_runner or _subprocess_provider_transport
 
@@ -3190,6 +3565,9 @@ class OpenAICompatibleSession:
                 headers,
                 request_raw,
                 settings["timeout_seconds"],
+                self._model_id,
+                self._model_profile_sha256,
+                True,
             )
             _response_url, response_origin = sanitize_endpoint(response_url)
             if response_origin != self._approved_origin:
@@ -3980,9 +4358,14 @@ def _validate_sandbox_attestation(value: Any) -> dict[str, Any]:
 
 
 def _default_provider_factory(
-    provider: dict[str, Any], credential: str | None
+    provider: dict[str, Any], credential: str | None, model_profile_sha256: str
 ) -> ProviderSession:
-    return OpenAICompatibleSession(provider["endpoint"].rstrip("/"), provider["model_id"], credential)
+    return OpenAICompatibleSession(
+        provider["endpoint"].rstrip("/"),
+        provider["model_id"],
+        credential,
+        model_profile_sha256,
+    )
 
 
 def _default_sandbox_factory(
@@ -4116,8 +4499,13 @@ def execute_plan(
     expected_authorization_sha256: str,
     authorization_literal: str,
     planned_run_id: str,
+    model_profile_path: str,
+    expected_model_profile_sha256: str,
     runs_root: Path | None = None,
-    provider_factory: Callable[[dict[str, Any], str | None], ProviderSession] | None = None,
+    provider_factory: Callable[
+        [dict[str, Any], str | None, str], ProviderSession
+    ]
+    | None = None,
     sandbox_factory: Callable[[Path, Path, dict[str, Any], uuid.UUID], Sandbox] | None = None,
     now: Callable[[], dt.datetime] | None = None,
     monotonic: Callable[[], float] | None = None,
@@ -4152,12 +4540,33 @@ def execute_plan(
     literal = f"{EXECUTE_LITERAL_PREFIX}:{expected_plan_sha256}:{planned_run_id}"
     if authorization_literal != literal:
         _fail("exact execution confirmation literal is missing or mismatched")
+    plan_profile = envelope["plan"]["cohort"]["model"]["profile"]
+    if plan_profile != {
+        "schema": local_model_adapter.PROFILE_SCHEMA,
+        "sha256": expected_model_profile_sha256,
+    }:
+        _fail("model profile arguments do not match the cohort plan")
+    normalized_profile_path = _safe_relative(
+        model_profile_path, "model profile path"
+    ).as_posix()
+    profile_file = _repository_input_file(
+        repo_root, normalized_profile_path, "model profile"
+    )
+    profile_raw = _stable_read(
+        profile_file, "model profile", max_bytes=4 * 1024 * 1024
+    )
+    profile_envelope = _verified_model_profile(
+        profile_raw, expected_model_profile_sha256
+    )
     auth = verify_authorization(
         authorization_raw,
         expected_sha256=expected_authorization_sha256,
         expected_plan_sha256=expected_plan_sha256,
         expected_run_id=planned_run_id,
         expected_model_id=envelope["plan"]["cohort"]["model"]["id"],
+        model_profile_raw=profile_raw,
+        expected_model_profile_path=normalized_profile_path,
+        expected_model_profile_sha256=expected_model_profile_sha256,
         now=now(),
     )
     if using_default_sandbox:
@@ -4201,6 +4610,18 @@ def execute_plan(
     forbidden_secrets = (credential,) if isinstance(credential, str) else ()
     credential_status = "not_required" if credential_name is None else "present"
 
+    declared_model_server = {
+        "profile": {
+            "path": normalized_profile_path,
+            "schema": local_model_adapter.PROFILE_SCHEMA,
+            "sha256": expected_model_profile_sha256,
+        },
+        "source": profile_envelope["profile"]["source"],
+        "provider": profile_envelope["profile"]["provider"],
+        "runtime": profile_envelope["profile"]["runtime"],
+        "runtime_attestation": None,
+    }
+
     attempt_candidate = uuid_factory()
     continuity_candidate = uuid_factory()
     if (
@@ -4235,6 +4656,7 @@ def execute_plan(
             "authorization_id": auth["authorization_id"],
             "authorization_sha256": expected_authorization_sha256,
         },
+        "model_server": declared_model_server,
         "timing": {
             "started_utc": _utc_text(started_dt),
             "ended_utc": None,
@@ -4350,11 +4772,12 @@ def execute_plan(
         },
         "cohort": plan["cohort"],
         "identity_semantics": {
-            "model_id": "provider_response_bound_authorized_identity",
+            "model_id": "huggingface_revision_and_launch_config_bound_provider_response_identity",
             "model_name": "operator_supplied_display_label",
             "cell_label": "operator_supplied_display_label",
-            "model_alias_policy": None,
+            "model_alias_policy": "friendly_aliases_forbidden",
         },
+        "model_server": declared_model_server,
         "execution_modality": {
             "provider_input": "text",
             "native_image_view_tool_available": False,
@@ -4538,7 +4961,9 @@ def execute_plan(
         }
         run_log["container"]["attestation"] = safe_attestation
 
-        session = provider_factory(auth["provider"], credential)
+        session = provider_factory(
+            auth["provider"], credential, expected_model_profile_sha256
+        )
         run_log["conversation"]["provider_session_count"] = 1
         del credential
         phase = "baseline"
@@ -4847,6 +5272,24 @@ def _authorization_template_payload(args: argparse.Namespace) -> dict[str, Any]:
         _fail(str(exc))
     slot = _select_run(envelope, args.slot)
     plan = envelope["plan"]
+    model_profile_path = _safe_relative(
+        args.model_profile, "model profile path"
+    ).as_posix()
+    profile_file = _repository_input_file(
+        repo_root, model_profile_path, "model profile"
+    )
+    profile_raw = _stable_read(
+        profile_file, "model profile", max_bytes=4 * 1024 * 1024
+    )
+    profile_envelope = _verified_model_profile(
+        profile_raw, args.expected_model_profile_sha256
+    )
+    if plan["cohort"]["model"]["profile"] != {
+        "schema": local_model_adapter.PROFILE_SCHEMA,
+        "sha256": args.expected_model_profile_sha256,
+    }:
+        _fail("model profile arguments do not match the cohort plan")
+    profile_provider = profile_envelope["profile"]["provider"]
     issued = _parse_utc(args.issued_utc, "issued_utc")
     _parse_utc(args.expires_utc, "expires_utc")
     source_root = Path(__file__).resolve().parent
@@ -4869,12 +5312,17 @@ def _authorization_template_payload(args: argparse.Namespace) -> dict[str, Any]:
             "provider_access": True,
             "spend_authorized": True,
         },
+        "model_profile": {
+            "path": model_profile_path,
+            "schema": local_model_adapter.PROFILE_SCHEMA,
+            "sha256": args.expected_model_profile_sha256,
+        },
         "provider": {
-            "protocol": PROVIDER_PROTOCOL,
-            "model_id": plan["cohort"]["model"]["id"],
-            "endpoint": args.provider_endpoint,
-            "credential_env": args.credential_env,
-            "billing_mode": "local-no-charge",
+            "protocol": profile_provider["protocol"],
+            "model_id": profile_provider["served_model_id"],
+            "endpoint": profile_provider["endpoint"],
+            "credential_env": profile_provider["credential_env"],
+            "billing_mode": profile_provider["billing_mode"],
             "settings": {
                 "temperature": 0,
                 "max_output_tokens": args.max_output_tokens,
@@ -4910,6 +5358,11 @@ def _authorization_template_payload(args: argparse.Namespace) -> dict[str, Any]:
                 "harness/isolated_container.py",
                 "isolated container source",
             )["sha256"],
+            "local_model_adapter_sha256": _text_source_identity(
+                source_root / "local_model_adapter.py",
+                "harness/local_model_adapter.py",
+                "local model adapter source",
+            )["sha256"],
             "provider_transport_sha256": _text_source_identity(
                 source_root / "provider_transport.py",
                 "harness/provider_transport.py",
@@ -4930,6 +5383,9 @@ def _authorization_template_payload(args: argparse.Namespace) -> dict[str, Any]:
         expected_plan_sha256=args.expected_plan_sha256,
         expected_run_id=args.slot,
         expected_model_id=plan["cohort"]["model"]["id"],
+        model_profile_raw=profile_raw,
+        expected_model_profile_path=model_profile_path,
+        expected_model_profile_sha256=args.expected_model_profile_sha256,
         now=issued,
     )
     return payload
@@ -4943,6 +5399,8 @@ def _parser() -> argparse.ArgumentParser:
     execute.add_argument("--expected-plan-sha256", required=True)
     execute.add_argument("--authorization", type=Path, required=True)
     execute.add_argument("--expected-authorization-sha256", required=True)
+    execute.add_argument("--model-profile", required=True)
+    execute.add_argument("--expected-model-profile-sha256", required=True)
     execute.add_argument("--authorize-execution", required=True)
     execute.add_argument("--slot", required=True)
     execute.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -4952,12 +5410,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     template.add_argument("--plan", type=Path, required=True)
     template.add_argument("--expected-plan-sha256", required=True)
+    template.add_argument("--model-profile", required=True)
+    template.add_argument("--expected-model-profile-sha256", required=True)
     template.add_argument("--slot", required=True)
     template.add_argument("--approved-by", required=True)
     template.add_argument("--issued-utc", required=True)
     template.add_argument("--expires-utc", required=True)
-    template.add_argument("--provider-endpoint", required=True)
-    template.add_argument("--credential-env")
     template.add_argument("--container-image", required=True)
     template.add_argument("--docker-executable", required=True)
     template.add_argument("--docker-executable-sha256", required=True)
@@ -4985,8 +5443,11 @@ def _parser() -> argparse.ArgumentParser:
     validate.add_argument("--expected-authorization-sha256", required=True)
     validate.add_argument("--plan", type=Path, required=True)
     validate.add_argument("--expected-plan-sha256", required=True)
+    validate.add_argument("--model-profile", required=True)
+    validate.add_argument("--expected-model-profile-sha256", required=True)
     validate.add_argument("--slot", required=True)
     validate.add_argument("--at-utc", required=True)
+    validate.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     return parser
 
 
@@ -5022,12 +5483,29 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             except cohort_runner.PlanError as exc:
                 _fail(str(exc))
+            model_profile_path = _safe_relative(
+                args.model_profile, "model profile path"
+            ).as_posix()
+            profile_file = _repository_input_file(
+                args.repo_root, model_profile_path, "model profile"
+            )
+            profile_raw = _stable_read(
+                profile_file, "model profile", max_bytes=4 * 1024 * 1024
+            )
+            if plan_envelope["plan"]["cohort"]["model"]["profile"] != {
+                "schema": local_model_adapter.PROFILE_SCHEMA,
+                "sha256": args.expected_model_profile_sha256,
+            }:
+                _fail("model profile arguments do not match the cohort plan")
             auth = verify_authorization(
                 _stable_read(args.authorization, "execution authorization"),
                 expected_sha256=args.expected_authorization_sha256,
                 expected_plan_sha256=args.expected_plan_sha256,
                 expected_run_id=args.slot,
                 expected_model_id=plan_envelope["plan"]["cohort"]["model"]["id"],
+                model_profile_raw=profile_raw,
+                expected_model_profile_path=model_profile_path,
+                expected_model_profile_sha256=args.expected_model_profile_sha256,
                 now=_parse_utc(args.at_utc, "at_utc"),
             )
             output = {
@@ -5047,6 +5525,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 expected_authorization_sha256=args.expected_authorization_sha256,
                 authorization_literal=args.authorize_execution,
                 planned_run_id=args.slot,
+                model_profile_path=args.model_profile,
+                expected_model_profile_sha256=args.expected_model_profile_sha256,
             )
             output = {
                 "status": result["run_log"]["status"],

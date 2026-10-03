@@ -7,31 +7,40 @@ approval, grade runs, mutate the registry, publish results, or deploy anything.
 Importing the module performs no file, environment, subprocess, provider,
 model, Docker, or network action.
 
-Dedicated fake/local Nightwatch tests exist and are included in board-policy
-CI. They do not invoke a real provider, model, Docker runtime, or network. No
-completed real Nightwatch campaign is claimed here. Separately, retained
-private R8 evidence records one exact source/image/runtime binding passing all
-nine provider-free, network-none cases, and one private local-no-charge S1 slot
+Dedicated fake/local Nightwatch and local-model-adapter tests are included in
+board-policy CI. They do not invoke a real provider, model, Docker runtime, or
+network. No completed real Nightwatch campaign is claimed here, no real model
+has been downloaded or called through the local-model profile path, and no
+model-server runtime has been qualified. Separately, retained private R8
+evidence records one exact source/image/runtime binding passing all nine
+provider-free, network-none cases, and one private local-no-charge S1 slot
 later completed boxed execution and trusted offline grading. Those events do
 not qualify Nightwatch campaign execution or support a public model-performance
 claim.
 
 ## Authority chain
 
-Nightwatch execution requires all three layers below. Nightwatch does not
+Nightwatch execution requires all four layers below. Nightwatch does not
 create, infer, renew, or weaken any of them:
 
-1. One or more canonical `marb_cohort_plan.v1` envelopes, each verified against
-   its independently retained plan SHA-256. Normal N-slot cohorts may reuse one
-   plan path across slots only when every reuse binds the identical digest.
-2. One reviewed and sealed `marb_execution_authorization.v3` per slot. Each
+1. One reviewed and sealed canonical `marb_hf_local_model_profile.v1`, verified
+   against its independently retained profile SHA-256. It binds an exact
+   Hugging Face commit, structured launch digest, immutable OCI image,
+   revision/config-derived served-model ID, and credential-free loopback
+   endpoint. Profile validity alone is not runtime qualification.
+2. One or more canonical `marb_cohort_plan.v2` envelopes, each verified against
+   its independently retained plan SHA-256 and the exact model-profile digest.
+   Normal N-slot cohorts may reuse one plan path only when every reuse binds the
+   identical plan and profile digests.
+3. One reviewed and sealed `marb_execution_authorization.v3` per slot. Each
    authorization remains bound to exactly one plan digest, planned run ID,
-   model, provider configuration, source revision, implementation, runtime,
-   settings, and validity window.
-3. One independently reviewed canonical `marb_nightwatch_campaign.v1`
-   envelope. Its digest approves the controller identity, aggregate window and
-   limits, exact automation policy, ordered slots, and every per-slot plan,
-   authorization, digest, and H2b confirmation literal.
+   model profile, provider configuration, source revision, implementation,
+   runtime, settings, and validity window.
+4. One independently reviewed canonical `marb_nightwatch_campaign.v2`
+   envelope. Its digest approves the Nightwatch and model-adapter source
+   identities, aggregate window and limits, exact automation policy, ordered
+   slots, and every per-slot profile, plan, authorization, digest, and H2b
+   confirmation literal.
 
 Each slot authorization must bind the active `marb-v0.13-h2b`
 execution-runtime contract, exact CADCLAW
@@ -46,7 +55,7 @@ terminator and exactly these top-level fields:
 
 ```json
 {
-  "schema": "marb_nightwatch_campaign.v1",
+  "schema": "marb_nightwatch_campaign.v2",
   "campaign_sha256": "<sha256-of-canonical-campaign-payload>",
   "campaign": {
     "campaign_id": "11111111-1111-4111-8111-111111111111",
@@ -59,7 +68,9 @@ terminator and exactly these top-level fields:
     "source_revision": "<full-lowercase-40-character-marb-commit>",
     "controller": {
       "path": "harness/nightwatch.py",
-      "sha256": "<lf-normalized-controller-source-sha256>"
+      "sha256": "<lf-normalized-controller-source-sha256>",
+      "model_adapter_path": "harness/local_model_adapter.py",
+      "model_adapter_sha256": "<lf-normalized-model-adapter-source-sha256>"
     },
     "execution": {
       "execute": true,
@@ -86,6 +97,8 @@ terminator and exactly these top-level fields:
         "ordinal": 1,
         "plan_path": "runs/nightwatch-inputs/slot-01-plan.json",
         "plan_sha256": "<independently-retained-plan-sha256>",
+        "model_profile_path": "runs/nightwatch-inputs/local-model-profile.json",
+        "model_profile_sha256": "<independently-retained-profile-sha256>",
         "planned_run_id": "<exact-plan-slot>",
         "authorization_path": "runs/nightwatch-inputs/slot-01-authorization.json",
         "authorization_sha256": "<independently-retained-authorization-sha256>",
@@ -106,9 +119,10 @@ most 100 characters. `source_revision` is exactly 40 lowercase hexadecimal
 characters.
 
 The campaign's `controller` identity must exactly match the executing
-`harness/nightwatch.py` path and its LF-normalized source SHA-256. The execution
-block must be exactly `{"execute":true,"max_concurrency":1}`, and every policy
-field must equal the value shown above. Unknown or missing fields fail closed.
+`harness/nightwatch.py` and `harness/local_model_adapter.py` paths and their
+LF-normalized source SHA-256 values. The execution block must be exactly
+`{"execute":true,"max_concurrency":1}`, and every policy field must equal the
+value shown above. Unknown or missing fields fail closed.
 
 `limits.max_slots` must equal the number of slots and be between 1 and 256.
 `failure_stop_threshold` must be between 1 and the number of slots. Slot
@@ -116,9 +130,10 @@ ordinals are contiguous and one-based. Plan and authorization paths are safe,
 normalized repository-relative POSIX paths of at most 500 characters: they do
 not contain backslashes, control characters, absolute roots, `.` or `..`
 components, or colon-bearing components. Authorization paths are
-case-insensitively unique. A plan path may be reused by multiple slots only
-with the same `plan_sha256`; the same path with a conflicting digest is
-rejected. A plan path and authorization path may never alias each other.
+case-insensitively unique. A plan or profile path may be reused by multiple
+slots only with its same digest. The same plan digest may not bind different
+profile digests. Plan, profile, and authorization paths may never alias each
+other.
 Planned run IDs are unique and match
 `[A-Za-z0-9][A-Za-z0-9._-]{0,191}`. Every slot's literal is exactly:
 
@@ -127,11 +142,12 @@ EXECUTE_MARB_MODEL_CALLS:<plan-sha256>:<planned-run-id>
 ```
 
 Each slot must have exactly one matching run ID in its bound plan, and every
-plan must bind the campaign's `source_revision`. One shared plan may therefore
-carry the normal N>=3 cohort while each slot retains its own unique reviewed
-authorization file. Each authorization digest, plan digest, run ID, and model
-ID is verified through H2a/H2b before dispatch. Campaign and ledger files
-contain paths and digests, never credential values.
+plan must bind the campaign's `source_revision` and the slot's profile digest.
+One shared plan may therefore carry the normal N>=3 cohort while each slot
+retains its own unique reviewed authorization file. Each profile, plan,
+authorization, run ID, provider, and model identity is verified through the
+adapter/H2a/H2b chain before dispatch. Campaign and ledger files contain paths
+and digests, never credential values.
 
 ## Automated-provider boundary
 
@@ -140,18 +156,21 @@ the verified H2b authorization must have:
 
 - `billing_mode: local-no-charge`;
 - `credential_env: null`;
-- an endpoint whose parsed host is `localhost` or an IP address classified as
-  loopback;
+- the exact canonical endpoint form `http://127.0.0.1:<port>/v1` or
+  `http://[::1]:<port>/v1`, with an explicit port matching the profile's API
+  container port;
 - spend exactly `{"currency":"USD","max_cost_usd":null,"zero_cost_attested":true}`;
   and
 - the campaign-wide exact policy and `max_concurrency: 1` shown above.
 
 An external endpoint, a credentialed endpoint, a metered authorization, or any
-other potentially paid provider is **manual-only**. Nightwatch rejects it during
-input validation before acquiring the campaign writer lock or constructing a
-provider. A paid or external run remains a separately reviewed one-slot action
-under the H2b operator protocol. Nightwatch passes `environ={}` to H2b so an
-automated run cannot obtain a provider credential from the ambient environment.
+other potentially paid provider is **never an automated fallback**. Nightwatch
+rejects it during input validation before acquiring the campaign writer lock or
+constructing a provider. The current H2b v3 profile also rejects that provider
+class; any future external path requires a separately versioned, explicitly
+approved, provider-price-bound one-slot protocol. Nightwatch passes
+`environ={}` to H2b so an automated run cannot obtain a provider credential
+from the ambient environment.
 
 ## Python API
 
@@ -173,14 +192,15 @@ run_campaign(
 ) -> dict[str, Any]
 ```
 
-`controller_identity` returns exactly `{"path":"harness/nightwatch.py",
-"sha256":"<lf-normalized-source-sha256>"}`. `make_campaign_envelope` wraps a
-payload but does not approve it. `verify_campaign_envelope` verifies canonical
-bytes, exact fields, and the independently supplied digest without touching
-runtime state. `run_campaign` is read-only by default because `execute` defaults
-to `False`; `execute=True` additionally requires the exact Nightwatch
-confirmation literal. The injectable executor and clock are explicit test
-seams, not alternate production authority paths.
+`controller_identity` returns the exact Nightwatch and local-model-adapter
+paths plus both LF-normalized source SHA-256 values.
+`make_campaign_envelope` wraps a payload but does not approve it.
+`verify_campaign_envelope` verifies canonical bytes, exact fields, and the
+independently supplied digest without touching runtime state. `run_campaign`
+is read-only by default because `execute` defaults to `False`; `execute=True`
+additionally requires the exact Nightwatch confirmation literal. The injectable
+executor and clock are explicit test seams, not alternate production authority
+paths.
 
 ## CLI
 
@@ -197,11 +217,11 @@ python harness/nightwatch.py status `
 ```
 
 `status` is the non-executing default behavior of `run_campaign`. It verifies
-the campaign envelope, controller identity, every plan, and every authorization
-without requiring the campaign or authorizations to be current at the time of
-inspection. Authorization semantics are checked at the midpoint of each saved
-authorization window. It then reads and reconciles any existing ledger, event
-journal, slot claims, and sealed H2b logs.
+the campaign envelope, both controller identities, every model profile, plan,
+and authorization without requiring the campaign or authorizations to be
+current at the time of inspection. Authorization semantics are checked at the
+midpoint of each saved authorization window. It then reads and reconciles any
+existing ledger, event journal, slot claims, and sealed H2b logs.
 
 Status does not create the Nightwatch directory, acquire the writer lock, write
 a ledger or event, read credential values, invoke H2b execution, construct a
@@ -225,13 +245,14 @@ python harness/nightwatch.py run `
 EXECUTE_MARB_NIGHTWATCH:<campaign-sha256>
 ```
 
-It checks the campaign window and current validity of every authorization before
-the writer lock, then repeats the campaign-window and selected-slot input checks
-under the lock immediately before dispatch. Each pending slot is passed to
-`cohort_executor.execute_plan` with its exact saved plan and authorization
-bytes, independent digests, planned run ID, and saved H2b authorization literal.
-Only one slot runs at a time, and the controller reconciles its retained state
-before moving to the next slot.
+It checks the campaign window and current validity of every profile, plan, and
+authorization before the writer lock, then repeats the campaign-window and
+selected-slot input checks under the lock immediately before dispatch. Each
+pending slot is passed to `cohort_executor.execute_plan` with its exact saved
+plan and authorization bytes, profile path and digest, independent digests,
+planned run ID, and saved H2b authorization literal. Only one slot runs at a
+time, and the controller reconciles its retained state before moving to the
+next slot.
 
 The canonical success output uses `marb_nightwatch_result.v1` with
 `mode: executed`, campaign digest, terminal or current campaign status,
@@ -249,11 +270,11 @@ runs/.nightwatch/<campaign-uuid>/
   events.jsonl
 ```
 
-`ledger.json` uses `marb_nightwatch_ledger.v1`. It binds the campaign UUID and
+`ledger.json` uses `marb_nightwatch_ledger.v2`. It binds the campaign UUID and
 digest, source revision, aggregate limits, event sequence, timestamps, campaign
-status, and the exact immutable identity of every slot. Mutable slot fields are
-status, attempt UUID, repository-relative run directory, sealed run-log digest,
-and a safe failure category.
+status, and the exact immutable profile/plan/authorization identity of every
+slot. Mutable slot fields are status, attempt UUID, repository-relative run
+directory, sealed run-log digest, and a safe failure category.
 
 Supported slot statuses are `pending`, `running`, `completed_ungraded`,
 `failed`, `partial`, and `manual_review`. Supported campaign statuses are
@@ -270,7 +291,7 @@ blocks dispatch.
 
 Ledger snapshots are canonical JSON written to a unique UUID-suffixed temporary
 file, flushed, `fsync`ed, and atomically replaced with `os.replace`.
-`events.jsonl` uses `marb_nightwatch_event.v1`; each canonical event records a
+`events.jsonl` uses `marb_nightwatch_event.v2`; each canonical event records a
 strictly contiguous sequence, campaign UUID and digest, event name, optional
 slot ordinal and run ID, status, and UTC timestamp. The event is appended,
 flushed, and `fsync`ed before the corresponding ledger snapshot is replaced.
@@ -293,9 +314,15 @@ Nightwatch's operational ledger. Reconciliation:
 2. Requires exactly one matching `runs/<planned-run-id>--<attempt-uuid>`
    directory.
 3. Verifies canonical `run_log.json` against `run_log.sha256`.
-4. Requires the H2b run-log schema, run and attempt IDs, MARB revision, plan and
-   authorization digests, sealed journal, and terminal status to agree.
-5. Requires every publication flag—graded, registry, board, site, and
+4. Re-reads and verifies the sealed model profile, then requires the H2b v2
+   run-log profile path/digest, source, provider, runtime, run and attempt IDs,
+   MARB revision, plan and authorization digests, sealed journal, and terminal
+   status to agree.
+5. For `completed_ungraded`, requires a passing
+   `marb_local_model_runtime_attestation.v1` bound to the profile digest and
+   stating `model_call_performed: false`. Missing or contradictory attestation
+   forces manual review rather than promotion.
+6. Requires every publication flag—graded, registry, board, site, and
    deployment—to remain false.
 
 A valid sealed attempt becomes `completed_ungraded`, `failed`, or `partial` in
@@ -319,9 +346,11 @@ still `pending` and all campaign and per-slot bindings remain valid.
 ## Terminal boundary
 
 The strongest successful campaign and slot state is `completed_ungraded`. It
-means the authorized H2b artifacts and run journal were retained and sealed. It
-is not a score, gate result, registry record, board row, publication decision,
-or deployment authorization.
+means the authorized H2b artifacts and run journal were retained and sealed,
+and the run log carries the required runtime-identity attestation. The
+attestation's endpoint check is not a model completion or quality result. This
+state is not a score, gate result, registry record, board row, publication
+decision, or deployment authorization.
 
 Nightwatch's exact approved policy forbids grading, registry mutation,
 publication, and deployment. The controller also verifies that reconciled H2b
@@ -333,3 +362,6 @@ silently rescales historical results.
 The OS lock, ledger, events, and H2b claims protect only one local checkout.
 They do not provide cross-clone or cross-host uniqueness; that remains an
 operator coordination responsibility.
+
+The software gates above do not claim operational qualification. No real model
+server or completed campaign has passed this path as of 2026-08-29.

@@ -1,14 +1,31 @@
-# MARB local-anchor track builder harness
+# MARB planning and local execution harness
 
-This harness drives a local open-weight model to build the M3-CRETE gantry frame (task 1)
-in CadQuery. The model is served by Ollama through an OpenAI-compatible API. It works only
-from the staged blind kit and the frozen task brief. This is the builder for the
-local-anchor floor on the MARB capability curve.
+The supported path plans `L1-ASSEMBLE`, `L2-RESOLVE`, and `L4-ECO` cohorts,
+executes one explicitly authorized slot inside the H2b sandbox, and coordinates
+approved local repeats through Nightwatch. Model serving is Hugging Face-first,
+credential-free, and revision-bound through
+[`local_model_adapter.py`](local_model_adapter.py). The harness builds and
+retains evidence; grading and publication remain separate trusted steps.
 
-The harness builds. It does not grade. Grading is a separate step that runs the MARB
-grader on the exported STEP file: `grader/marb_grade_all.py` for the GAP, ORIENT, and POS
-positional metrics, and `grader/grade_native_step.py` for the native gates (inventory,
-interference, floating).
+No model has been downloaded or called through the new profile path, no real
+model server has been qualified, and no new benchmark result is claimed as of
+2026-08-29. The older Ollama-oriented `marb_local_harness.py` remains only as an
+exploratory legacy script and cannot produce official H2b evidence.
+
+## Hugging Face-first model identity
+
+Before planning, inventory an existing cache and create, review, seal, and
+independently digest one `marb_hf_local_model_profile.v1`. It binds a full
+Hugging Face commit, structured launch digest, exact vLLM version, immutable
+model-server OCI RepoDigest, single-node DGX Spark topology, derived served
+model ID, and exact credential-free loopback endpoint. Profile v1 does not
+support a bridged two-node topology.
+
+Profile preparation never downloads a model, launches Docker, probes a server,
+or authorizes a run. The same-host runtime-attestation path is still being
+integrated and operationally qualified. Follow
+[`HF_LOCAL_MODELS.md`](HF_LOCAL_MODELS.md); do not infer readiness from a
+friendly model alias, cached directory, manual chat, or sealed profile alone.
 
 ## Plan and execute a cohort slot
 
@@ -20,14 +37,16 @@ not read credentials, contact a provider, create run evidence, grade an
 artifact, authorize spend, or mutate the registry or board. Model and driver
 names in a plan are inert labels, and every slot remains `planned` with null
 outcome and evidence digests. In particular, `cell_label` and `model.name` are
-operator-supplied display labels, not identity evidence. A publishable model
-identity must use the exact authorized `model.id` confirmed by the provider
-response; H2b has no alias policy. This release accepts only the byte-bound
-`prompt_variant` value `frozen-core`.
+operator-supplied display labels, not identity evidence. Plan schema
+`marb_cohort_plan.v2` binds the independently retained model-profile digest;
+`model.id` must be the profile's revision/config-derived served-model ID. This
+release accepts only the byte-bound `prompt_variant` value `frozen-core`.
 
 ```powershell
 $sourceRevision = git rev-parse HEAD
 $pythonExe = "<absolute-python.exe>"
+$modelId = "<served-model-id-reported-by-profile-template>"
+$modelProfileSha256 = "<independently-retained-profile-sha256>"
 $planPath = Join-Path (Get-Location) "canonical-plan.json"
 if ($PSVersionTable.PSVersion -lt [version]"7.4") { throw "PowerShell 7.4+ is required for byte-preserving native stdout redirection" }
 & $pythonExe harness/cohort_runner.py plan `
@@ -36,8 +55,9 @@ if ($PSVersionTable.PSVersion -lt [version]"7.4") { throw "PowerShell 7.4+ is re
   --cell-id l4-eco-example-cadquery `
   --cell-label "L4 ECO example - CadQuery" `
   --cohort-id l4-eco-example-v1 `
-  --model-id example/model `
+  --model-id $modelId `
   --model-name "Example Model" `
+  --model-profile-sha256 $modelProfileSha256 `
   --driver cadquery `
   --driver-version 2.7.0 `
   --prompt-variant frozen-core `

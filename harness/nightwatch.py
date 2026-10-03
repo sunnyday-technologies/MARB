@@ -12,29 +12,29 @@ import contextlib
 import dataclasses
 import datetime as dt
 import hashlib
-import ipaddress
 import json
 import os
 import re
 import stat
 import sys
-import urllib.parse
 import uuid
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterator, NoReturn, Sequence
 
 try:  # package import in tests; script import for the CLI
-    from . import cohort_executor, cohort_runner
+    from . import cohort_executor, cohort_runner, local_model_adapter
 except ImportError:  # pragma: no cover - exercised by CLI smoke tests
     import cohort_executor  # type: ignore[no-redef]
     import cohort_runner  # type: ignore[no-redef]
+    import local_model_adapter  # type: ignore[no-redef]
 
 
-CAMPAIGN_SCHEMA = "marb_nightwatch_campaign.v1"
-LEDGER_SCHEMA = "marb_nightwatch_ledger.v1"
-EVENT_SCHEMA = "marb_nightwatch_event.v1"
+CAMPAIGN_SCHEMA = "marb_nightwatch_campaign.v2"
+LEDGER_SCHEMA = "marb_nightwatch_ledger.v2"
+EVENT_SCHEMA = "marb_nightwatch_event.v2"
 EXECUTE_LITERAL_PREFIX = "EXECUTE_MARB_NIGHTWATCH"
 CONTROLLER_PATH = "harness/nightwatch.py"
+MODEL_ADAPTER_PATH = "harness/local_model_adapter.py"
 HEX64 = re.compile(r"[0-9a-f]{64}")
 FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
@@ -222,9 +222,8 @@ def _repo_file(repo_root: Path, relative: str, label: str) -> Path:
     return candidate
 
 
-def controller_identity() -> dict[str, str]:
-    """Return the normalized source identity a campaign must approve."""
-    raw = _stable_read(Path(__file__).resolve(), "Nightwatch controller source")
+def _normalized_source_sha256(path: Path, label: str) -> str:
+    raw = _stable_read(path.resolve(), label)
     try:
         normalized = (
             raw.decode("utf-8")
@@ -233,8 +232,22 @@ def controller_identity() -> dict[str, str]:
             .encode("utf-8")
         )
     except UnicodeDecodeError:
-        _fail("Nightwatch controller source is not valid UTF-8")
-    return {"path": CONTROLLER_PATH, "sha256": hashlib.sha256(normalized).hexdigest()}
+        _fail(f"{label} is not valid UTF-8")
+    return hashlib.sha256(normalized).hexdigest()
+
+
+def controller_identity() -> dict[str, str]:
+    """Return every normalized controller identity a campaign must approve."""
+    return {
+        "path": CONTROLLER_PATH,
+        "sha256": _normalized_source_sha256(
+            Path(__file__), "Nightwatch controller source"
+        ),
+        "model_adapter_path": MODEL_ADAPTER_PATH,
+        "model_adapter_sha256": _normalized_source_sha256(
+            Path(local_model_adapter.__file__), "local model adapter source"
+        ),
+    }
 
 
 def make_campaign_envelope(payload: dict[str, Any]) -> dict[str, Any]:
@@ -311,13 +324,16 @@ def verify_campaign_envelope(
         _fail("Nightwatch campaign source revision is malformed")
     controller = _exact_keys(
         campaign.get("controller"),
-        {"path", "sha256"},
+        {"path", "sha256", "model_adapter_path", "model_adapter_sha256"},
         "Nightwatch campaign controller",
     )
     if (
         controller.get("path") != CONTROLLER_PATH
         or not isinstance(controller.get("sha256"), str)
         or not HEX64.fullmatch(controller["sha256"])
+        or controller.get("model_adapter_path") != MODEL_ADAPTER_PATH
+        or not isinstance(controller.get("model_adapter_sha256"), str)
+        or not HEX64.fullmatch(controller["model_adapter_sha256"])
     ):
         _fail("Nightwatch campaign controller identity is malformed")
     execution = _exact_keys(
@@ -376,6 +392,8 @@ def verify_campaign_envelope(
         _fail("Nightwatch campaign aggregate limits are inconsistent")
     seen_run_ids: set[str] = set()
     seen_plan_paths: dict[str, str] = {}
+    seen_plan_profiles: dict[str, str] = {}
+    seen_profile_paths: dict[str, str] = {}
     seen_authorization_paths: set[str] = set()
     for ordinal, slot_value in enumerate(slots, start=1):
         slot = _exact_keys(
@@ -384,6 +402,8 @@ def verify_campaign_envelope(
                 "ordinal",
                 "plan_path",
                 "plan_sha256",
+                "model_profile_path",
+                "model_profile_sha256",
                 "planned_run_id",
                 "authorization_path",
                 "authorization_sha256",
@@ -397,26 +417,49 @@ def verify_campaign_envelope(
         authorization_path = _safe_relative(
             slot.get("authorization_path"), "campaign authorization path"
         ).as_posix()
+        profile_path = _safe_relative(
+            slot.get("model_profile_path"), "campaign model profile path"
+        ).as_posix()
         if (
             not isinstance(slot.get("plan_sha256"), str)
             or not HEX64.fullmatch(slot["plan_sha256"])
+            or not isinstance(slot.get("model_profile_sha256"), str)
+            or not HEX64.fullmatch(slot["model_profile_sha256"])
             or not isinstance(slot.get("authorization_sha256"), str)
             or not HEX64.fullmatch(slot["authorization_sha256"])
         ):
             _fail("Nightwatch campaign slot digest is malformed")
         plan_identity = plan_path.casefold()
+        profile_identity = profile_path.casefold()
         authorization_identity = authorization_path.casefold()
         if (
-            authorization_identity in seen_authorization_paths
+            len({plan_identity, profile_identity, authorization_identity}) != 3
+            or authorization_identity in seen_authorization_paths
             or authorization_identity in seen_plan_paths
+            or authorization_identity in seen_profile_paths
             or plan_identity in seen_authorization_paths
+            or plan_identity in seen_profile_paths
+            or profile_identity in seen_authorization_paths
+            or profile_identity in seen_plan_paths
             or (
                 plan_identity in seen_plan_paths
                 and seen_plan_paths[plan_identity] != slot["plan_sha256"]
             )
+            or (
+                profile_identity in seen_profile_paths
+                and seen_profile_paths[profile_identity]
+                != slot["model_profile_sha256"]
+            )
+            or (
+                slot["plan_sha256"] in seen_plan_profiles
+                and seen_plan_profiles[slot["plan_sha256"]]
+                != slot["model_profile_sha256"]
+            )
         ):
             _fail("Nightwatch campaign input path identities are inconsistent")
         seen_plan_paths[plan_identity] = slot["plan_sha256"]
+        seen_plan_profiles[slot["plan_sha256"]] = slot["model_profile_sha256"]
+        seen_profile_paths[profile_identity] = slot["model_profile_sha256"]
         seen_authorization_paths.add(authorization_identity)
         run_id = slot.get("planned_run_id")
         if (
@@ -440,25 +483,18 @@ class _ValidatedSlot:
     campaign_slot: dict[str, Any]
     plan_raw: bytes
     authorization_raw: bytes
+    model_profile_raw: bytes
     plan: dict[str, Any]
     authorization: dict[str, Any]
+    model_profile: dict[str, Any]
     seed: str
     model_id: str
 
 
 def _loopback_endpoint(endpoint: str) -> bool:
     try:
-        parsed = urllib.parse.urlsplit(endpoint)
-        host = parsed.hostname
-    except ValueError:
-        return False
-    if host is None:
-        return False
-    if host.casefold() == "localhost":
-        return True
-    try:
-        return ipaddress.ip_address(host).is_loopback
-    except ValueError:
+        return local_model_adapter.canonical_loopback_endpoint(endpoint) == endpoint
+    except local_model_adapter.ModelProfileError:
         return False
 
 
@@ -487,10 +523,22 @@ def _validate_slot_inputs(
     authorization_path = _repo_file(
         repo_root, slot["authorization_path"], "campaign authorization"
     )
+    profile_path = _repo_file(
+        repo_root, slot["model_profile_path"], "campaign model profile"
+    )
     plan_raw = _stable_read(plan_path, "campaign plan")
     authorization_raw = _stable_read(
         authorization_path, "campaign authorization", max_bytes=4 * 1024 * 1024
     )
+    model_profile_raw = _stable_read(
+        profile_path, "campaign model profile", max_bytes=4 * 1024 * 1024
+    )
+    try:
+        model_profile = local_model_adapter.verify_profile_envelope(
+            model_profile_raw, expected_sha256=slot["model_profile_sha256"]
+        )
+    except local_model_adapter.ModelProfileError as exc:
+        _fail(str(exc))
     try:
         plan = cohort_runner.verify_plan_envelope(
             plan_raw, expected_sha256=slot["plan_sha256"]
@@ -513,12 +561,18 @@ def _validate_slot_inputs(
             expected_plan_sha256=slot["plan_sha256"],
             expected_run_id=slot["planned_run_id"],
             expected_model_id=payload["cohort"]["model"]["id"],
+            model_profile_raw=model_profile_raw,
+            expected_model_profile_path=slot["model_profile_path"],
+            expected_model_profile_sha256=slot["model_profile_sha256"],
             now=verification_time,
         )
     except cohort_executor.ExecutorError as exc:
         _fail(str(exc))
     provider = authorization["provider"]
     spend = authorization["spend"]
+    profile_provider = model_profile["profile"]["provider"]
+    planned_profile = payload["cohort"]["model"].get("profile")
+    authorized_profile = authorization.get("model_profile")
     if (
         provider["billing_mode"] != "local-no-charge"
         or provider["credential_env"] is not None
@@ -532,12 +586,35 @@ def _validate_slot_inputs(
         _fail(
             "Nightwatch automation accepts only credential-free loopback local-no-charge providers"
         )
+    if (
+        planned_profile
+        != {
+            "schema": local_model_adapter.PROFILE_SCHEMA,
+            "sha256": slot["model_profile_sha256"],
+        }
+        or authorized_profile
+        != {
+            "path": slot["model_profile_path"],
+            "schema": local_model_adapter.PROFILE_SCHEMA,
+            "sha256": slot["model_profile_sha256"],
+        }
+        or
+        profile_provider["protocol"] != provider["protocol"]
+        or profile_provider["served_model_id"] != payload["cohort"]["model"]["id"]
+        or profile_provider["served_model_id"] != provider["model_id"]
+        or profile_provider["endpoint"] != provider["endpoint"]
+        or profile_provider["credential_env"] is not None
+        or profile_provider["billing_mode"] != provider["billing_mode"]
+    ):
+        _fail("Nightwatch model profile does not match the authorized provider")
     return _ValidatedSlot(
         campaign_slot=slot,
         plan_raw=plan_raw,
         authorization_raw=authorization_raw,
+        model_profile_raw=model_profile_raw,
         plan=plan,
         authorization=authorization,
+        model_profile=model_profile,
         seed=matching[0]["seed"],
         model_id=payload["cohort"]["model"]["id"],
     )
@@ -584,6 +661,8 @@ def _slot_ledger_entry(campaign: dict[str, Any], validated: _ValidatedSlot) -> d
         "planned_run_id": slot["planned_run_id"],
         "plan_path": slot["plan_path"],
         "plan_sha256": slot["plan_sha256"],
+        "model_profile_path": slot["model_profile_path"],
+        "model_profile_sha256": slot["model_profile_sha256"],
         "authorization_path": slot["authorization_path"],
         "authorization_sha256": slot["authorization_sha256"],
         "source_revision": campaign["source_revision"],
@@ -667,6 +746,8 @@ def _validate_ledger(
                 "planned_run_id",
                 "plan_path",
                 "plan_sha256",
+                "model_profile_path",
+                "model_profile_sha256",
                 "authorization_path",
                 "authorization_sha256",
                 "source_revision",
@@ -686,6 +767,8 @@ def _validate_ledger(
             "planned_run_id",
             "plan_path",
             "plan_sha256",
+            "model_profile_path",
+            "model_profile_sha256",
             "authorization_path",
             "authorization_sha256",
             "source_revision",
@@ -1095,8 +1178,27 @@ def _reconcile_slot(repo_root: Path, slot: dict[str, Any]) -> dict[str, Any]:
         status_value = log.get("status")
         source = log.get("source")
         authorization = log.get("authorization")
+        model_server = log.get("model_server")
         journal = log.get("journal")
         publication = log.get("publication")
+        profile_raw = _stable_read(
+            _repo_file(
+                repo_root, slot["model_profile_path"], "retained model profile"
+            ),
+            "retained model profile",
+            max_bytes=4 * 1024 * 1024,
+        )
+        try:
+            expected_profile = local_model_adapter.verify_profile_envelope(
+                profile_raw, expected_sha256=slot["model_profile_sha256"]
+            )["profile"]
+        except local_model_adapter.ModelProfileError as exc:
+            raise NightwatchError(str(exc)) from None
+        attestation = (
+            model_server.get("runtime_attestation")
+            if isinstance(model_server, dict)
+            else None
+        )
         if (
             log.get("schema") != cohort_executor.RUN_LOG_SCHEMA
             or log.get("logical_run_id") != run_id
@@ -1108,6 +1210,28 @@ def _reconcile_slot(repo_root: Path, slot: dict[str, Any]) -> dict[str, Any]:
             or not isinstance(authorization, dict)
             or authorization.get("authorization_sha256")
             != slot["authorization_sha256"]
+            or not isinstance(model_server, dict)
+            or model_server.get("profile")
+            != {
+                "path": slot["model_profile_path"],
+                "schema": local_model_adapter.PROFILE_SCHEMA,
+                "sha256": slot["model_profile_sha256"],
+            }
+            or model_server.get("source") != expected_profile["source"]
+            or model_server.get("provider") != expected_profile["provider"]
+            or model_server.get("runtime") != expected_profile["runtime"]
+            or (
+                status_value == "completed_ungraded"
+                and (
+                    not isinstance(attestation, dict)
+                    or attestation.get("schema")
+                    != local_model_adapter.RUNTIME_ATTESTATION_SCHEMA
+                    or attestation.get("status") != "passed"
+                    or attestation.get("profile_sha256")
+                    != slot["model_profile_sha256"]
+                    or attestation.get("model_call_performed") is not False
+                )
+            )
             or not isinstance(journal, dict)
             or journal.get("status") != "sealed"
             or not isinstance(publication, dict)
@@ -1401,6 +1525,8 @@ def run_campaign(
                     expected_authorization_sha256=slot["authorization_sha256"],
                     authorization_literal=validated.campaign_slot["authorization_literal"],
                     planned_run_id=slot["planned_run_id"],
+                    model_profile_path=slot["model_profile_path"],
+                    expected_model_profile_sha256=slot["model_profile_sha256"],
                     environ={},
                 )
             except cohort_executor.RunExecutionError:
