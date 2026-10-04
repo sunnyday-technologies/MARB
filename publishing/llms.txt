@@ -6,7 +6,8 @@
 
 - Benchmark home: https://marb.cadclaw.io/
 - M3-CRETE board, provisional measurements separate from historical rankings: https://marb.cadclaw.io/#board
-- Robotic hand board, initial Amazing Hand results unranked and ORCA in preparation: https://marb.cadclaw.io/robotic-hand/
+- Robotic hand board, Amazing Hand baseline and separate Halden/DexHand development results, all unranked: https://marb.cadclaw.io/robotic-hand/
+- HandBench local development update, October 4: https://marb.cadclaw.io/robotic-hand/halden-local-update/
 - Halden Mk-IV interactive exhibit (59-part hand concept with modeled servos and tendons, unscored; separate from Amazing Hand): https://marb.cadclaw.io/robotic-hand/halden-mkiii/
 - HandBench baseline article: https://marb.cadclaw.io/robotic-hand/handbench-baseline/
 - HandBench technical report (internally reviewed pilot, unranked; actual assembly figures, PDF and component CSV): https://marb.cadclaw.io/robotic-hand/handbench-technical-report/
@@ -29,6 +30,7 @@
 
 ## Current public record
 
+- October 4 development update: local qwen3-vl:32b completed the Halden workflow with an anchor-only return, 0/48 scored groups at 1 mm. Six local preparation/repair attempts are retained under changing conditions. Separately, gpt-6-astra Medium returned all 101 instances of a partial DexHand snapshot, with 16/100 non-anchor matches under a 5 mm screen; an earlier failed hand attempt is also retained. Different cases, tolerances and assistance prevent model ranking. No new registered leaderboard entries or physical validation; nightly scheduling remains outstanding.
 - Current repository scoring specification: v0.12. Dated board cells retain their recorded v0.9 tags.
 - The repository run registry contains 43 records at this source revision. Site boards are dated editorial snapshots and can summarize fewer cells.
 - September 17 update: five Astra/Grok Bot artifact measurements appear separately as provisional, unranked results. Historical M3-CRETE standings are unchanged. The September 19 HandBench article adds six initial Amazing Hand attempts, with five native placement measurements and one ungraded outcome, separately from ranked entries. ORCA remains in preparation. Hand and M3-CRETE scores must not be pooled.
@@ -52,4 +54,4 @@
 
 - Search indexing and real-time AI input are allowed. Model training is not permitted by this site's Content Signal: search=yes, ai-input=yes, ai-train=no.
 - Content Signal communicates the publisher's machine-readable preference; applicable contracts, licenses, law, and third-party rights still govern use.
-- Updated: 2026-09-27.
+- Updated: 2026-10-04.

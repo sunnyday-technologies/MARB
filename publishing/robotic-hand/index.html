@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Robotic hand leaderboard | MARB</title>
-  <meta name="description" content="MARB robotic-hand benchmark: initial Amazing Hand baseline results, unranked. ORCA remains in preparation.">
+  <meta name="description" content="MARB robotic-hand results: Amazing Hand baseline plus separate Halden and DexHand development observations. No ranked entries.">
   <link rel="canonical" href="https://marb.cadclaw.io/robotic-hand/">
   <meta property="og:title" content="Robotic hand leaderboard | MARB">
-  <meta property="og:description" content="Amazing Hand has an initial, unranked six-attempt baseline. ORCA remains in preparation.">
+  <meta property="og:description" content="Amazing Hand baseline and separate Halden and DexHand development results. Cases and scoring are not pooled; all remain unranked.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://marb.cadclaw.io/robotic-hand/">
   <meta name="twitter:card" content="summary">
@@ -22,10 +22,14 @@
   <nav><a href="/#board">M3-CRETE board</a><a href="/robotic-hand/" aria-current="page">Robotic hand</a><a href="/astra-vs-grok/">Astra vs Grok Bot</a><a href="/studies/">Studies</a><a class="ghost" href="https://github.com/sunnyday-technologies/MARB">GitHub →</a></nav>
 </header>
 <main><article class="story">
-  <p class="eyebrow">MARB · Robotic hand · September 19, 2026</p>
+  <p class="eyebrow">MARB · Robotic hand · Updated October 4, 2026</p>
   <h1>Robotic hand leaderboard</h1>
-  <p class="lede">A separate benchmark for assembling authored robotic-hand components. Amazing Hand and ORCA will be reported as distinct cases, not combined into one ranking.</p>
+  <p class="lede">A separate benchmark for assembling authored robotic-hand components. Each hand and scoring method is reported separately; results are not combined into one ranking.</p>
   <aside class="scope"><strong>Initial results · unranked.</strong> Six Amazing Hand attempts are retained: five have placement measurements and one remains ungraded. Read <a href="/robotic-hand/handbench-baseline/">HandBench: Some Assembly Required</a> for the results and their limits.<p><a href="/robotic-hand/handbench-technical-report/">Technical report: actual assemblies, methods and source data</a></p></aside>
+
+  <h2 id="development-update">Halden and DexHand · development update</h2>
+  <p><strong>October 4, 2026 · unranked.</strong> Local Qwen completed the Halden test workflow but saved only the fixed anchor: 0/48 scored groups at a 1 mm tolerance. A separate Astra Medium run on a partial DexHand snapshot returned all 101 instances, with 16/100 non-anchor matches under its 5 mm screen. Different tasks and assistance conditions prevent a model ranking.</p>
+  <p><a href="/robotic-hand/halden-local-update/">Read the update, assembly views and retained failure history →</a></p>
 
   <h2 id="amazing-hand">Amazing Hand</h2>
   <p><strong>Initial pilot complete · no ranked entries.</strong> The retained case uses 29 component designs in 226 positions. Three Astra attempts and three supervised Grok Bot attempts establish a baseline under the stated execution and scoring conditions. No complete reference-pose reconstruction was obtained; these observations do not establish a model ranking.</p>
@@ -44,7 +48,7 @@
   <p><a href="/robotic-hand/halden-mkiii/">Explore Halden Mk-IV</a>: a 59-part hand concept with modeled servos and tendons, assembly animation and eight grip poses. This unscored visualization is separate from the Amazing Hand reconstruction results and does not establish physical buildability.</p>
 
   <h2 id="next-steps">Next steps</h2>
-  <p>Retain the Amazing Hand task and scoring for future model-update comparisons. ORCA still needs a matching authored assembly or accepted component placements before its baseline can proceed. The broader campaign remains incomplete; Berkeley Lite can be added later.</p>
+  <p>Freeze the Halden task and adapter for repeated local trials, while retaining the Amazing Hand baseline for future comparisons. ORCA still needs a matching authored assembly or accepted component placements before its baseline can proceed. Nightly scheduling and cross-host qualification remain outstanding; Berkeley Lite is deferred.</p>
   <p><a href="/#board">Return to the M3-CRETE results →</a></p>
 </article></main>
 <footer><p>CADCLAW / MARB · Sunnyday Technologies</p><p>Publisher-run digital benchmarks. No physical certification or endorsement by the hand projects is implied. Component licenses are separate from MARB's code license.</p></footer>

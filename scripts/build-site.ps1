@@ -275,6 +275,7 @@ $requiredSitemapUrls = @(
   "https://marb.cadclaw.io/",
   "https://marb.cadclaw.io/astra-vs-grok/",
   "https://marb.cadclaw.io/robotic-hand/",
+  "https://marb.cadclaw.io/robotic-hand/halden-local-update/",
   "https://marb.cadclaw.io/robotic-hand/handbench-baseline/",
   "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/",
   "https://marb.cadclaw.io/robotic-hand/halden-mkiii/",
@@ -288,11 +289,11 @@ foreach ($requiredUrl in $requiredSitemapUrls) {
   if ($sitemapUrls -notcontains $requiredUrl) { throw "Sitemap is missing required URL: $requiredUrl" }
 }
 if ($sitemapUrls.Count -ne $requiredSitemapUrls.Count) {
-  throw "Sitemap must enumerate exactly the eleven local HTML routes"
+  throw "Sitemap must enumerate exactly the twelve local HTML routes"
 }
 foreach ($node in $sitemapNodes) {
   $route = $node.SelectSingleNode("./*[local-name()='loc']").InnerText
-  $expectedLastmod = if ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/dexter/")) { "2026-09-27" } elseif ($route -eq "https://marb.cadclaw.io/robotic-hand/halden-mkiii/") { "2026-09-23" } elseif ($route -in @("https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/handbench-baseline/", "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/", "https://marb.cadclaw.io/studies/")) { "2026-09-20" } elseif ($route -eq "https://marb.cadclaw.io/") { "2026-09-19" } elseif ($route -eq "https://marb.cadclaw.io/astra-vs-grok/") { "2026-09-17" } else { "2026-08-11" }
+  $expectedLastmod = if ($route -in @("https://marb.cadclaw.io/", "https://marb.cadclaw.io/robotic-hand/", "https://marb.cadclaw.io/robotic-hand/halden-local-update/", "https://marb.cadclaw.io/studies/")) { "2026-10-04" } elseif ($route -eq "https://marb.cadclaw.io/robotic-hand/dexter/") { "2026-09-27" } elseif ($route -eq "https://marb.cadclaw.io/robotic-hand/halden-mkiii/") { "2026-09-23" } elseif ($route -in @("https://marb.cadclaw.io/robotic-hand/handbench-baseline/", "https://marb.cadclaw.io/robotic-hand/handbench-technical-report/")) { "2026-09-20" } elseif ($route -eq "https://marb.cadclaw.io/astra-vs-grok/") { "2026-09-17" } else { "2026-08-11" }
   $lastmod = $node.SelectSingleNode("./*[local-name()='lastmod']")
   if ($null -eq $lastmod -or $lastmod.InnerText -ne $expectedLastmod) {
     throw "Sitemap route has an incorrect lastmod: $route"

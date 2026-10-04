@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HandBench update: execution works, reconstruction remains incomplete | MARB</title>
+  <meta name="description" content="Local Qwen completed the Halden test workflow but reconstructed 0 of 48 scored groups. A separate Astra Medium development run on DexHand matched 16 of 100. Neither is ranked.">
+  <link rel="canonical" href="https://marb.cadclaw.io/robotic-hand/halden-local-update/">
+  <meta property="og:title" content="HandBench update: execution works, reconstruction remains incomplete">
+  <meta property="og:description" content="A working local test workflow, an anchor-only Halden return, and a separate DexHand development result. Methods, failures and limits.">
+  <meta property="og:type" content="article"><meta property="og:url" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/">
+  <meta property="og:image" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/assets/halden-reference-front.png">
+  <meta property="og:image:alt" content="Supplied front reference view of the Halden benchmark geometry, not a model-generated reconstruction.">
+  <meta property="article:published_time" content="2026-10-04"><meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg"><link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/astra-vs-grok/story.css"><link rel="stylesheet" href="/robotic-hand/handbench-baseline/article.css">
+  <link rel="stylesheet" href="/robotic-hand/halden-local-update/article.css">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary">
+</head>
+<body>
+<header class="nav"><a class="brand" href="/" aria-label="MARB home"><img src="/CADCLAW_logo.jpg" alt="CADCLAW"></a><nav><a href="/">Benchmark</a><a href="/robotic-hand/">Robotic hand</a><a href="/studies/">Studies</a><a class="ghost" href="https://github.com/sunnyday-technologies/MARB">GitHub →</a></nav></header>
+<main><article class="story handbench">
+  <p class="eyebrow">Sunnyday Technologies · October 4, 2026 · Development results, unranked</p>
+  <h1>HandBench update: execution works, reconstruction remains incomplete</h1>
+  <p class="lede">Local Qwen completed the Halden test workflow, including image feedback and grading. It did not reconstruct the hand: only the fixed anchor was saved, for <strong>0 of 48 scored groups</strong>.</p>
+  <p>This follows our <a href="/robotic-hand/handbench-baseline/">initial Amazing Hand study</a>. The immediate goal was to establish a local workflow that could save an assembly, return inspection images to the model, preserve the submission and grade it. That cycle now works under one tested configuration. Assembly quality remains the problem.</p>
+  <aside class="scope"><strong>No new leaderboard ranking.</strong> These were assisted development attempts with changing software and prompts, not repeated trials under a fixed benchmark protocol. A separate DexHand result appears below; it is not an Astra–Qwen comparison.</aside>
+
+  <h2>The Halden case</h2>
+  <p>Halden is our own AI-authored hand concept, developed for this testing program. The September 24 snapshot contains <strong>49 rigid groups comprising 90 solids</strong>. Ten flexible groups are excluded. One rigid group is the supplied alignment anchor and receives no credit; the other 48 are scored against the retained reference at a <strong>1 mm placement tolerance</strong>.</p>
+  <p>The participant receives component geometry and eight reference views, not the completed assembly or its placement data. This digital reconstruction task does not establish grasping performance, strength or physical buildability.</p>
+  <div class="comparison">
+    <figure><a href="assets/halden-reference-front.png"><img src="assets/halden-reference-front.png" alt="Supplied Halden front reference view showing the rigid assembly, including internal components." width="640" height="640"></a><figcaption><strong>Reference.</strong> Supplied front camera view, looking along −Y. This is a camera label, not an anatomical view.</figcaption></figure>
+    <figure><a href="assets/qwen-return-front.png"><img src="assets/qwen-return-front.png" alt="Qwen's saved Halden assembly at the same front camera: only the fixed anchor is present." width="640" height="640"></a><figcaption><strong>Returned assembly.</strong> Same camera. Only the fixed anchor remains; no scored group was reconstructed.</figcaption></figure>
+  </div>
+
+  <h2>What the local run completed</h2>
+  <p>The working attempt used <strong>qwen3-vl:32b with Ollama 0.32.1</strong>. It finished in <strong>4.47 minutes</strong>, with 12 model requests and 11 CAD or inspection requests. Four were inspection requests; two checkpoint images were returned and included in later model requests.</p>
+  <p>The model explicitly finished. The saved assembly was frozen, graded and retained, and the run's resources were cleaned up. Image-delivery records confirm that reference views and the requested checkpoints reached the model as image data. They do not establish that the model understood those views.</p>
+  <p>The adapter required one structured action per response and supplied inventory-only progress feedback. It requested thinking off and used an explicit closed-thinking prefix; no effort label was available. Sampling used temperature 0.6 and seed 4101. Each attempt was capped at 30 minutes, 50 model turns and 50 CAD or inspection requests, including at most 12 inspections. No paid model calls or model downloads were used in this local campaign.</p>
+
+  <h2>The failures remain part of the record</h2>
+  <p>Six local attempts were retained across preparation and repair. The interface changed between them, so they must not be treated as six equivalent model trials.</p>
+  <div class="table-scroll" role="region" aria-label="Retained Halden development attempts" tabindex="0"><table>
+    <thead><tr><th scope="col">Attempt condition</th><th scope="col">Model requests</th><th scope="col">Outcome</th><th scope="col">Matched / scored</th></tr></thead>
+    <tbody>
+      <tr><td>Original interface</td><td>1</td><td>Response truncated; no saved assembly</td><td>Not graded</td></tr>
+      <tr><td>Startup revision</td><td>0</td><td>Startup failed before model execution</td><td>Not graded</td></tr>
+      <tr><td>Grammar revision</td><td>1</td><td>Runtime rejected the response grammar</td><td>Not graded</td></tr>
+      <tr><td>Single-action revision</td><td>50</td><td>Turn limit; anchor-only assembly</td><td>0 / 48</td></tr>
+      <tr><td>Inventory-feedback revision</td><td>12</td><td>Workflow completed; anchor-only assembly</td><td>0 / 48</td></tr>
+      <tr><td>Native-conversation test</td><td>1</td><td>No valid action in the response content</td><td>Not graded</td></tr>
+    </tbody>
+  </table></div>
+  <p>The four-attempt repair campaign consumed 64 model requests and 61 CAD or inspection requests; the first two attempts are retained separately. An internal evidence review checked image delivery, saved-file hashes, grading and cleanup. No failed attempt was replaced.</p>
+
+  <h2>A separate DexHand development result</h2>
+  <p><strong>Astra Medium (gpt-6-astra)</strong> completed a development run on a partial, 101-instance DexHand snapshot. It returned all 101 instances in <strong>14.96 minutes</strong>, using 16 CAD calls with no failed CAD calls. With the anchor excluded, <strong>16 of 100 instances</strong> matched the reference under that case's <strong>5 mm distance screen</strong>.</p>
+  <p>The record also retains an earlier failed hand attempt, graded 0/100, and a separate runtime qualification. The completed return initially exceeded the grader's time allowance. A metric-preserving evaluator change then graded the same frozen geometry; the assembly was not repaired or rerun for that grade.</p>
+  <p>This was an assisted, adaptive test. The partial source snapshot does not fully determine a unique hand pose, so the measurement describes agreement with one reference, not mechanical correctness. Its case, tolerance and assistance differ from Halden. The two scores cannot rank Astra against Qwen. No DexHand CAD or imagery is redistributed with this update.</p>
+
+  <h2>What comes next</h2>
+  <p>Freeze the Halden task and adapter, then run repeated local trials with the same budget and scoring. Report every attempt, including setup failures and incomplete returns. That will provide a basis for measuring improvement without confusing software repairs with model capability.</p>
+  <p>For now, the result is narrower: <strong>one local configuration completes the test workflow; a successful hand reconstruction has not been demonstrated.</strong> Nightly scheduling and cross-host qualification remain outstanding. The <a href="/robotic-hand/">hand results page</a> keeps these development observations separate from ranked entries.</p>
+</article></main>
+<footer><p>CADCLAW / MARB · Sunnyday Technologies</p><p>Publisher-run digital tests. No physical validation or endorsement by the hand projects is implied.</p></footer>
+</body></html>

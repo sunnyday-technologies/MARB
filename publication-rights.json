@@ -1,11 +1,13 @@
 {
   "schema_version": "1.0",
   "site": "https://marb.cadclaw.io/",
-  "reviewed_on": "2026-09-27",
+  "reviewed_on": "2026-10-04",
   "release_authorized": true,
   "release_hold": "",
   "supported_by_repository_hash": [],
   "rights_cleared_for_release": [
+    "publishing/robotic-hand/halden-local-update/assets/halden-reference-front.png",
+    "publishing/robotic-hand/halden-local-update/assets/qwen-return-front.png",
     "publishing/media/astra-vs-grok/position-and-coverage.png",
     "publishing/media/astra-vs-grok/gap-and-coverage.png",
     "publishing/media/astra-vs-grok/grok-a01.png",
@@ -59,6 +61,7 @@
   ],
   "tracked_repository_hold": [],
   "notes": [
+    "2026-10-04: owner approved publication of the Halden local-workflow development update and separate DexHand aggregate result. Two unmodified Halden render PNGs from the owner-authored benchmark concept are cleared for this article. No DexHand images, CAD, private paths, raw logs, participant archives or placement keys enter this release. Results remain unranked and do not establish physical validation.",
     "2026-09-27: Owner instructed proceeding with the reviewed Dexter publication plan. Two Sunnyday-captured screenshots of the owner-directed digital hand exhibit are cleared for this illustrated review. Images do not imply physical validation or extend raw CAD distribution rights. Internal evidence/privacy and reader critics were followed by executive editorial review.",
     "2026-09-20: owner authorized publication of the internally reviewed HandBench technical report and its six actual-assembly figures. Manuscript SHA-256 6abeb17e6f26f4e707c30c18f4d26c4cc277bba4987555efd794308467a28e26; PDF SHA-256 cd1745100e2b8755e0f5399bf5687b48a950791d64016ae8d100f45f1d3cac3f. Figures are Sunnyday-created post-hoc renders of retained candidate arrangements of the Pollen Robotics Amazing Hand case; they are cleared for this technical reporting use, with project attribution and the upstream Apache-2.0 license included. This record does not clear distribution of raw third-party CAD or withheld reference placements. Independent scientific, methods and privacy critics followed by an executive editor accepted the report. Figure hashes, source provenance, reviewed scope and authorization are retained privately. Only the report, six PNGs, PDF, component counts and license notice are added; no candidate archives, raw CAD, answer keys, logs or internal reviews enter the site artifact.",
     "2026-09-19: owner requested publication of the reviewed HandBench article (approved prose SHA-256 88f3387f2ae762c8db65e63240345a01e6af6fb185556aa49edd5640a7882e2d). Five visuals are cleared under this approval: one generated conceptual hero with no source geometry input, and four original Sunnyday explanatory/data figures. Three independent AI critics followed by an AI executive editor reviewed the copy. Nonessential PNG metadata is removed without altering image pixels. No raw CAD, answer keys, return archives, logs or internal editorial notes enter the release. Supporting authorization, source provenance and original image hashes remain privately retained.",
