@@ -30,15 +30,23 @@ class HaldenLocalPublicationTests(unittest.TestCase):
         self.assertEqual(text.count("<tr><td>"), 6)
         self.assertEqual(text.count("<td>Not graded</td>"), 4)
         self.assertEqual(text.count("<td>0 / 48</td>"), 2)
-        self.assertEqual(text.count("<figure>"), 2)
+        self.assertEqual(text.count("<figure"), 3)
+        self.assertIn("hand-hero", text)
+        self.assertIn("not an in-run checkpoint", text)
+        self.assertNotIn("assets/halden-reference-front.png", text)
+        self.assertNotIn("assets/qwen-return-front.png", text)
+        self.assertIn('property="og:image" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/assets/halden-reference-oblique.png"', text)
         self.assertNotIn("<script", text.lower())
 
     def test_public_files_and_metadata(self):
         self.assertEqual(
             {p.relative_to(PAGE.parent).as_posix() for p in PAGE.parent.rglob("*") if p.is_file()},
-            {"index.html", "article.css", "assets/halden-reference-front.png", "assets/qwen-return-front.png"},
+            {"index.html", "article.css", "assets/halden-reference-front.png", "assets/qwen-return-front.png",
+             "assets/halden-reference-oblique.png", "assets/qwen-return-oblique.png"},
         )
         expected = {
+            "halden-reference-oblique.png": "b793dac34e6aad12f96f5a7236658807a2ac1a84bb2ec17b7781b50b135b3905",
+            "qwen-return-oblique.png": "126d4337e555ee8addd58273ae40dee28f9ac7ed20673e3f3594c2834713f7f2",
             "halden-reference-front.png": "3a3d454bc3ee8e2395aae823ee3cb45c210b5f515395d0109ea72cdb0c30ccad",
             "qwen-return-front.png": "911c23477dfc0acd36f01d80e39b71dd226c8673e02c358fff07dc45657e1ed9",
         }

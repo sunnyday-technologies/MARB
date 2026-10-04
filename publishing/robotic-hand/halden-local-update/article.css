@@ -1,1 +1,2 @@
 .comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.handbench .comparison figure{margin:16px 0 28px}.comparison img{display:block;width:100%;height:auto;border:1px solid var(--rule)}.comparison figcaption{font-size:14px;line-height:1.6;margin-top:12px}.handbench .table-scroll:focus-visible{outline:2px solid var(--navy);outline-offset:4px}@media(max-width:650px){.comparison{grid-template-columns:1fr;gap:0}}
+.handbench .hand-hero{max-width:640px;margin:28px auto 40px}
