@@ -35,16 +35,23 @@ class HaldenLocalPublicationTests(unittest.TestCase):
         self.assertIn("not an in-run checkpoint", text)
         self.assertNotIn("assets/halden-reference-front.png", text)
         self.assertNotIn("assets/qwen-return-front.png", text)
-        self.assertIn('property="og:image" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/assets/halden-reference-oblique.png"', text)
+        self.assertNotIn("assets/halden-reference-oblique.png", text)
+        self.assertNotIn("assets/qwen-return-oblique.png", text)
+        self.assertIn("Colors distinguish mesh components, not materials", text)
+        self.assertIn("not a benchmark input", text)
+        self.assertIn('property="og:image" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/assets/halden-reference-highfive.png"', text)
         self.assertNotIn("<script", text.lower())
 
     def test_public_files_and_metadata(self):
         self.assertEqual(
             {p.relative_to(PAGE.parent).as_posix() for p in PAGE.parent.rglob("*") if p.is_file()},
             {"index.html", "article.css", "assets/halden-reference-front.png", "assets/qwen-return-front.png",
-             "assets/halden-reference-oblique.png", "assets/qwen-return-oblique.png"},
+             "assets/halden-reference-oblique.png", "assets/qwen-return-oblique.png",
+             "assets/halden-reference-highfive.png", "assets/qwen-return-highfive.png"},
         )
         expected = {
+            "halden-reference-highfive.png": "8e2d506de0c9e24611dc7788eec7780465451f28c9f702a59bcfaf573ff91835",
+            "qwen-return-highfive.png": "6cffbabd0c4e6a01da6d1f4a66f54d003e5b872bba5d0d30bc8e2c190ca3a7a8",
             "halden-reference-oblique.png": "b793dac34e6aad12f96f5a7236658807a2ac1a84bb2ec17b7781b50b135b3905",
             "qwen-return-oblique.png": "126d4337e555ee8addd58273ae40dee28f9ac7ed20673e3f3594c2834713f7f2",
             "halden-reference-front.png": "3a3d454bc3ee8e2395aae823ee3cb45c210b5f515395d0109ea72cdb0c30ccad",

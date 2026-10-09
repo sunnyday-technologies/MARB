@@ -1,11 +1,13 @@
 {
   "schema_version": "1.0",
   "site": "https://marb.cadclaw.io/",
-  "reviewed_on": "2026-10-04",
+  "reviewed_on": "2026-10-09",
   "release_authorized": true,
   "release_hold": "",
   "supported_by_repository_hash": [],
   "rights_cleared_for_release": [
+    "publishing/robotic-hand/halden-local-update/assets/halden-reference-highfive.png",
+    "publishing/robotic-hand/halden-local-update/assets/qwen-return-highfive.png",
     "publishing/robotic-hand/halden-local-update/assets/halden-reference-oblique.png",
     "publishing/robotic-hand/halden-local-update/assets/qwen-return-oblique.png",
     "publishing/robotic-hand/halden-local-update/assets/halden-reference-front.png",
@@ -63,6 +65,7 @@
   ],
   "tracked_repository_hold": [],
   "notes": [
+    "2026-10-09 visual revision: owner requested a straight-on high-five view with distinct component colors. Two editorial CAD renders use unchanged retained reference and submission meshes, a matched camera and scale, and consistent colors for connected mesh components. No geometry, pose, benchmark input or score changes. These post-run illustrations are labeled as editorial views, not model inputs or in-run checkpoints. Only the PNGs enter the public artifact; earlier images remain available for existing links.",
     "2026-10-04 visual revision: owner requested a palm-and-fingers view. Cleared the existing Halden oblique reference PNG and a matching camera-only render of the unchanged saved Qwen assembly. No geometry, benchmark input or score changes. The article identifies the post-run render; earlier front PNGs remain available for existing links.",
     "2026-10-04: owner approved publication of the Halden local-workflow development update and separate DexHand aggregate result. Two unmodified Halden render PNGs from the owner-authored benchmark concept are cleared for this article. No DexHand images, CAD, private paths, raw logs, participant archives or placement keys enter this release. Results remain unranked and do not establish physical validation.",
     "2026-09-27: Owner instructed proceeding with the reviewed Dexter publication plan. Two Sunnyday-captured screenshots of the owner-directed digital hand exhibit are cleared for this illustrated review. Images do not imply physical validation or extend raw CAD distribution rights. Internal evidence/privacy and reader critics were followed by executive editorial review.",

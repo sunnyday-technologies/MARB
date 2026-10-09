@@ -8,12 +8,13 @@
   <meta property="og:title" content="HandBench update: execution works, reconstruction remains incomplete">
   <meta property="og:description" content="A working local test workflow, an anchor-only Halden return, and a separate DexHand development result. Methods, failures and limits.">
   <meta property="og:type" content="article"><meta property="og:url" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/">
-  <meta property="og:image" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/assets/halden-reference-oblique.png">
-  <meta property="og:image:alt" content="Halden reference hand seen across the palm, with four fingers and the thumb clearly visible. Not a Qwen reconstruction.">
+  <meta property="og:image" content="https://marb.cadclaw.io/robotic-hand/halden-local-update/assets/halden-reference-highfive.png">
+  <meta property="og:image:alt" content="Straight-on high-five view of the Halden reference hand with color-coded components. Not a Qwen reconstruction.">
+  <meta property="article:modified_time" content="2026-10-09">
   <meta property="article:published_time" content="2026-10-04"><meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/CADCLAW_logo.jpg" type="image/jpeg"><link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/astra-vs-grok/story.css"><link rel="stylesheet" href="/robotic-hand/handbench-baseline/article.css">
-  <link rel="stylesheet" href="/robotic-hand/halden-local-update/article.css?v=palm-20261004">
+  <link rel="stylesheet" href="/robotic-hand/halden-local-update/article.css?v=highfive-20261009">
   <link rel="alternate" type="text/plain" href="/llms.txt" title="MARB agent-readable summary">
 </head>
 <body>
@@ -22,7 +23,7 @@
   <p class="eyebrow">Sunnyday Technologies · October 4, 2026 · Development results, unranked</p>
   <h1>HandBench update: execution works, reconstruction remains incomplete</h1>
   <p class="lede">Local Qwen completed the Halden test workflow, including image feedback and grading. It did not reconstruct the hand: only the fixed anchor was saved, for <strong>0 of 48 scored groups</strong>.</p>
-  <figure class="hand-hero"><a href="assets/halden-reference-oblique.png"><img src="assets/halden-reference-oblique.png" alt="Oblique palm-facing view of the Halden reference hand, showing four fingers, thumb and palm housing." width="640" height="640" fetchpriority="high"></a><figcaption><strong>The Halden reference hand.</strong> Palm, fingers and thumb shown from an oblique angle. This is the supplied target, not Qwen's returned assembly.</figcaption></figure>
+  <figure class="hand-hero"><a href="assets/halden-reference-highfive.png"><img src="assets/halden-reference-highfive.png" alt="Straight-on high-five view of Halden: four upright fingers, thumb to the left and palm facing the viewer, with color-coded components." width="1400" height="1600" fetchpriority="high"></a><figcaption><strong>The Halden reference hand.</strong> Straight-on high-five view. Colors distinguish mesh components, not materials. This editorial render is not a benchmark input or Qwen's reconstruction.</figcaption></figure>
   <p>This follows our <a href="/robotic-hand/handbench-baseline/">initial Amazing Hand study</a>. The immediate goal was to establish a local workflow that could save an assembly, return inspection images to the model, preserve the submission and grade it. That cycle now works under one tested configuration. Assembly quality remains the problem.</p>
   <aside class="scope"><strong>No new leaderboard ranking.</strong> These were assisted development attempts with changing software and prompts, not repeated trials under a fixed benchmark protocol. A separate DexHand result appears below; it is not an Astra–Qwen comparison.</aside>
 
@@ -30,8 +31,8 @@
   <p>Halden is our own AI-authored hand concept, developed for this testing program. The September 24 snapshot contains <strong>49 rigid groups comprising 90 solids</strong>. Ten flexible groups are excluded. One rigid group is the supplied alignment anchor and receives no credit; the other 48 are scored against the retained reference at a <strong>1 mm placement tolerance</strong>.</p>
   <p>The participant receives component geometry and eight reference views, not the completed assembly or its placement data. This digital reconstruction task does not establish grasping performance, strength or physical buildability.</p>
   <div class="comparison">
-    <figure><a href="assets/halden-reference-oblique.png"><img src="assets/halden-reference-oblique.png" alt="Halden reference hand from the palm-facing oblique camera, with fingers and thumb visible." width="640" height="640" loading="lazy"></a><figcaption><strong>Reference.</strong> Supplied oblique view showing the palm, fingers and thumb.</figcaption></figure>
-    <figure><a href="assets/qwen-return-oblique.png"><img src="assets/qwen-return-oblique.png" alt="Qwen's saved assembly from the same oblique camera: the anchor housing remains, without the fingers or thumb." width="640" height="640" loading="lazy"></a><figcaption><strong>Returned assembly.</strong> Same camera and scale. Rendered from the unchanged saved submission for this article; this is not an in-run checkpoint. Only the fixed anchor remains.</figcaption></figure>
+    <figure><a href="assets/halden-reference-highfive.png"><img src="assets/halden-reference-highfive.png" alt="Color-coded Halden reference hand with the palm facing the viewer and fingers upright." width="1400" height="1600" loading="lazy"></a><figcaption><strong>Reference.</strong> Unchanged reference geometry. Both editorial views use the same camera, scale and component colors.</figcaption></figure>
+    <figure><a href="assets/qwen-return-highfive.png"><img src="assets/qwen-return-highfive.png" alt="Qwen's saved assembly from the same straight-on camera: only the anchor housing remains, without fingers or thumb." width="1400" height="1600" loading="lazy"></a><figcaption><strong>Returned assembly.</strong> Rendered from the unchanged saved submission for this article; this is not an in-run checkpoint. Only the fixed anchor remains.</figcaption></figure>
   </div>
 
   <h2>What the local run completed</h2>
