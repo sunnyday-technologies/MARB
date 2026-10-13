@@ -73,6 +73,61 @@ Existing scoring, registry, leaderboard, website and Hugging Face files were
 unchanged. This publishes source and documentation, not an M3 structural grade
 or a public-submission service.
 
+## M3 catalog and stock qualification
+
+On 2026-10-13, clean source commit
+`970977f963c0c5c24667f16bb77de766f2d84692` passed the M3 coverage and
+authored-stock qualification. The numerical analysis version is now v0.1.1.
+The M3 draft digest is
+`f7f3576c6d6f8cef5ef4123f1f813312c5f3fda7b18eb83b969c8e413beebaa8`.
+
+- All 146 FEA, draft-contract, coverage and stock-control tests passed. No
+  optional-runtime or filesystem checks were skipped in this group.
+- The existing fake-only CI suite ran 382 tests. 376 passed and six checks were
+  skipped. No failures or errors remained. The added audit and stock formula
+  tests are also included in the board-policy workflow.
+- All four frozen M3 kit archives passed. Each catalog contains 14 STEP files,
+  15 valid solids and three verified prismatic stock profiles.
+- The private reference inventory contains 100 occurrences. Its STEP imports
+  as 101 valid solids. Solid multiplicity is explicit. All 20 reference beam
+  solids passed exact authored-source congruence. Reference placements and
+  per-part counts remain private. Full nonbeam identities and load paths were
+  not qualified by this check.
+- All twelve actual-stock controls passed their expected numerical outcomes.
+  Six 49 N controls returned `simulated_pass`. Six 490 N controls returned
+  `simulated_fail`. Both principal bending directions were exercised for each
+  profile. Analytical deflection and bending stress agreed within the declared
+  relative tolerance of `1e-6`. The largest observed relative difference was
+  `6.66e-16`. Every control passed global equilibrium checks.
+- The clean release build passed with 84 files, 359 checked links, 43 registry
+  records and v0.12 scoring. Secret and answer-key guards passed. The benchmark
+  definition, score files, registry, website and Hugging Face files were unchanged.
+
+The initial working-tree regression ran 146 tests and encountered one error in
+a new output-write failure test. Its fixture mocked file opening before
+calculating its own input digests. Computing the arguments first fixed the test.
+The later working-tree and clean-source runs passed. The initial record is
+preserved separately.
+
+The adapter now derives centroidal bending axes from the actual source. The
+C-Beam centroid differs from its bounding-box axis. Asymmetric section moduli
+use the farther extreme fiber. Inconsistent isotropic elastic constants are
+refused. These improvements verify geometry and the declared material model.
+They do not qualify supplier strength, torsion or shear-center behavior.
+
+The stock fixtures use assumed material values, ideal fixed supports and
+fixture-specific limits. Large overload responses are linear equation controls.
+Physical interpretation would require a qualified nonlinear domain. These runs
+do not validate M3 service limits, splice or carriage connections, fixtures,
+payload or operating loads. No full-machine numerical solve or physical test
+was performed. Every catalog audit reported `audit_complete_admission_blocked`.
+
+The private clean-source qualification report digest is
+`59eb6872803e993241019f50b5053768d9605f3c236d0a89474ea7ab2cd0acde`.
+Raw inputs, reports, refusal controls and reference-derived counts are retained
+as separate local operator evidence. The
+[M3 contract guide](MARB_M3_STRUCTURAL_CONTRACT.md) records the remaining gates.
+
 ## What this qualifies
 
 This evidence qualifies the bounded source path on analytical and adversarial
