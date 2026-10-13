@@ -1,0 +1,230 @@
+{
+  "schema_version": "marb_m3_structural_draft.v0.1",
+  "task_id": "M3-CRETE",
+  "revision": "m3-structural-draft-20261013",
+  "status": "draft_unqualified",
+  "archives": {
+    "m3_cadquery_blind_kit.zip": "dcf887c2f9adf4626924db8585596b2eb1a4af3b763dceaed9c3a75d30ee6a30",
+    "m3_fusion_blind_kit_v1.1.zip": "aee40fac05c79646f89cdf5e4853a01a41b2c864fe58b2b4410385ff74722175",
+    "m3_fusion_blind_kit_v1.2.zip": "6b437b16a388d34d6cbdc279f7eb10054ce9f905c7645d89a5eeafd0d6e388be",
+    "m3_fusion_blind_kit_v1.3.zip": "7c1bd77d0118c8221c8863ce20c1bb6e3776012bc68b86f64d1b19aec553e9d5"
+  },
+  "catalog": {
+    "cbeam_4080": {
+      "entry": "kit/C-Beam 40x80x1000 Linear Rail.step",
+      "sha256": "a29914be79093d6fb224c8031c35711afc8d3debebb535984c01d579f0bc3dc5",
+      "solid_count": 1,
+      "role": "beam_stock",
+      "section_y": [
+        1,
+        0,
+        0
+      ],
+      "disposition": "Verify individual stock geometry and centroidal bending properties. Do not infer connection behavior, composite splice action, torsion J or shear center."
+    },
+    "gantry_plate_xlarge": {
+      "entry": "kit/C-Beam Gantry Plate XLarge.STEP",
+      "sha256": "a0f878a594f06629dbdc087e88ec1469db307c1e71252876a4a98735c98788d2",
+      "solid_count": 1,
+      "role": "load_transfer_plate",
+      "section_y": null,
+      "disposition": "Load-transfer part. Plate bending, holes, fasteners and attachment behavior are unqualified. It cannot be excluded from whole-machine coverage."
+    },
+    "gt2_pulley": {
+      "entry": "kit/GT2 Timing Pulley 20 Tooth.step",
+      "sha256": "9ee89da7012bd7219219393cb886a2c4086321156bd5cad6ba36995c21045c27",
+      "solid_count": 1,
+      "role": "drive_component",
+      "section_y": null,
+      "disposition": "Drive and load-transfer component. Include measured mass, attachment behavior and prescribed operating loads."
+    },
+    "frame_shim": {
+      "entry": "kit/M3_6mm_frame_shim_4080.step",
+      "sha256": "aa21c722cf84daf84f9bf024f270d8941f6298dae889ca6ead07bfc657421d04",
+      "solid_count": 1,
+      "role": "load_transfer_spacer",
+      "section_y": null,
+      "disposition": "Load-transfer part. Contact, clamping, local stress and attachment behavior are unqualified. It cannot be excluded from whole-machine coverage."
+    },
+    "belt_y": {
+      "entry": "kit/M3_GT2_belt_Y_958mm.step",
+      "sha256": "684c691a9f34b8327683552932dd2612cda5800c1ec024c9044826939e52d903",
+      "solid_count": 1,
+      "role": "drive_belt",
+      "section_y": null,
+      "disposition": "Drive component. Belt tension, pretension, transmitted forces and supported mass are unqualified."
+    },
+    "belt_z": {
+      "entry": "kit/M3_GT2_belt_Z_942mm.step",
+      "sha256": "b5fea51a291ff1c53a20e4dfe632eba8fb00588c1ba8d5427e2b53e482a2a9db",
+      "solid_count": 1,
+      "role": "drive_belt",
+      "section_y": null,
+      "disposition": "Drive component. Belt tension, pretension, transmitted forces and supported mass are unqualified."
+    },
+    "nema23_motor": {
+      "entry": "kit/M3_NEMA23_motor.step",
+      "sha256": "68cef890950c45d9de071bbf0a184431409e11d7426aa8e612f8988af1b3ca1b",
+      "solid_count": 1,
+      "role": "equipment_mass",
+      "section_y": null,
+      "disposition": "Equipment and applied mass. Geometry does not identify internal construction, measured mass or attachment reactions."
+    },
+    "idler_wheel": {
+      "entry": "kit/Smooth Idler Pulley Wheel.step",
+      "sha256": "2e4daa1b981980b1105a48fc34f64da9b8222cd97723e7c81f151bbabccedf46",
+      "solid_count": 1,
+      "role": "drive_component",
+      "section_y": null,
+      "disposition": "Drive and load-transfer component. Include measured mass, attachment behavior and prescribed operating loads."
+    },
+    "v_wheel": {
+      "entry": "kit/Solid V Wheel.step",
+      "sha256": "1c729f91c49707f66965cb0032a14c7f13a50bde1f675fe4fb80b4d23446702c",
+      "solid_count": 1,
+      "role": "rolling_contact",
+      "section_y": null,
+      "disposition": "Load-transfer contact. Wheel preload, compliance, contact capacity and transferred load are unqualified."
+    },
+    "vslot_2040": {
+      "entry": "kit/V-Slot 20x40x1000 Linear Rail.step",
+      "sha256": "60b98c9cfa2b6a78d1a85ea28d05944f0f9f70aa546b1cde24d93a6de429754d",
+      "solid_count": 1,
+      "role": "beam_stock",
+      "section_y": [
+        1,
+        0,
+        0
+      ],
+      "disposition": "Verify individual stock geometry and centroidal bending properties. Do not infer connection behavior, composite splice action, torsion J or shear center."
+    },
+    "vslot_2080": {
+      "entry": "kit/V-Slot 20x80x1000 Linear Rail.step",
+      "sha256": "2507cb4fe27e77ef41a182373f2fe36b73e0c162776dd4692a8a11042ee5da90",
+      "solid_count": 1,
+      "role": "beam_stock",
+      "section_y": [
+        1,
+        0,
+        0
+      ],
+      "disposition": "Verify individual stock geometry and centroidal bending properties. Do not infer connection behavior, composite splice action, torsion J or shear center."
+    },
+    "gantry_plate_2080": {
+      "entry": "kit/V-Slot Gantry Plate 20-80mm.step",
+      "sha256": "bdec439ea7c831182576ed919a8f983158d3956e2c6be4fb715313aae4f2372b",
+      "solid_count": 1,
+      "role": "load_transfer_plate",
+      "section_y": null,
+      "disposition": "Load-transfer part. Plate bending, holes, fasteners and attachment behavior are unqualified. It cannot be excluded from whole-machine coverage."
+    },
+    "belt_pinion": {
+      "entry": "kit/VS_Belt_Pinion.step",
+      "sha256": "ae461c1dac95ee940695eb1ca7ca02264b57a5f8e787c48d732128c3fcd17764",
+      "solid_count": 2,
+      "role": "drive_component",
+      "section_y": null,
+      "disposition": "Drive and load-transfer component. Include measured mass, attachment behavior and prescribed operating loads."
+    },
+    "zpmm_spacer": {
+      "entry": "kit/ZPMM_6p1_motor_mount_spacer_6mm_holes.step",
+      "sha256": "9d52a7fcee7be803ea67b312dc7963cfe2bd2ce93e4b7f49e188e37bd55a5eac",
+      "solid_count": 1,
+      "role": "load_transfer_spacer",
+      "section_y": null,
+      "disposition": "Load-transfer part. Contact, clamping, local stress and attachment behavior are unqualified. It cannot be excluded from whole-machine coverage."
+    }
+  },
+  "requirements": {
+    "material_properties": {
+      "phase": "analysis",
+      "status": "provisional",
+      "needed": "Identify each supplier alloy and temper. Record E, G, nu, density and yield with reviewed provenance and uncertainty. Do not reuse assumed 6061-T6 strength for all parts.",
+      "basis": [
+        "https://support.openbuilds.com/support/solutions/articles/65000167811-what-is-v-slot-",
+        "CADCLAW/cadclaw/fea/m3_frame.py"
+      ]
+    },
+    "torsion_and_shear_center": {
+      "phase": "analysis",
+      "status": "provisional",
+      "needed": "Qualify Saint-Venant J, shear-center offsets and applicability for each actual profile. Address eccentric loads, torsion and warping. Polar bending inertia is not a torsion qualification.",
+      "basis": [
+        "CADCLAW/cadclaw/fea/frame_model.py",
+        "grader/fea_step.py"
+      ]
+    },
+    "connections": {
+      "phase": "analysis",
+      "status": "provisional",
+      "needed": "Model splice inserts, carriage plates, spacers, wheels and fasteners. Record load transfer, release or stiffness assumptions and capacity evidence. Do not assume composite insert action or universal rigid joints.",
+      "basis": [
+        "kits/m3_fusion_blind_kit_v1.3.zip",
+        "CADCLAW/docs/M3_FEA_LOAD_CASES.md"
+      ]
+    },
+    "supports": {
+      "phase": "analysis",
+      "status": "missing",
+      "needed": "Identify actual support attachments and restrained degrees of freedom. Review fixture compliance and reactions.",
+      "basis": []
+    },
+    "mass_and_payload": {
+      "phase": "analysis",
+      "status": "missing",
+      "needed": "Account for beam self-weight, all nonbeam masses, motors and payload. Declare attachment and eccentricity for each force. Do not derive heterogeneous component mass from a common aluminum density.",
+      "basis": []
+    },
+    "travel_loads": {
+      "phase": "analysis",
+      "status": "missing",
+      "needed": "Freeze static cases over center, travel endpoints and critical intermediate positions. Include gravity, payload, belt reactions and operating lateral loads with approved provenance.",
+      "basis": []
+    },
+    "service_limits": {
+      "phase": "analysis",
+      "status": "provisional",
+      "needed": "Approve service deflection, displacement measurement location, stress limit and safety factor for the intended task. Historical numbers are controls only.",
+      "basis": [
+        "CADCLAW/examples/m3_crete/m3_fea_load_cases.yaml"
+      ]
+    },
+    "candidate_extraction": {
+      "phase": "analysis",
+      "status": "missing",
+      "needed": "Derive load-bearing stations, eccentric attachments and interfaces from verified candidate solids. Account for all occurrences and solids, including multi-solid sources. Qualify nonbeam load paths.",
+      "basis": []
+    },
+    "independent_controls": {
+      "phase": "analysis",
+      "status": "missing",
+      "needed": "Review actual-profile reference, incorrect-placement, disconnected-splice, support, weak-axis and overload controls independently. Verify analytical or independent numerical results and preserved failures.",
+      "basis": []
+    },
+    "blind_assignment": {
+      "phase": "publication",
+      "status": "missing",
+      "needed": "Qualify automatic authored-part assignment and structural bindings independently of the candidate author. Preserve blind task boundaries.",
+      "basis": []
+    },
+    "immutable_isolated_runtime": {
+      "phase": "publication",
+      "status": "missing",
+      "needed": "Stage immutable hash-verified operator inputs and enforce isolated geometry and solver worker time and memory limits before untrusted public submissions.",
+      "basis": []
+    },
+    "physical_comparison": {
+      "phase": "physical",
+      "status": "missing",
+      "needed": "Compare predicted displacement and reactions with controlled physical measurements. Qualify connection compliance and capacity before claims about physical readiness or safe load.",
+      "basis": []
+    }
+  },
+  "historical_controls": {
+    "payload_n": 49.0,
+    "lateral_n": 100.0,
+    "deflection_limit_mm": 0.5,
+    "safety_factor": 1.65,
+    "adopted_for_M3": false
+  }
+}

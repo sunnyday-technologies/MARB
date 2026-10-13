@@ -17,6 +17,7 @@ import warnings
 PINNED_PYNITE_VERSION = "2.4.1"
 NOT_CHECKED = [
     "shear and torsion strength",
+    "shear-center eccentricity, warping and flexural-torsional coupling",
     "buckling and geometric or material nonlinearity",
     "fastener, joint, and contact strength",
     "fatigue and dynamics",
@@ -130,6 +131,9 @@ def _validate(frame, cases, limits):
         nu = _finite(material["nu"], "Poisson ratio")
         if not -1 < nu < .5:
             raise _NotEvaluable("Poisson ratio must lie between -1 and 0.5")
+        expected_g = material["E_pa"] / (2.0 * (1.0 + nu))
+        if not math.isclose(material["G_pa"], expected_g, rel_tol=0.01):
+            raise _NotEvaluable("inconsistent isotropic E, G and Poisson ratio")
         section = _mapping(member["section"], "section",
                            {"A_m2", "Iy_m4", "Iz_m4", "J_m4", "Sy_m3", "Sz_m3"})
         for key, value in section.items():

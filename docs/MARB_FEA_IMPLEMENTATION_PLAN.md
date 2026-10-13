@@ -2,7 +2,7 @@
 
 Date: 2026-10-13
 Owner: Sunnyday Technologies
-Status: experimental implementation verified on controls; full M3 task unqualified
+Status: software and authored stock geometry verified; full M3 task unqualified
 
 ## Purpose
 
@@ -112,19 +112,28 @@ path. The [qualification record](MARB_FEA_QUALIFICATION.md) reports the analytic
 results, adversarial checks, runtime identity and limitations. The optional command
 can run locally now.
 
-Steps 5 and 6 remain task and operational qualification work. No full M3 candidate
+Step 5 now has an exact catalog draft, coverage auditor and verified centroidal
+geometry for the actual three stock profiles. The
+[M3 structural contract](MARB_M3_STRUCTURAL_CONTRACT.md) records the findings and
+remaining engineering gates. This is source and coverage qualification. It does
+not establish connection behavior or a numerical full-machine model.
+
+Steps 5 and 6 still require task and operational qualification. No full M3 candidate
 has been structurally graded. No ranked cohort, new readiness score, public FEA
 leaderboard row, physical acceptance or public-submission service is established.
 
 ## Ordered remaining work
 
-1. Freeze an M3 structural contract with verified profiles and inserts, material
+1. Complete the frozen M3 draft with verified materials and connection data.
+   Stock profile geometry is verified. Inserts still need explicit load-transfer
+   behavior. Record material
    and section properties, support and connection behavior, component masses,
    travel-dependent loads and service limits.
 2. Qualify full-machine structural coverage. The current adapter accepts only
-   complete straight-stock beam subassemblies. M3 needs a declared extraction
-   policy or expanded adapter coverage for its non-beam parts and asymmetric
-   profiles. Preserve full-assembly geometry verification and candidate-derived
+   complete straight-stock beam subassemblies, including verified asymmetric
+   principal-axis profiles. The coverage audit identifies non-beam parts that
+   still need explicit mass and load-transfer treatment. Preserve full-assembly
+   geometry verification and candidate-derived
    coordinates. Do not substitute a reference frame for the candidate.
 3. Calibrate the M3 task against independently reviewed correct, misplaced,
    disconnected and overload controls. Validate connections and compare with
