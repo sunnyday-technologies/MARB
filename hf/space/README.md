@@ -1,5 +1,5 @@
 ---
-title: MARB — Mechanical Assembly Readiness Benchmark
+title: 'MARB: Mechanical Assembly Readiness Benchmark'
 emoji: 🦾
 colorFrom: blue
 colorTo: gray
@@ -22,9 +22,16 @@ tags:
   - evaluation
 ---
 
-# MARB Leaderboard
+# MARB: Mechanical Assembly Readiness Benchmark
 
-The published board for **MARB**, the Mechanical Assembly Readiness Benchmark.
+MARB, the Mechanical Assembly Readiness Benchmark, is a CAD benchmark and an AI CAD assembly benchmark. Given ~100 pre-authored STEP parts and the four-image reference kit, the model must produce an assembly that passes the automated STEP grader. The grader checks correct part placement and relationships.
+
+MARB measures assembly outcomes, not model reasoning traces. A key finding from the reported runs is that undirected effort does not reliably improve scores. Verification steps identified and corrected placement errors, improving the assembly outcomes that MARB scores. The single-run comparisons do not isolate a causal effect.
+
+MARB is run independently by Sunnyday Technologies and is separate from CADCLAW. Models are not required to use CADCLAW.
+
+The published scores apply to each recorded task and grader. Digital checks do not establish physical buildability, safety, or certified readiness.
+
 Every row targets the same ~100-part machine, but the runs span versioned
 blind-kit and harness cohorts. Results use the scoring version shown per row and
 are comparable only within a matching kit, prompt, tool, and harness cohort.

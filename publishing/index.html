@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>The Mechanical Assembly Readiness Benchmark (MARB), measuring AI-built machines | CADCLAW</title>
-  <meta name="description" content="A versioned benchmark for comparing AI assembly workflows on declared geometric metrics and gates. Results are method-specific measurements, not physical validation or a readiness certification." />
-  <meta property="og:title" content="The Mechanical Assembly Readiness Benchmark (MARB), CADCLAW" />
-  <meta property="og:description" content="Versioned MARB results and methods for comparing AI assembly workflows. Scores apply to the published task, kit, grader, assistance conditions, and run date." />
+  <title>Mechanical Assembly Readiness Benchmark (MARB) | CAD benchmark | AI CAD assembly benchmark | STEP</title>
+  <meta name="description" content="MARB is a CAD benchmark and an AI CAD assembly benchmark for pre-authored STEP parts. It measures assembly outcomes with declared checks." />
+  <meta property="og:title" content="Mechanical Assembly Readiness Benchmark (MARB) | CAD benchmark | AI CAD assembly benchmark | STEP" />
+  <meta property="og:description" content="MARB is a CAD benchmark and an AI CAD assembly benchmark for pre-authored STEP parts. It measures assembly outcomes with declared checks." />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://marb.cadclaw.io/" />
   <meta property="og:image" content="https://marb.cadclaw.io/media/cadclaw-marb-30-day-update-600.png" />
@@ -79,8 +79,11 @@
 <main>
   <section class="hero">
     <div>
-      <h1>MARB — Mechanical Assembly Readiness Benchmark</h1>
-      <p class="tag"><strong>How close can an AI workflow come to a declared assembly target?</strong> <strong>MARB</strong> compares exported artifacts under a versioned geometric method: the same recorded task and grader, with GAP, ORIENT, POS, and configured gate results reported separately. It measures the published run—not physical buildability, safety, or certified readiness.</p>
+      <h1>MARB: Mechanical Assembly Readiness Benchmark</h1>
+      <p class="tag">For the founding MARB task, readiness means producing an assembly from ~100 pre-authored STEP parts and the four-image reference kit. The assembly must pass the automated STEP grader for correct part placement and relationships.</p>
+      <p>MARB measures assembly outcomes, not model reasoning traces. A key finding from the reported runs is that undirected effort does not reliably improve scores. Verification steps identified and corrected placement errors, improving the assembly outcomes that MARB scores. The single-run comparisons do not isolate a causal effect.</p>
+      <p>MARB is run independently by Sunnyday Technologies and is separate from CADCLAW. Models are not required to use CADCLAW.</p>
+      <p class="sub">The published scores apply to each recorded task and grader. Digital checks do not establish physical buildability, safety, or certified readiness.</p>
       <div class="cta-row">
         <a class="cta primary" href="#board">See the leaderboards</a>
         <a class="cta" href="/recap/">The Angry Millimeter (recap)</a>
@@ -120,7 +123,7 @@
       <img src="/media/cadclaw-marb-30-day-update-600.png" alt="CADCLAW and MARB capability update: authored STEP, assembly and validation, boxed execution, and traceable evidence" />
       <p class="caption">Capability update through 2026-09-06. Same measures, stronger evidence controls.</p>
     </div>
-    <div class="callout"><strong>Current evidence boundary.</strong> One exact source, image, and runtime binding passed the nine-case R8 provider-free, network-none qualification. One privately retained S1 sample then completed boxed execution and trusted offline grading, but failed the native inventory, interference, and floating gates. This is pipeline evidence—not a registered public run, benchmark cohort, model comparison, portable runtime qualification, physical validation, or certification. A replacement source, image, or execution environment requires fresh qualification.</div>
+    <div class="callout"><strong>Current evidence boundary.</strong> One exact source, image, and runtime binding passed the nine-case R8 provider-free, network-none qualification. One privately retained S1 sample then completed boxed execution and trusted offline grading, but failed the native inventory, interference, and floating gates. This is pipeline evidence. It is not a registered public run, benchmark cohort, model comparison, portable runtime qualification, physical validation, or certification. A replacement source, image, or execution environment requires fresh qualification.</div>
   </section>
 
   <section class="section" id="gap">
@@ -148,7 +151,7 @@
 
   <section class="section" id="chart">
     <h2>Capability × Readiness</h2>
-    <p class="lede">The maintainers provide an indicative comparison between the research ladder and <strong>TRL</strong>, <strong>MRL</strong>, and <strong>IRL</strong> concepts. It is a discussion aid—not an equivalence, official mapping, agency assessment, or shortcut to a readiness review.</p>
+    <p class="lede">The maintainers provide an indicative comparison between the research ladder and <strong>TRL</strong>, <strong>MRL</strong>, and <strong>IRL</strong> concepts. It is a discussion aid. It is not an equivalence, official mapping, agency assessment, or shortcut to a readiness review.</p>
     <div class="output-media">
       <img src="/media/trl_mrl_irl_chart.png" alt="The CADCLAW capability ladder (L0–L7) mapped to TRL, MRL, and IRL evidence bands" />
       <p class="caption">CADCLAW capability ladder ↔ TRL / MRL / IRL, indicative evidence bands, not equivalence.</p>
@@ -228,7 +231,7 @@
 
   <section class="section" id="results">
     <h2>First head-to-head <span style="font-size:14px;color:var(--ink-faint);font-weight:400">(the founding study, 2026-05-26)</span></h2>
-    <p class="lede">Three publisher-run workflows—Claude Opus 4.7 with Fusion and CadQuery, and <strong>OpenAI Codex / GPT-5</strong> with CadQuery—used fresh prompt-only sessions and the same founding kit. Each placed the supplied parts without human placement assistance; none met the benchmark's declared geometric threshold. These are single workflow runs, not independent product tests.</p>
+    <p class="lede">Three publisher-run workflows used fresh prompt-only sessions and the same founding kit: Claude Opus 4.7 with Fusion and CadQuery, and <strong>OpenAI Codex / GPT-5</strong> with CadQuery. Each placed the supplied parts without human placement assistance; none met the benchmark's declared geometric threshold. These are single workflow runs, not independent product tests.</p>
     <div class="output-media">
       <img src="/media/m3_target.png" alt="The target M3-CRETE machine; one of four reference renders each AI was given" />
       <p class="caption">One of four goal renders provided (the 3/4 overview); the kit also includes front, top, and side views.</p>
@@ -304,7 +307,7 @@
         <tr><td><strong>Studies log</strong></td><td>Published study records: effort sweep, local open-weight anchor, and founding results</td><td><a href="/studies/">marb.cadclaw.io/studies</a></td></tr>
         <tr><td><strong>Scoring spec (current v0.12)</strong></td><td>The current method; dated mechanical-track grades retain their recorded v0.9 tags</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/spec/MARB_SCORING.md">MARB/spec</a></td></tr>
         <tr><td><strong>Frontier track write-ups</strong></td><td>Claude tracks comparison + prompt-framework findings</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/comparison_claude_tracks.md">comparison</a> · <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/prompt_framework_findings.md">findings</a></td></tr>
-        <tr><td><strong>Local-anchor study</strong></td><td>30 runs, six prompt cohorts, graded — the full write-up</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/local_anchor_study.md">MARB/results</a></td></tr>
+        <tr><td><strong>Local-anchor study</strong></td><td>30 runs, six prompt cohorts, graded. The full write-up.</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/local_anchor_study.md">MARB/results</a></td></tr>
         <tr><td><strong>Grades &amp; registry</strong></td><td>Graded metrics and the provenance fields available for each registered run</td><td><a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_v0_9_grades.json">grades</a> · <a href="https://github.com/sunnyday-technologies/MARB/blob/main/results/marb_runs.json">registry</a></td></tr>
         <tr><td><strong>Blind kits &amp; graders</strong></td><td>Run your own model against the board (kits, harness, metrics)</td><td><a href="https://github.com/sunnyday-technologies/MARB">MARB repo</a></td></tr>
         <tr><td><strong>CADCLAW engine</strong></td><td>The open engine used for the published mechanical-track grading</td><td><a href="https://github.com/sunnyday-technologies/CADCLAW">CADCLAW repo</a></td></tr>
