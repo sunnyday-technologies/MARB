@@ -43,12 +43,15 @@ those reports.
 - 84 FEA tests ran. 83 passed and one hardlink-preservation test was skipped because
   the sandbox filesystem denied hardlink creation. Direct alias and existing-output
   preservation tests passed.
+- A clean local clone then passed all 84 FEA tests with no skips, including the
+  hardlink-preservation check. This verified implementation commit `0f222bf`.
 - 59 existing tests passed: three leaderboard-surface tests, sixteen task-registry
   tests and forty frontier-publication-policy tests.
 - The frontier publication validator passed. The method, registry, retained score
   files, site and Hugging Face board were not edited.
-- Secret and answer-key checks and staged review passed. A clean-checkout
-  verification is required before declaring the implementation complete.
+- Secret and answer-key checks and staged review passed. The clean-checkout
+  release build passed with 84 files, 359 checked links and unchanged v0.12
+  scoring. Committed secret and answer-key guards passed.
 
 ## What this qualifies
 
