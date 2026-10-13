@@ -150,7 +150,7 @@ Large displacement or rotation can trigger review of the linear assumptions.
 Those numerical triggers do not qualify a physical linear domain. A result
 within the triggers still retains every engineering evidence gap.
 
-For reproducible actual-stock calibration, run `scripts/qualify_m3_gantry.py`
+For reproducible qualification using authored stock, run `scripts/qualify_m3_gantry.py`
 with the same input flags and a new `--out-dir`. The qualifier freezes verified
 input snapshots. It retains the supplied candidate and scoped stock controls.
 It checks a stock subset, weak-axis placement, a stock gap, a missing insert,
@@ -158,6 +158,9 @@ a misplaced insert, altered stock and a 490 N numerical overload. Refusal causes
 are checked explicitly. Weak-axis compliance and overload scaling have
 independent expected ratios. None of these controls is a model attempt or a
 physical load test. Store the entire output locally or privately.
+
+The [clean-source qualification record](MARB_M3_GANTRY_QUALIFICATION.md) identifies
+the executed controls, pinned source, test results and retained private evidence.
 
 ## Next physical comparison packet
 

@@ -129,6 +129,10 @@ The [measurement template](../tasks/m3_crete/gantry_measurement_template.v0.1.js
 records the data and prior review needed for a physical comparison. No physical
 measurements or acceptance are established by the nominal diagnostic.
 
+The [gantry qualification record](MARB_M3_GANTRY_QUALIFICATION.md) records the
+clean-source tests and authored-part controls. Numerical qualification is
+complete for that scoped diagnostic. Physical validation remains pending.
+
 Steps 5 and 6 still require task and operational qualification. No full M3 candidate
 has been structurally graded. No ranked cohort, new readiness score, public FEA
 leaderboard row, physical acceptance or public-submission service is established.
