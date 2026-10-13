@@ -138,17 +138,33 @@ def _bounds(solid) -> tuple:
     return low, high
 
 
-def _source_stations(source: dict, solid) -> tuple:
+def _stock_geometry(solid) -> tuple:
     low, high = _bounds(solid)
     dims = tuple(b - a for a, b in zip(low, high))
     axis = max(range(3), key=lambda i: dims[i])
     transverse = [i for i in range(3) if i != axis]
     if min(dims) <= GEOMETRY_MM or dims[axis] < 2.0 * max(dims[i] for i in transverse):
         _fail("source_not_bounded_straight_stock")
-    center = tuple((a + b) / 2 for a, b in zip(low, high))
-    mass_center = solid.Center().toTuple()
-    if any(abs(mass_center[i] - center[i]) > NODE_CLOSURE_MM for i in transverse):
-        _fail("asymmetric_neutral_axis_unsupported")
+    mass_center = _vec(solid.Center().toTuple())
+    # A uniform prismatic section's bending centroid can differ from its bbox
+    # midpoint. This is a centroidal beam line, not a measured shear center.
+    # Use the axial bbox midpoint only to cut and reconstruct the full stock.
+    center = tuple((low[i] + high[i]) / 2 if i == axis else mass_center[i] for i in range(3))
+    return low, high, dims, axis, center
+
+
+def _section_orientation(value: object, axis: int) -> tuple:
+    section_y = _vec(value)
+    if abs(_dot(section_y, section_y) - 1.0) > 1e-9 or abs(section_y[axis]) > 1e-9:
+        _fail("invalid_section_orientation")
+    if sum(abs(v) > 1e-9 for v in section_y) != 1:
+        _fail("non_orthogonal_section_orientation_unsupported")
+    return section_y
+
+
+def _source_stations(source: dict, solid) -> tuple:
+    low, high, dims, axis, center = _stock_geometry(solid)
+    transverse = [i for i in range(3) if i != axis]
     stations = source.get("stations")
     if not isinstance(stations, list) or not 2 <= len(stations) <= MAX_SOLIDS:
         _fail("invalid_stations")
@@ -157,29 +173,30 @@ def _source_stations(source: dict, solid) -> tuple:
     if any(not isinstance(n, str) or not n for n in nodes) or len(set(nodes)) != len(nodes):
         _fail("invalid_station_nodes")
     if any(abs(p[i] - center[i]) > GEOMETRY_MM for p in points for i in transverse):
-        _fail("stations_off_bounding_box_centerline")
+        _fail("stations_off_centroidal_stock_axis")
     if abs(points[0][axis] - low[axis]) > GEOMETRY_MM or abs(points[-1][axis] - high[axis]) > GEOMETRY_MM:
         _fail("stations_do_not_span_stock")
     if any(b[axis] - a[axis] <= GEOMETRY_MM for a, b in zip(points, points[1:])):
         _fail("stations_not_strictly_increasing")
-    section_y = _vec(source.get("section_y"))
-    if abs(_dot(section_y, section_y) - 1.0) > 1e-9 or abs(section_y[axis]) > 1e-9:
-        _fail("invalid_section_orientation")
-    if sum(abs(v) > 1e-9 for v in section_y) != 1:
-        _fail("non_orthogonal_section_orientation_unsupported")
-    _verify_prismatic_section(source, solid, axis, center, dims, section_y)
+    section_y = _section_orientation(source.get("section_y"), axis)
+    _verify_prismatic_section(source, solid, section_y)
     return axis, points, section_y
 
 
-def _verify_prismatic_section(source: dict, solid, axis: int, center: tuple, dims: tuple, section_y: tuple) -> None:
-    """Confirm unmachined stock and section constants from the actual catalog.
+def inspect_stock_section(solid, section_y: object) -> dict:
+    """Inspect a bounded axis-aligned prism's centroidal bending properties.
 
     The temporary extrusion is a geometric comparison only. It is never
     substituted for a candidate, written to STEP or included in the model.
-    Material strength and Saint-Venant torsion J remain evaluator assumptions.
+    No material strength or Saint-Venant torsion J is inferred from geometry.
+    Centroidal principal bending axes are checked. Shear-center eccentricity,
+    warping and flexural-torsional coupling are not inferred from this adapter.
+    Metadata describes the supplied catalog solid, not assembly placement.
     """
     try:
         import cadquery as cq
+        low, high, dims, axis, center = _stock_geometry(solid)
+        section_y = _section_orientation(section_y, axis)
         beam_x = tuple(1.0 if i == axis else 0.0 for i in range(3))
         section_z = _cross(beam_x, section_y)
         plane = cq.Plane(origin=center, xDir=section_y, normal=beam_x)
@@ -196,21 +213,35 @@ def _verify_prismatic_section(source: dict, solid, axis: int, center: tuple, dim
         product_mm4 = _dot(section_y, _matvec(inertia, section_z)) / dims[axis]
         if abs(product_mm4) > max(1e-5, min(iy_mm4, iz_mm4) * 1e-6):
             _fail("non_principal_section_axes_unsupported")
-        cy_mm = sum(abs(v) * d / 2 for v, d in zip(section_y, dims))
-        cz_mm = sum(abs(v) * d / 2 for v, d in zip(section_z, dims))
+        extremes = tuple(max(abs(a - c), abs(b - c)) for a, b, c in zip(low, high, center))
+        # For an asymmetric section use the farther extreme fiber on each
+        # centroidal axis. These unsigned moduli conservatively bound either
+        # sign of bending. Orthogonal section axes were required above.
+        cy_mm = sum(abs(v) * d for v, d in zip(section_y, extremes))
+        cz_mm = sum(abs(v) * d for v, d in zip(section_z, extremes))
         derived = {"A_m2": area_mm2 * 1e-6, "Iy_m4": iy_mm4 * 1e-12,
                    "Iz_m4": iz_mm4 * 1e-12, "Sy_m3": iy_mm4 / cz_mm * 1e-9,
                    "Sz_m3": iz_mm4 / cy_mm * 1e-9}
-        section = source.get("section", {})
-        if not isinstance(section, dict) or any(not isinstance(section.get(k), (int, float)) or isinstance(section.get(k), bool)
-                                              or not math.isfinite(section[k]) or section[k] <= 0
-                                              or not math.isclose(section[k], v, rel_tol=0.001, abs_tol=0)
-                                              for k, v in derived.items()):
-            _fail("section_constants_do_not_match_catalog")
+        if any(not math.isfinite(v) or v <= 0 for v in derived.values()):
+            _fail("source_section_qualification_failed")
+        return {"axis": axis, "length_mm": dims[axis], "centroid_mm": list(solid.Center().toTuple()),
+                "stock_bounds_mm": {"low": list(low), "high": list(high)}, "section": derived,
+                "section_y": list(section_y), "product_inertia_mm4": product_mm4,
+                "principal_axes_verified": True, "prismatic_verified": True}
     except FeaGeometryError:
         raise
     except Exception:
         _fail("source_section_qualification_failed")
+
+
+def _verify_prismatic_section(source: dict, solid, section_y: tuple) -> None:
+    derived = inspect_stock_section(solid, section_y)["section"]
+    section = source.get("section", {})
+    if not isinstance(section, dict) or any(not isinstance(section.get(k), (int, float)) or isinstance(section.get(k), bool)
+                                          or not math.isfinite(section[k]) or section[k] <= 0
+                                          or not math.isclose(section[k], v, rel_tol=0.001, abs_tol=0)
+                                          for k, v in derived.items()):
+        _fail("section_constants_do_not_match_catalog")
 
 
 def _rotation_deg(axis: int, section_y: tuple) -> float:
@@ -371,7 +402,8 @@ def _extract_candidate(contract: dict, bindings: dict, candidate_step: Path, cat
             "geometry": {"candidate_sha256": candidate_hash, "sources": source_diagnostics,
                          "mapping_sha256": mapping_digest, "unused_candidate_solids": 0,
                          "node_closure_tolerance_mm": NODE_CLOSURE_MM,
-                         "assumptions": ["Bounding box centerline is the stock neutral-axis idealization.",
+                         "assumptions": ["The prismatic stock centroid line and principal bending axes are verified.",
+                                         "Shear centers, warping and flexural-torsional coupling are not verified.",
                                          "Stock direction is canonicalized to the positive global axis.",
                                          "Shared station nodes assume the evaluator-declared connection model.",
                                          "All candidate solids are mapped. Physical connections are not verified."]}}

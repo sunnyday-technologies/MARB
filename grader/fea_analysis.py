@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
 
 from grader.fea_step import FeaGeometryError
 
-VERSION = 'marb_fea_analysis.v0.1.0'
+VERSION = 'marb_fea_analysis.v0.1.1'
 SCHEMA = 'marb_fea_analysis_report.v0.1'
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_STEP_BYTES = 64 * 1024 * 1024
@@ -30,6 +30,7 @@ NOT_CHECKED = [
     'Legacy MARB assembly score and whole-machine inventory.',
     'Material and section-property certification.',
     'Connection, fastener, contact, shear and torsion strength.',
+    'Shear-center eccentricity, warping and flexural-torsional coupling.',
     'Transverse shear deformation, buckling, geometric nonlinearity, fatigue and dynamic loads.',
     'Local stresses in plates, holes, spacers and inserts.',
     'Ultimate load capacity, physical validation and certification.',
@@ -140,6 +141,11 @@ def validate_contract(contract: dict) -> None:
             _number(mat[key], True)
         if not -1 < _number(mat['nu']) < 0.5:
             raise AnalysisError('invalid isotropic Poisson ratio')
+        expected_g = mat['E_pa'] / (2.0 * (1.0 + mat['nu']))
+        # Rounded engineering data are allowed. This checks the declared
+        # isotropic stiffness model, not supplier certification.
+        if not math.isclose(mat['G_pa'], expected_g, rel_tol=0.01):
+            raise AnalysisError('inconsistent isotropic E, G and Poisson ratio')
         section = source['section']
         _fields(section, {'A_m2', 'Iy_m4', 'Iz_m4', 'J_m4', 'Sy_m3', 'Sz_m3'}, 'section')
         for value in section.values():

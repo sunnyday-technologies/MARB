@@ -44,6 +44,15 @@ except importlib.metadata.PackageNotFoundError:
 
 
 class TestBackendInputBoundary(unittest.TestCase):
+    def test_inconsistent_isotropic_stiffness_is_refused_before_solver(self):
+        frame = cantilever()
+        frame['members'][0]['material']['G_pa'] *= 2
+        with mock.patch.object(fea_backend, '_load_runtime') as runtime:
+            report = fea_backend.solve_cases(frame, [load_case()], LIMITS)
+        self.assertEqual(report['status'], 'not-evaluable')
+        self.assertIn('inconsistent isotropic', report['errors'][0])
+        runtime.assert_not_called()
+
     def test_legacy_import_does_not_import_solver(self):
         script = "import sys; import grader.fea_backend; assert 'Pynite' not in sys.modules; assert 'numpy' not in sys.modules"
         result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True)

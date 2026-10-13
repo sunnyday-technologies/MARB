@@ -56,6 +56,17 @@ def _temporary_directory():
 
 
 class TestFrozenFeaContract(unittest.TestCase):
+    def test_inconsistent_isotropic_stiffness_is_rejected(self):
+        contract = _contract()
+        contract['sources']['beam']['material']['G_pa'] *= 2
+        with self.assertRaisesRegex(analysis.AnalysisError, 'inconsistent isotropic'):
+            analysis.validate_contract(contract)
+
+    def test_rounded_isotropic_stiffness_is_allowed(self):
+        contract = _contract()
+        contract['sources']['beam']['material']['G_pa'] = 26e9
+        analysis.validate_contract(contract)
+
     def test_explicit_contract_and_bindings_validate(self):
         analysis.validate_contract(_contract())
         analysis.validate_bindings(_bindings(), _contract(), "c" * 64)

@@ -6,6 +6,8 @@ v0.12 positional grading. Its result is an unranked development analysis.
 
 The [implementation plan](MARB_FEA_IMPLEMENTATION_PLAN.md) records the route to
 an independently qualified full M3 structural track.
+The [M3 structural contract and coverage audit](MARB_M3_STRUCTURAL_CONTRACT.md)
+records exact authored catalogs and the remaining engineering requirements.
 
 ## Inputs and trust boundary
 
@@ -33,9 +35,16 @@ This may shift a shared station by at most 0.01 mm. It does not establish contac
 or connection capacity.
 
 The adapter verifies area and bending properties against the source section.
+It uses the actual centroidal stock axis. Principal bending axes must align with
+the supported orthogonal section axes. For asymmetric profiles, section moduli
+use the farther extreme fiber. The stock centroid does not establish its shear
+center. Open-section eccentric loads, torsion and warping remain unqualified.
 Torsion constants and material values remain declared, evaluator-qualified inputs.
 A node shared by two members is an explicitly assumed rigid connection. Endpoint
 proximity alone does not prove that a fastener, plate or contact can carry load.
+Isotropic elastic constants must satisfy `G = E / (2 * (1 + nu))` within one
+percent. This allows rounded engineering inputs. It does not qualify a supplier
+material or its yield strength.
 
 ## Running a controlled example
 
