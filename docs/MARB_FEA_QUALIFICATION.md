@@ -53,6 +53,26 @@ those reports.
   release build passed with 84 files, 359 checked links and unchanged v0.12
   scoring. Committed secret and answer-key guards passed.
 
+## Merge-stage qualification
+
+On 2026-10-13, a clean checkout of proposed head `599f6f8` passed a fresh
+qualification. All 84 FEA tests passed with no skips. The existing fake-only CI
+suite ran 382 tests: 376 passed and six platform-specific checks were skipped.
+No failures or errors remained. The initial custom-runner output-capture error
+was corrected in the runner; repository code was unchanged for that correction.
+
+The actual STEP 49 N control returned `simulated_pass`. The 490 N overload
+returned `simulated_fail`. Both passed independently reconstructed equilibrium
+checks. Release build, frontier publication validation, and tree and commit-range
+secret and answer-key guards passed.
+
+[PR #23](https://github.com/sunnyday-technologies/MARB/pull/23) passed its GitHub
+checks and merged as `6769cce`. Its merged tree matched the qualified head.
+The merge commit's board-policy, answer-key and CodeQL checks also passed.
+Existing scoring, registry, leaderboard, website and Hugging Face files were
+unchanged. This publishes source and documentation, not an M3 structural grade
+or a public-submission service.
+
 ## What this qualifies
 
 This evidence qualifies the bounded source path on analytical and adversarial
