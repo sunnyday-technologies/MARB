@@ -39,6 +39,11 @@ Missing, conflicting, or unsupported engineering evidence remains a blocker.
 An exact catalog match cannot clear the structural requirements. A nonempty
 provenance field cannot qualify a material or connection by itself.
 
+The [static gantry diagnostic](MARB_M3_GANTRY_DIAGNOSTIC.md) implements a separate
+nominal analysis for the owner-selected 49 N case. Candidate stock geometry
+drives a restricted planar model. Splice and support behavior remain explicit
+unmeasured hypotheses. It leaves every physical evidence gap open.
+
 ## Running the local audit
 
 Freeze the draft digest independently before evaluating inputs. From the

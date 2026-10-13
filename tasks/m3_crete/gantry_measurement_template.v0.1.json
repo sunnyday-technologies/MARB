@@ -1,0 +1,46 @@
+{
+  "schema_version": "marb_m3_gantry_measurement_packet.v0.1",
+  "status": "draft_no_measurements",
+  "physical_test_authorized": false,
+  "physical_acceptance": "not_evaluated",
+  "case_packet_sha256": null,
+  "reviewed_physical_test_plan_sha256": null,
+  "reviewed_prediction_report_sha256": null,
+  "hardware_identity": {
+    "assembly_revision": null,
+    "matches_frozen_MARB_scope": null,
+    "extrusion_supplier_alloy_temper": null,
+    "splice_retainer_attachment": null,
+    "carriage_and_support_configuration": null,
+    "measured_component_and_payload_masses_kg": null
+  },
+  "reviewed_test_conditions": {
+    "owner_present": null,
+    "load_application_point_and_offsets": null,
+    "fixture_restraints_and_compliance": null,
+    "approved_load_sequence_n": null,
+    "unloaded_baseline_and_return_checks": null,
+    "instrument_identity_calibration_and_resolution": null,
+    "repeat_count": null,
+    "displacement_acceptance_tolerance_mm": null,
+    "reaction_acceptance_tolerance_n": null,
+    "uncertainty_method": null,
+    "stop_conditions": null
+  },
+  "measurement_fields": {
+    "record_id": "unique identifier",
+    "acquired_utc": "UTC timestamp",
+    "record_purpose": "calibration or validation; freeze this before using the data",
+    "applied_force_n": "measured force with uncertainty",
+    "left_vertical_displacement_mm": "relative to the declared unloaded baseline",
+    "midpoint_vertical_displacement_mm": "same sign convention and baseline",
+    "right_vertical_displacement_mm": "same sign convention and baseline",
+    "left_and_right_reaction_n": "measured where available; do not fill with solver output",
+    "splice_left_and_right_rotation_rad": "measured where available; do not fill with solver output",
+    "measurement_uncertainty": "instrument, fixture and repeatability evidence",
+    "unloading_recovery_mm": "residual displacement after unloading"
+  },
+  "records": [],
+  "comparison_rule": "Compare measured midpoint displacement relative to the measured end-support chord. Keep calibration records separate from validation records. Freeze parameters and prediction hashes before validation. Record prediction-minus-measurement residuals with uncertainty. No acceptance decision is possible until the physical test plan and tolerances are reviewed.",
+  "measurement_source": "not_available"
+}

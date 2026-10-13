@@ -118,6 +118,21 @@ geometry for the actual three stock profiles. The
 remaining engineering gates. This is source and coverage qualification. It does
 not establish connection behavior or a numerical full-machine model.
 
+The [static gantry diagnostic](MARB_M3_GANTRY_DIAGNOSTIC.md) now derives its
+selected stock placements from the candidate. A frozen prescribed 49 N case
+evaluates explicit rotational splice and vertical support stiffness hypotheses.
+It reports conditional bending demands and displacements. It does not grade a
+service limit or material strength. The insert contributes geometry evidence
+only. Its weight, composite action and connection capacity remain unqualified.
+
+The [measurement template](../tasks/m3_crete/gantry_measurement_template.v0.1.json)
+records the data and prior review needed for a physical comparison. No physical
+measurements or acceptance are established by the nominal diagnostic.
+
+The [gantry qualification record](MARB_M3_GANTRY_QUALIFICATION.md) records the
+clean-source tests and authored-part controls. Numerical qualification is
+complete for that scoped diagnostic. Physical validation remains pending.
+
 Steps 5 and 6 still require task and operational qualification. No full M3 candidate
 has been structurally graded. No ranked cohort, new readiness score, public FEA
 leaderboard row, physical acceptance or public-submission service is established.
