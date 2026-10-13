@@ -1,0 +1,7 @@
+# Optional experimental beam-subassembly analysis. Does not alter legacy graders.
+# Versions present in the local qualification runtime. Use a separate environment.
+cadquery==2.7.0
+cadquery-ocp==7.8.1.1.post1
+PyniteFEA==2.4.1
+numpy==2.4.4
+scipy==1.17.1
