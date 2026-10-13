@@ -92,9 +92,16 @@ merge nearby geometry into an invented physical connection.
 
 ## Release and recovery
 
-Keep implementation and test evidence local for review. Do not alter benchmark
-scoring, registry rows, public website, Hugging Face data, provider settings or
-running services. No model inference is needed to qualify this source path.
+The implementation and operator documentation were pushed and merged through
+[PR #23](https://github.com/sunnyday-technologies/MARB/pull/23) on 2026-10-13.
+Merge commit `6769cce` preserves the qualified implementation and source identity.
+The merge-stage qualification and its limits are recorded in
+[the qualification record](MARB_FEA_QUALIFICATION.md).
+
+Raw control artifacts remain local engineering evidence. Merged source does not
+admit a structural task or authorize changes to benchmark scoring, registry rows,
+public website, Hugging Face data, provider settings or running services.
+No model inference was needed for this source qualification.
 Rollback is removal or disabling of the optional FEA command. Existing graders
 do not import it and retain their prior behavior.
 
@@ -108,3 +115,26 @@ can run locally now.
 Steps 5 and 6 remain task and operational qualification work. No full M3 candidate
 has been structurally graded. No ranked cohort, new readiness score, public FEA
 leaderboard row, physical acceptance or public-submission service is established.
+
+## Ordered remaining work
+
+1. Freeze an M3 structural contract with verified profiles and inserts, material
+   and section properties, support and connection behavior, component masses,
+   travel-dependent loads and service limits.
+2. Qualify full-machine structural coverage. The current adapter accepts only
+   complete straight-stock beam subassemblies. M3 needs a declared extraction
+   policy or expanded adapter coverage for its non-beam parts and asymmetric
+   profiles. Preserve full-assembly geometry verification and candidate-derived
+   coordinates. Do not substitute a reference frame for the candidate.
+3. Calibrate the M3 task against independently reviewed correct, misplaced,
+   disconnected and overload controls. Validate connections and compare with
+   physical measurements before claiming physical readiness or safe capacity.
+4. Qualify automatic part assignment for a blind track. Add immutable input
+   staging and isolated workers with enforced time and memory limits before
+   accepting untrusted submissions.
+5. Freeze task, evaluator, calibration and runtime identities. Admit and run a
+   repeat-run structural cohort under the publication policy. Keep its results
+   separate from historical geometric scores. Any composite score needs a new
+   version and an explicit owner decision.
+6. Update the website and Hugging Face communication for the admitted state and
+   available measured results. The current leaderboard does not include FEA.
