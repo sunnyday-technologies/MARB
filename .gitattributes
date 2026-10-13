@@ -53,3 +53,9 @@ scripts/hooks/* text eol=lf
 # Preserve reviewed report/download bytes across Windows and Linux checkouts.
 /publishing/robotic-hand/handbench-technical-report/HandBench-Assembly-Completeness-and-Pose-Recovery.pdf binary
 /publishing/robotic-hand/handbench-technical-report/component-results.csv -text whitespace=cr-at-eol
+
+# Preserve the exact bytes of frozen structural inputs on every platform.
+# The existing catalogue was qualified with CRLF. New diagnostic inputs use LF.
+/tasks/m3_crete/structural_contract.v0.1.json text eol=crlf
+/tasks/m3_crete/gantry_diagnostic.v0.1.json text eol=lf
+/tasks/m3_crete/gantry_measurement_template.v0.1.json text eol=lf

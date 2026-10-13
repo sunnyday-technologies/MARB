@@ -1,0 +1,55 @@
+{
+  "schema_version": "marb_m3_gantry_packet.v0.1",
+  "task_id": "M3-CRETE",
+  "revision": "gantry-49n-diagnostic-20261013",
+  "status": "nominal_diagnostic",
+  "catalog_contract_sha256": "f7f3576c6d6f8cef5ef4123f1f813312c5f3fda7b18eb83b969c8e413beebaa8",
+  "case": {
+    "force_n": 49.0,
+    "vertical_axis": 2,
+    "load_position": "stock_splice",
+    "gravity_m_s2": 9.80665,
+    "include_stock_self_weight": true,
+    "self_weight_scope": "two_main_stock_members_only",
+    "basis": "Owner-selected prescribed diagnostic force. This is not a measured payload or an approved operating load."
+  },
+  "nominal_material": {
+    "E_pa": 68900000000.0,
+    "rho_kg_m3": 2700.0,
+    "status": "assumed",
+    "basis": [
+      "CADCLAW/cadclaw/fea/frame_model.py: Material.aluminum_6063_t5",
+      "https://support.openbuilds.com/support/solutions/articles/65000167811-what-is-v-slot-"
+    ]
+  },
+  "support_model": {
+    "kind": "vertical_end_restraints_free_rotation",
+    "normalized_vertical_stiffness": [10.0, 100.0],
+    "status": "hypotheses_not_measured"
+  },
+  "splice_model": {
+    "kind": "relative_rotation_sensitivity",
+    "normalized_rotation_stiffness": [0.0, 0.1, 1.0, 10.0],
+    "rigid_limit": true,
+    "insert_action": "geometry_witness_only",
+    "vertical_transfer": "shared_displacement_assumption",
+    "status": "hypotheses_not_measured"
+  },
+  "scope": {
+    "beam_source_id": "cbeam_4080",
+    "insert_source_id": "vslot_2040",
+    "projection": "uncoupled_centroidal_principal_axis_bending",
+    "geometry_closure_mm": 0.01,
+    "partial_assembly": true
+  },
+  "evidence_gaps": {
+    "material_identity": "unqualified",
+    "component_masses": "unqualified",
+    "carriage_restraints": "unqualified",
+    "splice_transfer": "unqualified",
+    "load_attachment_offsets": "unqualified",
+    "shear_center_and_torsion": "unqualified",
+    "service_limits": "unqualified",
+    "physical_comparison": "unqualified"
+  }
+}
