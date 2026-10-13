@@ -46,6 +46,17 @@ whether they are functionally acceptable. The exact limitation and the
 whole-class rule for future alternatives are published in
 [`spec/MARB_SCORING.md`](spec/MARB_SCORING.md#51-acceptable-solution-classes-and-current-limitation).
 
+### Experimental FEA analysis (separate from scores)
+
+An optional [beam-subassembly analysis](docs/MARB_FEA_ANALYSIS.md) verifies
+authored stock against an actual candidate STEP, derives its structural model
+from verified placements, and evaluates prescribed static loads. Its frozen
+contract, evaluator-authored binding and pinned solver are separate from the
+v0.12 score. Results are unranked development analyses. Full M3 structural-task
+qualification and physical validation remain incomplete. The
+[implementation plan](docs/MARB_FEA_IMPLEMENTATION_PLAN.md) lists the required
+profile, connection, load and calibration evidence.
+
 ### L2-RESOLVE definition (unmeasured)
 
 MARB v0.11 freezes an L2 change-loop task without publishing an L2 result. In
