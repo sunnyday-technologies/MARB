@@ -19,17 +19,18 @@ class HaldenReleaseGateTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         shutil.copytree(ROOT / 'publishing', self.root / 'publishing')
-        for name in ('scripts/build-site.ps1', 'publication-rights.json',
+        for name in ('scripts/build-site.ps1', 'scripts/usd-brep-comparison-gate.ps1',
+                     'publication-rights.json',
                      'results/marb_runs.json', 'spec/MARB_SCORING.md'):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, target)
 
-    def change(self, name, before, after):
+    def change(self, name, before, after, count=-1):
         path = self.root / name
         text = path.read_text(encoding='utf-8')
         self.assertIn(before, text)
-        path.write_text(text.replace(before, after), encoding='utf-8')
+        path.write_text(text.replace(before, after, count), encoding='utf-8')
 
     def gate(self, error=None):
         result = subprocess.run([PWSH, '-NoProfile', '-File',
@@ -64,8 +65,19 @@ class HaldenReleaseGateTests(unittest.TestCase):
         self.gate('Unapproved executable script')
 
     def test_broad_csp_allowance_is_rejected(self):
-        self.change('publishing/_headers', 'script-src ', "script-src 'self' ")
-        self.gate('CSP script-src must contain only the reviewed hashes')
+        # Mutate only the global policy; keep the reviewed route policy intact.
+        self.change('publishing/_headers', 'script-src ', "script-src 'self' ", count=1)
+        self.gate('USD BRep CSP exception escaped its route')
+
+    def test_comparison_geometry_on_other_route_is_rejected(self):
+        for extension in ('.bin', '.usda'):
+            with self.subTest(extension=extension):
+                probe = self.root / ('publishing/robotic-hand/unreviewed' + extension)
+                probe.write_bytes(b'Not geometry. Unreviewed route denial probe.')
+                try:
+                    self.gate('Blocked file type reached publish output')
+                finally:
+                    probe.unlink()
 
 
 if __name__ == '__main__':

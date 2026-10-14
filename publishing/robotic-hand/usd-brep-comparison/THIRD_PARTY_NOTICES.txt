@@ -1,0 +1,25 @@
+Halden Mk-IV USD BRep diagnostic comparison
+
+Authored Halden geometry and viewer integration: Sunnyday Technologies.
+The owner authorized this bounded public demonstration on 2026-10-14.
+The page includes source-hand geometry, saved exact USD and display meshes.
+It does not include private evaluator answer-key files or change benchmark scores.
+This is an unscored diagnostic. Failed geometry and image checks are retained.
+The design is unbuilt; no physical validation is claimed.
+
+Three.js 0.186.0 and OrbitControls are distributed under the MIT license.
+The complete license is included at assets/vendor/THREE-LICENSE.txt.
+The official minified Three core bytes are served as three.core.js to match
+the published module import; the bytes are unchanged. OrbitControls has one
+import-specifier change from bare three to the local module. Original and
+served vendor hashes and modification details are in the comparison receipt.
+
+NVIDIA USD BRep 1.0.0 / SMLib processed the geometry offline.
+The NVIDIA runtime and SDK binaries are not distributed by this site.
+NVIDIA USD BRep source is Apache-2.0 with bundled third-party notices:
+https://github.com/NVIDIA-Omniverse/usd-brep/tree/v1.0.0
+NVIDIA product names are used to identify the software tested; no endorsement
+or engineering approval is implied.
+
+The browser uses Three.js and saved meshes. It does not run the exact kernel.
+Native geometry failures bar a drop-in replacement claim.
