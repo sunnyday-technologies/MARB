@@ -5,4 +5,4 @@
 #gx10-metrics[hidden]{display:none}#gx10-metrics h2{font-size:16px}#gx10-metrics h3{font-size:12px;margin:18px 0 6px;color:#eee9df}#gx10-metrics table{font-variant-numeric:tabular-nums}#gx10-metrics td:first-child{width:38%}#gx10-metrics details{margin-top:10px;padding-top:9px}#gx10-metrics details p{overflow-wrap:anywhere}.metric-warning{border-left:2px solid #f4bd7060;padding-left:10px;color:var(--red);font-size:11px;line-height:1.6}
 .results-jump{display:inline-flex;align-items:center;min-height:44px;color:var(--amber);font-size:12px}#gx10-metrics{scroll-margin-top:16px}@media(max-width:700px){#gx10-metrics{scroll-margin-top:calc(clamp(320px,48svh,530px) + 12px)}}
 
-@media(max-width:700px){.controls :is(button,select,input,summary,a){scroll-margin-top:calc(clamp(320px,48svh,530px) + 12px)}}
+@media(max-width:700px){.controls :is(button,select,input,summary,a){scroll-margin-top:min(calc(84svh + 126px),calc(100svh - 80px))}}

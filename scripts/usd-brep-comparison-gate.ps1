@@ -1,7 +1,7 @@
 # Exact-byte release exception for one authored-hand diagnostic route.
 $UsdBrepRoute = "robotic-hand/usd-brep-comparison"
 $UsdBrepCsp = "default-src 'none'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; manifest-src 'none'; media-src 'none'; object-src 'none'; script-src 'self'; style-src 'self'; worker-src 'none'; upgrade-insecure-requests"
-$UsdBrepInventorySha256 = "c4579871b0c48ffb053a1a0534abf1cfeef81ad123331455dbbb76ffab3b5860"
+$UsdBrepInventorySha256 = "fa09302673e9ce8adce738d74aad9247ddeb73bdc497c25ba0f180a97146a790"
 
 function Get-UsdBrepTextSha256 {
   param([string]$Text)
@@ -73,7 +73,8 @@ function Assert-UsdBrepComparisonRelease {
       $gx10.image_gate.passed -ne $false -or $gx10.image_gate.pairs_passed -ne 2 -or
       $gx10.backend_comparison[2].nvidia.groups_failed[0] -ne 47 -or $gx10.palm_mesh.gx10_ARM_spine_edges -ne 388 -or
       $gx10.palm_mesh.historical_Windows_spine_edges -ne 1356) { throw "USD BRep measurements or retained failure boundaries changed" }
-  return [pscustomobject]@{ Enabled = $true; EntryUrl = $entry; EntrySri = $entrySri }
+  $geometryAssets = @($record.artifacts | Where-Object { [IO.Path]::GetExtension($_.path) -in @('.bin', '.usda') } | ForEach-Object { $_.path.Substring('publishing/'.Length) })
+  return [pscustomobject]@{ Enabled = $true; EntryUrl = $entry; EntrySri = $entrySri; ApprovedGeometryAssets = $geometryAssets }
 }
 
 function Assert-UsdBrepComparisonMarkup {

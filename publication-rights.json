@@ -115,7 +115,7 @@
       "source_step_sha256": "356ed1fd967696bd9bf9393260950db2556649fd867ea5f52cf81e381721e64d",
       "matching_source_commit": "edbd541b1a9d2e9eb7eb5706309239aa3d94e2e6",
       "measured_candidate_commit": "123aad33e6423145a4fc6f1ee0c889938a9b0e0c",
-      "inventory_sha256": "c4579871b0c48ffb053a1a0534abf1cfeef81ad123331455dbbb76ffab3b5860",
+      "inventory_sha256": "fa09302673e9ce8adce738d74aad9247ddeb73bdc497c25ba0f180a97146a790",
       "entry_module": {
         "url": "./viewer.js?v=076dffe901f51bf1",
         "integrity": "sha256-B23/6QH1G/FSzZVrk2mNfnP7M6WE/P53nHeL7XcGOWo="
@@ -187,7 +187,7 @@
         },
         {
           "path": "publishing/robotic-hand/usd-brep-comparison/index.html",
-          "sha256": "231c477f3f576a1913a8e187b49a427fff01dde8f05f3d997cc3e17488e987a7",
+          "sha256": "5fc91b642dc8ecc680cdc00293e77fd1e7ff066ddf3bcdf3ca31784fbe767e3c",
           "bytes": 10616
         },
         {
@@ -202,8 +202,8 @@
         },
         {
           "path": "publishing/robotic-hand/usd-brep-comparison/viewer.css",
-          "sha256": "4d3474af57e74e6bfa5728a58a84c3343e096cf8e0c9f217cefb4bc403fdbb46",
-          "bytes": 8586
+          "sha256": "4ca35491d075d01996f502f26281cb398680760a95000fdb6bdfa1c2b2704815",
+          "bytes": 8593
         },
         {
           "path": "publishing/robotic-hand/usd-brep-comparison/viewer.js",

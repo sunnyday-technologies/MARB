@@ -211,9 +211,15 @@ if ($blockedPaths.Count -gt 0) {
 $blockedExtensions = @(
   ".stl", ".step", ".stp", ".3mf", ".f3d", ".f3z", ".sldprt", ".sldasm",
   ".ipt", ".iam", ".iges", ".igs", ".x_t", ".x_b", ".dwg", ".dxf",
-  ".yaml", ".yml", ".env", ".pem", ".key", ".otf", ".ttf", ".woff", ".woff2"
+  ".yaml", ".yml", ".env", ".pem", ".key", ".otf", ".ttf", ".woff", ".woff2", ".bin", ".usda"
 )
-$blockedFiles = @($publishFiles | Where-Object { $blockedExtensions -contains $_.Extension.ToLowerInvariant() })
+$blockedFiles = @($publishFiles | Where-Object {
+  $extension = $_.Extension.ToLowerInvariant()
+  ($blockedExtensions -contains $extension) -and -not (
+    $usdBrepComparison.Enabled -and $extension -in @('.bin', '.usda') -and
+    $usdBrepComparison.ApprovedGeometryAssets -contains (Get-PublishRelativePath $_.FullName)
+  )
+})
 if ($blockedFiles.Count -gt 0) {
   throw "Blocked file type reached publish output: $((@($blockedFiles | ForEach-Object { Get-PublishRelativePath $_.FullName })) -join ', ')"
 }
