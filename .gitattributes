@@ -41,6 +41,9 @@ scripts/hooks/* text eol=lf
 /publishing/** text eol=lf
 # Keep the user-supplied executable bundle byte-identical for SRI.
 /publishing/robotic-hand/halden-mkiii/assets/** -text -whitespace
+# The diagnostic release gate pins every reviewed asset byte, including binary
+# buffers and the entry module SRI, across Windows and Linux checkouts.
+/publishing/robotic-hand/usd-brep-comparison/** -text -whitespace
 /publishing/*.jpg -text
 /publishing/*.jpeg -text
 /publishing/*.png -text

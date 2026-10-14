@@ -99,5 +99,118 @@
     "publishing/media/m3crete_v1_explode_2040_below1.gif",
     "publishing/media/m3crete_v1_explode_only.gif",
     "publishing/media/token ledger.jpg"
+  ],
+  "interactive_artifact_releases": [
+    {
+      "id": "halden-authored-usd-brep-diagnostic-20261014",
+      "route": "/robotic-hand/usd-brep-comparison/",
+      "owner": "Sunnyday Technologies",
+      "reviewed_on": "2026-10-14",
+      "scope": "owner-authorized source-hand geometry and unscored backend observations",
+      "representation": "authored STEP-derived OCP meshes and NVIDIA exact USD BRep with saved SMLib meshes",
+      "source_geometry_included": true,
+      "private_evaluator_answer_key_files_included": false,
+      "benchmark_scores_changed": false,
+      "NVIDIA_drop_in_ready": false,
+      "source_step_sha256": "356ed1fd967696bd9bf9393260950db2556649fd867ea5f52cf81e381721e64d",
+      "matching_source_commit": "edbd541b1a9d2e9eb7eb5706309239aa3d94e2e6",
+      "measured_candidate_commit": "123aad33e6423145a4fc6f1ee0c889938a9b0e0c",
+      "inventory_sha256": "c4579871b0c48ffb053a1a0534abf1cfeef81ad123331455dbbb76ffab3b5860",
+      "entry_module": {
+        "url": "./viewer.js?v=076dffe901f51bf1",
+        "integrity": "sha256-B23/6QH1G/FSzZVrk2mNfnP7M6WE/P53nHeL7XcGOWo="
+      },
+      "third_party_notices": [
+        "publishing/robotic-hand/usd-brep-comparison/THIRD_PARTY_NOTICES.txt",
+        "publishing/robotic-hand/usd-brep-comparison/assets/vendor/THREE-LICENSE.txt"
+      ],
+      "artifacts": [
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/comparison-receipt.json",
+          "sha256": "6b8b487d19637c4036b4ff12237c139c16eb36cb199fb55f6b1dde9ed3e9ede4",
+          "bytes": 5982
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/core-metrics.json",
+          "sha256": "f171a7510ab1a8224abf46310ec2599291bf38f2295793c1c74a444a2b347c1a",
+          "bytes": 2917
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/gx10-metrics.json",
+          "sha256": "38a593436b8fa29e62a1265a9c151061f0ee8a5473e6901a1a58d3b6857e9d01",
+          "bytes": 14906
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/halden-exact.usda",
+          "sha256": "e03482aeb6cd7f87bc5180b178a1f1c45cd4916ca44deff29a9d6a1e7a342075",
+          "bytes": 3856534
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/manifest.json",
+          "sha256": "8d37c0ee98d717a64e8c6c7721fc2a9a06cb232f09f94ebefce2c565c24f9d8f",
+          "bytes": 55520
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/motion-metadata.json",
+          "sha256": "43fdaee972387f7abef9cf21c8b41c19f2ece511faa8228f34b6648596c5224a",
+          "bytes": 52819
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/nvidia-meshes.bin",
+          "sha256": "ec3810f3aab82a2edd918c3926dd129ac1943e0f66e08c42dbced8462bfeef11",
+          "bytes": 1694472
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/ocp-meshes.bin",
+          "sha256": "d026066867573e90342099fd13bb5bab0ee2794aefff58c64400c7d1038b9dad",
+          "bytes": 2091776
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/vendor/OrbitControls.js",
+          "sha256": "68904948ec52ce575e4a4cb83303d12bb68e7f691e7b679a822c8eb7b20f4288",
+          "bytes": 40771
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/vendor/THREE-LICENSE.txt",
+          "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+          "bytes": 1081
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/vendor/three.core.js",
+          "sha256": "f3556fb8c9aff8fc6f8e090b918ae5d4e6b45152afb93815002d3319d875cdec",
+          "bytes": 415816
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/assets/vendor/three.module.min.js",
+          "sha256": "6a238d5d0c711f1f008488aff06a2ab9ab478959842044d243e89c316f6a5fc2",
+          "bytes": 392831
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/index.html",
+          "sha256": "231c477f3f576a1913a8e187b49a427fff01dde8f05f3d997cc3e17488e987a7",
+          "bytes": 10616
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/motion-adapter.js",
+          "sha256": "175596f589cf9497e1da74eb1379d07b9da5326f0c2f4392d6fe4fb1b1034831",
+          "bytes": 4174
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/THIRD_PARTY_NOTICES.txt",
+          "sha256": "95e55b32df2505ae4dd567aa8727754ab33082b59aec41301d10cbe4acaf0f41",
+          "bytes": 1442
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/viewer.css",
+          "sha256": "4d3474af57e74e6bfa5728a58a84c3343e096cf8e0c9f217cefb4bc403fdbb46",
+          "bytes": 8586
+        },
+        {
+          "path": "publishing/robotic-hand/usd-brep-comparison/viewer.js",
+          "sha256": "076dffe901f51bf152cd956b93698d7e73fb33a584fcfe779c778bed7706396a",
+          "bytes": 21858
+        }
+      ]
+    }
   ]
 }

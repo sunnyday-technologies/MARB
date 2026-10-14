@@ -87,6 +87,11 @@ $reviewAssets = @($rights.owner_or_counsel_review_required | ForEach-Object { ([
 $excludedAssets = @($rights.excluded_from_release | ForEach-Object { ([string]$_).Replace('\', '/') })
 $trackedHolds = @($rights.tracked_repository_hold | ForEach-Object { ([string]$_).Replace('\', '/') })
 
+# One owner-authorized, exact-inventory geometry diagnostic. Validate before
+# clearing the previous build; the general source/output gates still apply.
+. (Join-Path $ScriptDir "usd-brep-comparison-gate.ps1")
+$usdBrepComparison = Assert-UsdBrepComparisonRelease -RepoRoot $RepoRoot -Rights $rights
+
 $imageExtensions = @(".png", ".jpg", ".jpeg", ".gif", ".svg")
 $publicAssets = @(
   Get-ChildItem -LiteralPath $SiteRoot -Recurse -File -Force |
@@ -396,6 +401,8 @@ foreach ($htmlFile in $htmlFiles) {
     $moduleCount = [regex]::Matches($raw, [regex]::Escape($exhibitScriptTag)).Count
     if ($moduleCount -ne 1) { throw "Halden must load exactly one reviewed module with SRI" }
     $exhibitScriptCount += $moduleCount
+  } elseif ($usdBrepComparison.Enabled -and (Get-PublishRelativePath $htmlFile.FullName) -eq "$UsdBrepRoute/index.html") {
+    $moduleCount = Assert-UsdBrepComparisonMarkup -Html $raw -Release $usdBrepComparison
   }
   if ($allScriptCount -ne ($jsonLdMatches.Count + $moduleCount)) {
     throw "Unapproved executable script: $(Get-PublishRelativePath $htmlFile.FullName)"
@@ -416,6 +423,7 @@ foreach ($htmlFile in $htmlFiles) {
 }
 
 if ($exhibitScriptCount -ne 1) { throw "Missing reviewed Halden exhibit" }
+if ($usdBrepComparison.Enabled) { Assert-UsdBrepComparisonHeaders -Headers $headersText }
 if ($jsonLdCount -lt 1) { throw "No JSON-LD found in published HTML" }
 if ($headersText -match "script-src\s+'none'" -or $headersText -match "script-src[^;]*'unsafe-inline'" -or $headersText -match "script-src[^;]*'unsafe-eval'") {
   throw "CSP script policy must allow only reviewed script hashes"
