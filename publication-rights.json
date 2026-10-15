@@ -6,6 +6,7 @@
   "release_hold": "",
   "supported_by_repository_hash": [],
   "rights_cleared_for_release": [
+    "publishing/media/halden-usd-brep-comparison-social-v1.png",
     "publishing/robotic-hand/halden-local-update/assets/halden-reference-highfive.png",
     "publishing/robotic-hand/halden-local-update/assets/qwen-return-highfive.png",
     "publishing/robotic-hand/halden-local-update/assets/halden-reference-oblique.png",
@@ -65,6 +66,7 @@
   ],
   "tracked_repository_hold": [],
   "notes": [
+    "2026-10-15: owner approved making and deploying the narrow Halden comparison social-preview repair. The new 1200x630 card proportionally fits the full previously cleared Halden reference high-five render without cropping anatomy or changing geometry. Source SHA-256 8e2d506de0c9e24611dc7788eec7780465451f28c9f702a59bcfaf573ff91835; card SHA-256 357f8dfee79059d88f6295b4c438a159f5572f6c5130fa8c4beb2a6f8be0bf9b. Only comparison head metadata and this image change in the public artifact; viewer, geometry, motion and measurement evidence remain unchanged.",
     "2026-10-09 visual revision: owner requested a straight-on high-five view with distinct component colors. Two editorial CAD renders use unchanged retained reference and submission meshes, a matched camera and scale, and consistent colors for connected mesh components. No geometry, pose, benchmark input or score changes. These post-run illustrations are labeled as editorial views, not model inputs or in-run checkpoints. Only the PNGs enter the public artifact; earlier images remain available for existing links.",
     "2026-10-04 visual revision: owner requested a palm-and-fingers view. Cleared the existing Halden oblique reference PNG and a matching camera-only render of the unchanged saved Qwen assembly. No geometry, benchmark input or score changes. The article identifies the post-run render; earlier front PNGs remain available for existing links.",
     "2026-10-04: owner approved publication of the Halden local-workflow development update and separate DexHand aggregate result. Two unmodified Halden render PNGs from the owner-authored benchmark concept are cleared for this article. No DexHand images, CAD, private paths, raw logs, participant archives or placement keys enter this release. Results remain unranked and do not establish physical validation.",
@@ -115,7 +117,7 @@
       "source_step_sha256": "356ed1fd967696bd9bf9393260950db2556649fd867ea5f52cf81e381721e64d",
       "matching_source_commit": "edbd541b1a9d2e9eb7eb5706309239aa3d94e2e6",
       "measured_candidate_commit": "123aad33e6423145a4fc6f1ee0c889938a9b0e0c",
-      "inventory_sha256": "fa09302673e9ce8adce738d74aad9247ddeb73bdc497c25ba0f180a97146a790",
+      "inventory_sha256": "2cfef793d28326a9220c0d8fbfb7fc99a5a44232e2d3154f6bbd511f42a663fa",
       "entry_module": {
         "url": "./viewer.js?v=076dffe901f51bf1",
         "integrity": "sha256-B23/6QH1G/FSzZVrk2mNfnP7M6WE/P53nHeL7XcGOWo="
@@ -187,8 +189,8 @@
         },
         {
           "path": "publishing/robotic-hand/usd-brep-comparison/index.html",
-          "sha256": "5fc91b642dc8ecc680cdc00293e77fd1e7ff066ddf3bcdf3ca31784fbe767e3c",
-          "bytes": 10616
+          "sha256": "85789d38d14dc5416ea21db6b1ed926354f7b5dfdc9b2df1c386900d2d246650",
+          "bytes": 12089
         },
         {
           "path": "publishing/robotic-hand/usd-brep-comparison/motion-adapter.js",

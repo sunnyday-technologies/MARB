@@ -1,7 +1,7 @@
 # Exact-byte release exception for one authored-hand diagnostic route.
 $UsdBrepRoute = "robotic-hand/usd-brep-comparison"
 $UsdBrepCsp = "default-src 'none'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; manifest-src 'none'; media-src 'none'; object-src 'none'; script-src 'self'; style-src 'self'; worker-src 'none'; upgrade-insecure-requests"
-$UsdBrepInventorySha256 = "fa09302673e9ce8adce738d74aad9247ddeb73bdc497c25ba0f180a97146a790"
+$UsdBrepInventorySha256 = "2cfef793d28326a9220c0d8fbfb7fc99a5a44232e2d3154f6bbd511f42a663fa"
 
 function Get-UsdBrepTextSha256 {
   param([string]$Text)
