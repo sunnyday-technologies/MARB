@@ -115,7 +115,7 @@
       "source_step_sha256": "356ed1fd967696bd9bf9393260950db2556649fd867ea5f52cf81e381721e64d",
       "matching_source_commit": "edbd541b1a9d2e9eb7eb5706309239aa3d94e2e6",
       "measured_candidate_commit": "123aad33e6423145a4fc6f1ee0c889938a9b0e0c",
-      "inventory_sha256": "fa09302673e9ce8adce738d74aad9247ddeb73bdc497c25ba0f180a97146a790",
+      "inventory_sha256": "2661d3355584e976be6fd2a0db07275ed53d592eefa6b0e122bc1624b36a8518",
       "entry_module": {
         "url": "./viewer.js?v=076dffe901f51bf1",
         "integrity": "sha256-B23/6QH1G/FSzZVrk2mNfnP7M6WE/P53nHeL7XcGOWo="
@@ -187,8 +187,8 @@
         },
         {
           "path": "publishing/robotic-hand/usd-brep-comparison/index.html",
-          "sha256": "5fc91b642dc8ecc680cdc00293e77fd1e7ff066ddf3bcdf3ca31784fbe767e3c",
-          "bytes": 10616
+          "sha256": "5da3c3d11c14eedd2474790662b0c7a3d57119fe7560de695c6a84ad68073a61",
+          "bytes": 11668
         },
         {
           "path": "publishing/robotic-hand/usd-brep-comparison/motion-adapter.js",
@@ -210,7 +210,12 @@
           "sha256": "076dffe901f51bf152cd956b93698d7e73fb33a584fcfe779c778bed7706396a",
           "bytes": 21858
         }
-      ]
+      ],
+      "discoverability_update": {
+        "date": "2026-10-17",
+        "authorization": "Owner requested search indexing and discovery links for the existing public diagnostic.",
+        "scope": "Page metadata and incoming discovery links only; geometry, measurements, experimental status and qualification findings are unchanged."
+      }
     }
   ]
 }

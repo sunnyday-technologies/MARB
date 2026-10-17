@@ -7,6 +7,7 @@
 - Benchmark home: https://marb.cadclaw.io/
 - M3-CRETE board, provisional measurements separate from historical rankings: https://marb.cadclaw.io/#board
 - Robotic hand board, Amazing Hand baseline and separate Halden/DexHand development results, all unranked: https://marb.cadclaw.io/robotic-hand/
+- NVIDIA USD BRep/SMLib and Open CASCADE/OCP comparison of the authored Halden hand, experimental and unscored, with qualification failures and downloadable measurements retained: https://marb.cadclaw.io/robotic-hand/usd-brep-comparison/
 - HandBench local development update, October 4: https://marb.cadclaw.io/robotic-hand/halden-local-update/
 - Halden Mk-IV interactive exhibit (59-part hand concept with modeled servos and tendons, unscored; separate from Amazing Hand): https://marb.cadclaw.io/robotic-hand/halden-mkiii/
 - HandBench baseline article: https://marb.cadclaw.io/robotic-hand/handbench-baseline/
@@ -54,4 +55,4 @@
 
 - Search indexing and real-time AI input are allowed. Model training is not permitted by this site's Content Signal: search=yes, ai-input=yes, ai-train=no.
 - Content Signal communicates the publisher's machine-readable preference; applicable contracts, licenses, law, and third-party rights still govern use.
-- Updated: 2026-10-04.
+- Updated: 2026-10-17.

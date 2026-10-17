@@ -22,10 +22,13 @@
   <nav><a href="/#board">M3-CRETE board</a><a href="/robotic-hand/" aria-current="page">Robotic hand</a><a href="/astra-vs-grok/">Astra vs Grok Bot</a><a href="/studies/">Studies</a><a class="ghost" href="https://github.com/sunnyday-technologies/MARB">GitHub →</a></nav>
 </header>
 <main><article class="story">
-  <p class="eyebrow">MARB · Robotic hand · Updated October 4, 2026</p>
+  <p class="eyebrow">MARB · Robotic hand · Updated October 17, 2026</p>
   <h1>Robotic hand leaderboard</h1>
   <p class="lede">A separate benchmark for assembling authored robotic-hand components. Each hand and scoring method is reported separately; results are not combined into one ranking.</p>
   <aside class="scope"><strong>Initial results · unranked.</strong> Six Amazing Hand attempts are retained: five have placement measurements and one remains ungraded. Read <a href="/robotic-hand/handbench-baseline/">HandBench: Some Assembly Required</a> for the results and their limits.<p><a href="/robotic-hand/handbench-technical-report/">Technical report: actual assemblies, methods and source data</a></p></aside>
+
+  <h2 id="usd-brep-comparison">NVIDIA USD BRep and Open CASCADE</h2>
+  <p><a href="/robotic-hand/usd-brep-comparison/">Inspect the Halden hand through both geometry engines</a>: the same authored STEP, with component checks, processing measurements and downloadable evidence. Experimental and unscored; the comparison retains its qualification failures and does not change the HandBench results.</p>
 
   <h2 id="development-update">Halden and DexHand · development update</h2>
   <p><strong>October 4, 2026 · unranked.</strong> Local Qwen completed the Halden test workflow but saved only the fixed anchor: 0/48 scored groups at a 1 mm tolerance. A separate Astra Medium run on a partial DexHand snapshot returned all 101 instances, with 16/100 non-anchor matches under its 5 mm screen. Different tasks and assistance conditions prevent a model ranking.</p>

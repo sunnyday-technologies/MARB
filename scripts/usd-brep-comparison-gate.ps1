@@ -1,7 +1,7 @@
 # Exact-byte release exception for one authored-hand diagnostic route.
 $UsdBrepRoute = "robotic-hand/usd-brep-comparison"
 $UsdBrepCsp = "default-src 'none'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; manifest-src 'none'; media-src 'none'; object-src 'none'; script-src 'self'; style-src 'self'; worker-src 'none'; upgrade-insecure-requests"
-$UsdBrepInventorySha256 = "fa09302673e9ce8adce738d74aad9247ddeb73bdc497c25ba0f180a97146a790"
+$UsdBrepInventorySha256 = "2661d3355584e976be6fd2a0db07275ed53d592eefa6b0e122bc1624b36a8518"
 
 function Get-UsdBrepTextSha256 {
   param([string]$Text)
@@ -84,7 +84,13 @@ function Assert-UsdBrepComparisonMarkup {
   $expected = '<script type="module" src="' + $Release.EntryUrl + '" integrity="' + $Release.EntrySri + '" crossorigin="anonymous"></script>'
   if ($scripts[0].Value -ne $expected) { throw "USD BRep entry module markup differs from the reviewed SRI tag" }
   if ($Html -match '(?i)<meta[^>]+http-equiv=["'']Content-Security-Policy') { throw "USD BRep route must use its one response-header CSP, not a second meta policy" }
-  foreach ($boundary in @('noindex,nofollow', 'EXPERIMENTAL', 'UNSCORED', 'qualification failed', 'OCP is the default', 'not running in this browser')) {
+  # The owner requested public search discovery on 2026-10-17. Keep indexing
+  # separate from the unchanged experimental scope and qualification status.
+  foreach ($discovery in @('<meta name="robots" content="index,follow">', '<link rel="canonical" href="https://marb.cadclaw.io/robotic-hand/usd-brep-comparison/">')) {
+    if (-not $Html.Contains($discovery)) { throw "USD BRep page is missing its indexable robots or canonical metadata" }
+  }
+  if ($Html -match '(?is)<meta\b[^>]*\bname=["''](?:robots|googlebot|bingbot)["''][^>]*(?:noindex|nofollow|none)') { throw "USD BRep page must not block public search indexing" }
+  foreach ($boundary in @('EXPERIMENTAL', 'UNSCORED', 'qualification failed', 'OCP is the default', 'not running in this browser')) {
     if ($Html -notmatch [regex]::Escape($boundary)) { throw "USD BRep page is missing a reviewed scope boundary" }
   }
   return 1
