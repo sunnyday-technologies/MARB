@@ -624,15 +624,70 @@ html { color: #c9d6e0; }
 body { background: transparent; color: #c9d6e0; }
 ::selection { background: #97d700; color: #061321; }
 
-/* Navy glow and a faint 40 px grid, fixed to the viewport. */
+/* Navy glow, a faint 40 px grid and the "Orient" background, fixed to the viewport: four
+   coordinate frames turn into line with their dashed reference frames, hold, then drift off,
+   each on its own period. Static SVGs rotated by CSS transforms (no script); at rest every
+   frame sits on its reference, which is also the reduced-motion state. */
 html {
   background:
+    url("media/sdt-orient-ref.svg") right 8vw bottom 58vh / min(26vh, 220px) min(26vh, 220px) no-repeat,
+    url("media/sdt-orient-ref.svg") right 27vw bottom 30vh / min(19vh, 160px) min(19vh, 160px) no-repeat,
+    url("media/sdt-orient-ref.svg") right 6vw bottom 12vh / min(32vh, 270px) min(32vh, 270px) no-repeat,
+    url("media/sdt-orient-ref.svg") right 31vw bottom 6vh / min(15vh, 128px) min(15vh, 128px) no-repeat,
     linear-gradient(rgba(169, 203, 239, 0.035) 1px, transparent 1px) 0 0 / 40px 40px,
     linear-gradient(90deg, rgba(169, 203, 239, 0.035) 1px, transparent 1px) 0 0 / 40px 40px,
     radial-gradient(1100px 560px at 80% -8%, rgba(1, 58, 115, 0.55), rgba(1, 58, 115, 0) 70%),
     radial-gradient(900px 620px at -10% 45%, rgba(1, 58, 115, 0.26), rgba(1, 58, 115, 0) 70%),
     linear-gradient(180deg, #061321, #040d18) #061321;
   background-attachment: fixed;
+}
+html::before, html::after, body::before, body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  aspect-ratio: 1;
+  background: url("media/sdt-orient-frame.svg") center / 100% 100% no-repeat;
+  animation: 30s cubic-bezier(.45,0,.25,1) infinite;
+  will-change: transform;
+  opacity: 0.6;
+}
+html::before { right: 8vw; bottom: 58vh; width: min(26vh, 220px); animation-name: sdt-orient-1; animation-duration: 29s; }
+@keyframes sdt-orient-1 {
+  0%, 38% { transform: none; }
+  58%, 72% { transform: rotate(-34deg); }
+  92%, 100% { transform: none; }
+}
+html::after { right: 27vw; bottom: 30vh; width: min(19vh, 160px); animation-name: sdt-orient-2; animation-duration: 35s; }
+@keyframes sdt-orient-2 {
+  0%, 38% { transform: none; }
+  58%, 72% { transform: rotate(41deg); }
+  92%, 100% { transform: none; }
+}
+body::before { right: 6vw; bottom: 12vh; width: min(32vh, 270px); animation-name: sdt-orient-3; animation-duration: 41s; }
+@keyframes sdt-orient-3 {
+  0%, 38% { transform: none; }
+  58%, 72% { transform: rotate(23deg); }
+  92%, 100% { transform: none; }
+}
+body::after { right: 31vw; bottom: 6vh; width: min(15vh, 128px); animation-name: sdt-orient-4; animation-duration: 47s; }
+@keyframes sdt-orient-4 {
+  0%, 38% { transform: none; }
+  58%, 72% { transform: rotate(-52deg); }
+  92%, 100% { transform: none; }
+}
+/* Phones: two frames only, half off the right edge and fainter, so body text stays clear. */
+@media (max-width: 719px) {
+  html { background-size: 26vh 26vh, 0 0, 30vh 30vh, 0 0, 40px 40px, 40px 40px, auto, auto, auto; background-position: right -10vw bottom 54vh, 0 0, right -14vw bottom 8vh, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  html::before { right: -10vw; bottom: 54vh; width: 26vh; opacity: 0.32; }
+  body::before { right: -14vw; bottom: 8vh; width: 30vh; opacity: 0.32; }
+  html::after, body::after { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html::before, html::after, body::before, body::after { animation: none; }
+}
+@media print {
+  html::before, html::after, body::before, body::after { display: none; }
 }
 
 /* Header: dark glass with a lime hairline. */
