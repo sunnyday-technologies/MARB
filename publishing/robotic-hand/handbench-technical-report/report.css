@@ -14,3 +14,14 @@ nav{background:#f0f6f8;border:1px solid var(--line);padding:20px 26px;font-size:
 header strong{letter-spacing:.08em}h1{font-size:clamp(32px,4.5vw,52px);max-width:1100px}h2{color:#172b3a}main{max-width:1200px}pre code{font-size:14px}
 
 .publication-bar{font:14px/1.6 system-ui,sans-serif;border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:30px}.publication-bar a{display:inline-block;margin:5px 20px 5px 0}footer{max-width:1200px;margin:20px auto 40px;padding:0 25px;font:13px/1.6 system-ui,sans-serif;color:var(--muted)}header nav{background:none;border:0;padding:0;margin:0}header nav a{margin-right:18px}.table-wrap{max-width:100%}@media(max-width:750px){pre code{font-size:12px}header nav{font-size:13px}}
+
+/* 2026-11-04: Sunnyday dark navy theme (see /styles.css). The report itself stays a white
+   document sheet, as the research papers do on sunn3d.com; the page around it is dark. */
+html{color-scheme:dark;background:linear-gradient(rgba(169,203,239,.035) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,rgba(169,203,239,.035) 1px,transparent 1px) 0 0/40px 40px,radial-gradient(1100px 560px at 80% -8%,rgba(1,58,115,.55),rgba(1,58,115,0) 70%),linear-gradient(180deg,#061321,#040d18) #061321;background-attachment:fixed}
+body{background:transparent}
+main{color-scheme:light;box-shadow:0 18px 55px rgba(0,0,0,.45)}
+header{background:rgba(6,19,33,.9);box-shadow:0 1px 0 rgba(151,215,0,.35),0 10px 30px rgba(0,0,0,.3)}
+header a{color:#a8e81a}
+footer{color:#9fb2c2}
+footer a{color:#a8e81a}
+@media print{html{background:none}}
