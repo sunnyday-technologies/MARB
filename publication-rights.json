@@ -6,6 +6,8 @@
   "release_hold": "",
   "supported_by_repository_hash": [],
   "rights_cleared_for_release": [
+    "publishing/media/sdt-orient-frame.svg",
+    "publishing/media/sdt-orient-ref.svg",
     "publishing/media/halden-usd-brep-comparison-social-v1.png",
     "publishing/robotic-hand/halden-local-update/assets/halden-reference-highfive.png",
     "publishing/robotic-hand/halden-local-update/assets/qwen-return-highfive.png",
@@ -66,6 +68,7 @@
   ],
   "tracked_repository_hold": [],
   "notes": [
+    "2026-11-12: recorded the two original Sunnyday Orient background SVGs omitted from the 2026-11-04 theme manifest. Owner selected Orient and approved its preview and release; retained authorization is in Publications/marb-dark-theme-2026-11-04/RELEASE_STATUS.md. Both assets reproduce byte-for-byte from that release's concepts/build_concepts.py build_orient function: generic coordinate axes, arrowheads and circles computed with Python math, with no imported artwork, third-party marks or CAD. Clearance covers these decorative SVGs only; release_authorized and all existing publication gates remain unchanged.",
     "2026-10-15: owner approved making and deploying the narrow Halden comparison social-preview repair. The new 1200x630 card proportionally fits the full previously cleared Halden reference high-five render without cropping anatomy or changing geometry. Source SHA-256 8e2d506de0c9e24611dc7788eec7780465451f28c9f702a59bcfaf573ff91835; card SHA-256 357f8dfee79059d88f6295b4c438a159f5572f6c5130fa8c4beb2a6f8be0bf9b. Only comparison head metadata and this image change in the public artifact; viewer, geometry, motion and measurement evidence remain unchanged.",
     "2026-10-09 visual revision: owner requested a straight-on high-five view with distinct component colors. Two editorial CAD renders use unchanged retained reference and submission meshes, a matched camera and scale, and consistent colors for connected mesh components. No geometry, pose, benchmark input or score changes. These post-run illustrations are labeled as editorial views, not model inputs or in-run checkpoints. Only the PNGs enter the public artifact; earlier images remain available for existing links.",
     "2026-10-04 visual revision: owner requested a palm-and-fingers view. Cleared the existing Halden oblique reference PNG and a matching camera-only render of the unchanged saved Qwen assembly. No geometry, benchmark input or score changes. The article identifies the post-run render; earlier front PNGs remain available for existing links.",
